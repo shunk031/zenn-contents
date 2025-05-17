@@ -155,7 +155,7 @@ DRMM を元にしたモデルの訓練方法として、label generation phase �
 
 #### Generating Better Search Engine Text Advertisements with Deep Reinforcement Learning
 
-- KDD 2019 Applied Data Science Track 採択論文^[^15]
+- KDD 2019 Applied Data Science Track 採択論文[^15]
 - 拙著まとめ: [Generating Better Search Engine Text Advertisements with Deep Reinforcement Learning- scrapbox](https://scrapbox.io/gunosydm/Generating_Better_Search_Engine_Text_Advertisements_with_Deep_Reinforcement_Learning)
 
 ##### 概要
@@ -240,6 +240,7 @@ Tencent Ads では VideoIn Ads[^23] という、広告対象の商品画像を�
 
 https://herp.careers/v1/appbrew/N71dKrjFhi11
 
+<!-- textlint-disable -->
 [^1]: お声がけ頂いた AppBrew のみなさん、ありがとうございます。この場をお借りしてお礼申し上げます。
 [^2]: 広告クリエイティブと機械学習技術における現状と展望 / The Present and Future of Machine Learning for Ad Creatives - Speaker Deck https://speakerdeck.com/shunk031/the-present-and-future-of-machine-learning-for-ad-creatives
 [^3]: [2009.12064] Attention Meets Perturbations: Robust and Interpretable Attention with Adversarial Training https://arxiv.org/abs/2009.12064
@@ -264,3 +265,4 @@ https://herp.careers/v1/appbrew/N71dKrjFhi11
 [^22]: Tencent Ads: Interesting Problems and Unique Challenges | AdKDD 2019 https://www.adkdd.org/Papers/Tencent-Ads%3A-Interesting-Problems-and-Unique-Challenges/2019
 [^23]: 拙著のテンセント Ads のまとめ記事で VideoIn Ads の凄さを解説しています: テンセントの広告技術が未来すぎる！AdKDD2019 のテンセント Ads 招待講演まとめ - Gunosy データ分析ブログ https://data.gunosy.io/entry/adkdd2019-tencent-ads-invited-talk#VideoIn-Ads
 [^24]: DPA が何の略かは不明
+<!-- textlint-enable -->
