@@ -1,0 +1,12 @@
+filters:
+  comments: true
+rules:
+  preset-ja-technical-writing:
+    no-exclamation-question-mark: false
+    max-kanji-continuous-len: false
+    sentence-length:
+      max: 120
+  preset-ja-spacing:
+    ja-space-around-code:
+      before: true
+      after: true
