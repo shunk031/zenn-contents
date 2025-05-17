@@ -12,4 +12,3 @@ rules:
       after: true
     ja-space-between-half-and-full-width:
       space: always
-    ja-no-space-around-parentheses: false
