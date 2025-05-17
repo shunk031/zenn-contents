@@ -9,5 +9,9 @@ make exec # to enter the devcontainer
 ```
 
 ```shell
+make textlint # to check the article
+```
+
+```shell
 make preview # to render the article
 ```
