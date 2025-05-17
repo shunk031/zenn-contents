@@ -13,11 +13,11 @@ published_at: "2023-02-10 20:05"
 
 IEEE の論文を書く際の bibtex style として [`IEEEtran`](http://www.michaelshell.org/tex/ieeetran/bibtex/) が使用されます。この style の特徴は論文中に引用がされた順番に文献情報のセクションに文献情報が表示される点です。
 
-IEEEtran style では同じ著者名の論文が複数存在する場合、以下のように　`----` で著者名が省略されてしまうことがあります:
+IEEEtran style では同じ著者名の論文が複数存在する場合、以下のように　`----` で著者名が省略されてしまうことがあります。
 
 ![](https://storage.googleapis.com/zenn-user-upload/49bf2f258336-20230210.png)
 
-これを次のように省略されないようにしたいです:
+これを次のように省略されないようにしたいです。
 
 ![](https://storage.googleapis.com/zenn-user-upload/4d3c0c6f095d-20230210.png)
 
