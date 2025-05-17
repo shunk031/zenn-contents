@@ -18,17 +18,28 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"kimgronqvist.vscode-ido"
+				"kimgronqvist.vscode-ido",
+				"3w36zj6.textlint",
+				"RooVeterinaryInc.roo-cline"
 			]
 		}
 	},
 	//
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	// "remoteUser": "root",
 	//
 	// Specify the Docker CLI arguments to use when running the container.
 	"runArgs": [
 		"--name",
 		"zenn-contents-devcontainer"
-	]
+	],
+	//
+	"mounts": [
+		"source=${localEnv:HOME}/.aws,target=${containerEnv:HOME}/.aws,type=bind,readonly"
+	],
+	//
+	// "containerEnv": {
+	// 	"AWS_CONFIG_FILE": "/root/.aws/config",
+	// 	"AWS_SHARED_CREDENTIALS_FILE": "/root/.aws/credentials"
+	// }
 }
