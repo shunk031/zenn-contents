@@ -5,5 +5,9 @@ VSCode で本レポジトリを開くと devcontainer で執筆環境が立ち�
 * [📘 How to use](https://zenn.dev/zenn/articles/zenn-cli-guide)
 
 ```shell
-make preview
+make exec # to enter the devcontainer
+```
+
+```shell
+make preview # to render the article
 ```
