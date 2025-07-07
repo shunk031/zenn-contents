@@ -12,3 +12,4 @@ rules:
       after: true
     ja-space-between-half-and-full-width:
       space: always
+    "@textlint-ja/preset-ai-writing": true
