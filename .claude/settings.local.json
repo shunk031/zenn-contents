@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx textlint \"articles/lips-aigd-with-user-generated-contents.md\")",
+      "Bash(npx textlint --fix \"articles/lips-aigd-with-user-generated-contents.md\")"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}
