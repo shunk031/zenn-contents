@@ -7,305 +7,381 @@ publication_name: appbrew
 published: true
 published_at: 2025-09-15
 ---
-こんにちは [@shunk031](https://twitter.com/shunk031) です。以前 AppBrew にて業務委託として携わらせていただいており、先般開催された AppBrew 同窓会[^1] に参加しました。その折にお声をかけていただいたことがきっかけで、久方ぶりに [AppBrew Tech Blog](https://zenn.dev/p/appbrew) へ本記事を寄稿することとなりました[^2][^3]。
+
+こんにちは [@shunk031](https://twitter.com/shunk031) です。以前、AppBrew で業務委託としてお世話になっており、先日開催された AppBrew 同窓会[^1]に参加しました。その際にお声がけいただいたことをきっかけに、久しぶりに [AppBrew Tech Blog](https://zenn.dev/p/appbrew) へ本記事を寄稿することになりました[^2][^3]。
+
+<!-- textlint-disable -->
+:::message
+筆者は現在 AppBrew に所属しておらず、外部の立場から公開情報と一般的な知見、過去の業務委託経験を踏まえて執筆しています。記載の内容・見解は筆者個人のものであり、AppBrew の公式見解を代表するものではありません。
+:::
+<!-- textlint-enable -->
 
 ## はじめに：UGC が拓く新たなデザインの可能性
 
-AppBrew が運営する日本最大級のコスメ・美容プラットフォーム [LIPS](https://lipscosme.com/) では、毎日数千件ものクチコミが投稿されており、これは日本最大級のコスメ・美容プラットフォームとしての重要な資産となっています。これらの膨大なクチコミや画像は、単なる商品レビューに留まらず、ユーザーの「美への情熱」が込められた **極めて価値ある User Generated Content（UGC）**[^4]を形成しています。私たちは、この計り知れない UGC を最大限に活用し、より魅力的なコスメの商品画像や広告クリエイティブを生成する可能性を常に追求しています。
+AppBrew が運営する日本最大級のコスメ・美容プラットフォーム [LIPS](https://lipscosme.com/) には、毎日数千件のクチコミが投稿されます。これらは単なる商品の評価にとどまらず、ユーザーの「美への情熱」が宿る **極めて価値の高い User Generated Content（UGC）**[^4]です。本稿では、この膨大な UGC をどう活用すれば、より魅力的な商品画像や広告クリエイティブを生み出せるかを、外部の視点から考察します。
 
-従来の広告制作は、専門的なスキルと多大な時間を要する作業でした。しかし、LIPS が保有する膨大なデータ資産と最新の AI グラフィックデザイン技術を組み合わせることで、この課題に対処し、新たな価値を創造する道筋を見出せると感じています。AI を活用すれば日々更新される多様なニーズを分析できます。LIPS の強みである「クチコミから購入へ」というユーザー体験を活用することで、コスメ市場の多様化する要求に迅速に対応可能です。これにより、パーソナライズされた魅力的なクリエイティブを大規模に生成できます。本記事では、UGC を活用可能な AI グラフィックデザインの最先端の研究事例を紹介します。このようなデータドリブンな方法は LIPS のデータ資産を最大限に引き出し、デザインプロセスを劇的に変革する可能性を秘めています。
+従来の広告制作は、専門スキルと多くの時間を要する作業でした。LIPS の豊富なデータ資産と最新の AI グラフィックデザイン技術の組み合わせには、その課題を乗り越える大きな可能性があると考えます。AI を使えば日々更新される多様なニーズを捉えやすく、「クチコミから購入へ」という LIPS の強みと掛け合わせることで、コスメ市場の変化に俊敏に対応できるはずです。結果として、個々の関心に寄り添ったクリエイティブの大規模生成が視野に入ります。本記事では、UGC 活用に資する最先端の AI グラフィックデザイン研究を概観し、LIPS へ適用した際の示唆について外部の立場から検討します。
 
-## AI グラフィックデザインの進化と多様な応用領域
+## AI グラフィックデザインの進化と応用
 
-AI は現在、デザインの単なる補助ツールという役割を超えて、創造的プロセスの中心的な存在へと進化を遂げています。AI 駆動型デザインシステム (Artificial Intelligence in Graphic Design; AIGD)[^5] は、多種多様なデザインニーズへ応えます。またこうしたシステムはユーザーがより細かく制御できるようになっており、設計の質を定量化するデータ駆動型手法として具現化されています。こうした手法には複雑な設計空間を効率的に探索する能力も含まれます。この進化は、特に広告業界を含む多様な産業で、広告生成の可能性を大きく広げています[^6]。初期の AI 研究はデザインタスクを個別の要素の分解に焦点を当てていました[^7]。一方で 2023 年以降はグラフィックデザインを全体的なタスクとして扱う包括的な研究が台頭しています[^8][^9]。これは AI がデザインワークフロー全体で審美的な一貫性を維持できる包括的なクリエイティブシステムへの進化を反映しています。
+AI はいまや単なる補助ツールを超え、創造プロセスの中核を担う存在へと進化しています。AI 駆動型グラフィックデザイン（Artificial Intelligence in Graphic Design; AIGD）[^5]は多様なニーズに応え、ユーザーの細やかな制御にも対応します。設計の質を定量化し、広大な設計空間を効率的に探索できる点も特徴です。この流れは広告をはじめ多くの産業で、生成の可能性を大きく押し広げています[^6]。初期研究が要素分解に焦点を当てていたのに対し[^7]、2023 年以降はグラフィックデザイン全体を対象にする包括的研究が台頭しています[^8][^9]。審美的一貫性を保ちながら、デザインワークフロー全体を扱う方向への進化です。
 
-AI グラフィックデザインの応用領域は非常に多岐に渡ります。こうした応用事例は幅広いビジュアルコンテンツの生成と改善が含まれています。具体的には広告画像[^5][^10][^11] やポスター[^9][^12][^13]、UI[^14][^15][^16] などがあります。その他にもデザイン [^17][^18] やインフォグラフィック [^19][^20][^21]、プレゼンテーション資料 [^22][^23] などが挙げられます。近年ではより複雑なインフォグラフィックの生成が可能になってきています。ロゴ、テキスト、それらに対応する装飾 (アンダーレイ) などの視覚的・テキスト的要素を背景画像上へ配置するポスターデザインの自動化もその一例です。さらに、ウェブサイト[^24] や印刷物といった日常生活での視覚的豊かな文書 (visually-rich document; VrD) の作成[^25] も可能です。視覚的なデザインからコードを直接生成するフロントエンド開発の新しいパラダイム[^15] も実現されつつあります。ロゴ作成[^26]、芸術的なテキスト生成[^27]、色彩の調和[^33] といった個別のデザイン要素でも AI が活用されています。
+<!-- textlint-disable -->
+応用領域は広告画像[^5][^10][^11]、ポスター[^9][^12][^13]、UI[^14][^15][^16]、さらに一般的なデザイン[^17][^18]、インフォグラフィック[^19][^20][^21]、プレゼン資料[^22][^23]など幅広く、多様なビジュアルコンテンツの生成・改善が行われています。ロゴ作成[^26]や芸術的テキスト生成[^27]といった個別要素でも AI の活用が進んでいます。さらに、ウェブサイト[^24]や印刷物などの「視覚的に豊かな文書（visually-rich document; VrD）」の自動生成[^25]、デザインからコードを直接生成する新しいフロントエンド開発の潮流[^15]も現実味を帯びてきました。
+<!-- textlint-enable -->
 
-このような AI の能力は、ビジネスモデルにも革新をもたらしています。AI を活用すれば、物理的なプロトタイプへの依存を大幅に削減できます。市場投入までの時間を加速させることも可能です。特に E コマースでは、「売れるまで作らない」という画期的なビジネスモデル[^10] も提案され始めています。企業は様々な製品パッケージのコンセプトを生成して創造性を高められます。マーケティングキャンペーン向けに高品質なクリエイティブコンテンツを迅速かつ費用対効果高く作成できます[^5]。これにより、ユーザーエンゲージメントと投資収益率に基づいてリアルタイムで様々なクリエイティブデザインをテストできます。個々の好みやニーズに合わせた高度にパーソナライズされた広告デザインの道が開かれています。
+ビジネス面でも大きな変化をもたらします。AI により物理プロトタイプへの依存が減り、リリースまでの時間を短縮できます。特に EC では「売れるまで作らない」という革新的なモデル[^10]すら提案され始めました。企業は多様なパッケージ案を素早く生み、マーケティング向けの高品質クリエイティブを効率良く制作できます[^5]。これにより、実際のエンゲージメントや投資対効果に基づくリアルタイムのデザイン検証と、より高いパーソナライズが可能になります。
 
-現在の研究では、生成 AI は既存の広告を編集したり修正したりするタスクよりも、全体として新しい広告を作成するタスクにおいて優れたパフォーマンスを示すことが示されています[^5]。これは、AI が人間の専門家が持つ「暗黙知」の統合に苦慮している可能性を示唆しています。しかし、この課題は AI グラフィックデザインの今後の重要な研究開発領域であり、人間がデザインプロセスに介入しない完全な自動生成技術への移行には、引き続き取り組むべき多くの課題が存在しています。
+現時点の研究では、生成 AI は既存広告の「編集・修正」よりも、新規広告の「創作」タスクで高い性能を示すことが報告されています[^5]。人間の専門家が持つ暗黙知の取り込みに課題があることを示唆しますが、ここは今後の重要な研究領域です。完全自動生成に向けては、引き続き解決すべき点が残っています。
 
 ## コア技術：AI による画像生成のメカニズム
 
-AI による画像生成は、その表現形式によって大きく「ラスタ画像生成」と「ベクタ画像生成」に分類され、それぞれ異なる特性と応用領域を持ち、コスメプラットフォーム LIPS の UGC 活用においても重要な役割を担う可能性を秘めています。
+AI による画像生成は、大きく「ラスタ画像生成」と「ベクタ画像生成」に分けられる。一方で、要素の配置を決める「レイアウト生成」は両方式を横断する上位概念であるため、本稿ではまずレイアウト生成を概観し、その後にラスタ／ベクタの代表手法を紹介する。
+
 
 ### レイアウト生成：デザインの骨格を AI が設計する
 
-レイアウト生成[^29] は、画像、テキスト、背景といった様々なデザイン要素を視覚的に魅力的な形で配置する技術です。人間がデザインする際の専門知識や時間的コストを AI が削減し、自動化することで多岐にわたるデザインニーズへ対応できます。与えられたコンテンツのニーズに合わせて、より合理的な表現を可能とします。この技術は、ポスター、ドキュメント、モバイルアプリの UI、雑誌、スライドなどの多様なレイアウト自動生成として応用されています。
+レイアウト生成[^29]は、画像・テキスト・背景といった要素を視覚的に魅力ある形で配置する技術です。人の専門知や作業時間を節約し、多様なニーズに対応可能です。与えられたコンテンツに合わせて合理的な表現を自動で導き、ポスター、ドキュメント、モバイル UI、雑誌、スライドなどに応用されています。
 
-![](https://ars.els-cdn.com/content/image/1-s2.0-S1566253523002567-ga1_lrg.jpg)
-*Figure by [Shi+ Infomation Fusion'23]*
+![Figure by [Shi+ Information Fusion'23]](https://ars.els-cdn.com/content/image/1-s2.0-S1566253523002567-ga1_lrg.jpg)
+*Figure by [Shi+ Information Fusion'23]*
 
-この分野の重要な進展を示す直近の研究として以下のような事例が挙げられます。
+直近の代表的研究をいくつか紹介します。
 
-#### Poster-O
+#### PosterO
 
-PosterO[^12] は大規模言語モデル（Large Language Model; LLM）が持つレイアウト知識を活用し、多目的ポスターを生成するレイアウト中心の手法です。この手法では、SVG (Scalable Vector Graphics) でレイアウトをツリー構造として表現します。この SVG を元に LLM に新しいレイアウトツリーを予測させることで、様々なデザインの意図や多様な形状の要素に対応する汎化設定での多様性を実現します。
+PosterO[^12]は LLM のレイアウト知識を活用し、多目的ポスターを生成するレイアウト中心の手法です。SVG（Scalable Vector Graphics）でレイアウトをツリー構造として表現し、LLM に新たなレイアウトツリーを予測させることで、多様な意図と形状に対応する汎化と多様性を実現します。
 
-![](https://arxiv.org/html/2505.07843v2/x2.png)
+![Figure by [Hsu+ CVPR'25]](https://arxiv.org/html/2505.07843v2/x2.png)
 *Figure by [Hsu+ CVPR'25]*
 
 #### Uni-Layout
 
-Uni-Layout[^30] は、レイアウトの生成と人間を模倣した評価、その両方のアライメントを実現するフレームワークとして注目されています。この枠組みは LLM をベースにした評価フレームワークと CoT (Chain-of-Thought)[^31] 推論を組み合わせることでレイアウト品質を評価します。また人間からのフィードバックを統合するために Dynamic-Margin Preference Optimization (DMPO) を導入し、人間判断とのより良いアライメントを実現します。
+Uni-Layout[^30]は、レイアウトの生成と、人間を模倣した評価の両方をアライメントする枠組みです。LLM ベースの評価と Chain-of-Thought（CoT）[^31]を組み合わせ品質を測定し、Dynamic-Margin Preference Optimization（DMPO）で人間の判断との整合性を高めます。
 
-![](https://arxiv.org/html/2508.02374v1/samples/images/Figure1.jpg)
+![Figure by [Lu+ ACM MM'25]](https://arxiv.org/html/2508.02374v1/samples/images/Figure1.jpg)
 *Figure by [Lu+ ACM MM'25]*
 
 #### LGGPT
 
-LGGPT[^32] は、科学記事、App UI、雑誌、スライドなど 4 つの異なるドメインのレイアウトデータを統合して生成可能にします。単一のモデルで多岐にわたるレイアウトタスクを処理するために、より小規模な LLM を活用します。LGGPT は、1.5B のパラメータサイズがさまざまなドメインのレイアウトデータを扱うシナリオにおいて最適なパフォーマンスと効率のトレードオフを達成できることを示しています。さらに LGGPT は、Arbitrary Layout Instruction (ALI) と Universal Layout Response (ULR) という統一された入出力テンプレートを採用しています。Interval Quantization Encoding (IQE) 戦略を導入することで、HTML ベースの形式に通常見られる冗長なトークンを排除し、レイアウト関連情報の密度を高めています。
+<!-- textlint-disable -->
+LGGPT[^32]は、科学記事・アプリ UI・雑誌・スライドの 4 領域のレイアウトデータを統合し、単一モデルで多様なタスクに対応します。1.5B パラメータ級モデルで性能と効率の良いトレードオフを示し、入出力テンプレート（Arbitrary Layout Instruction; ALI/Universal Layout Response; ULR）と Interval Quantization Encoding（IQE）により冗長トークンを削減しています。
+<!-- textlint-enable -->
 
-![](https://arxiv.org/html/2502.14005v1/extracted/6216509/arch.png)
+![Figure by [Zhang+ arXiv'25]](https://arxiv.org/html/2502.14005v1/extracted/6216509/arch.png)
 *Figure by [Zhang+ arXiv'25]*
 
 #### CreatiLayout
 
-CreatiLayout[^33] はマルチモーダル拡散トランスフォーマー（MM-DiT）をベースとしたアプローチです。レイアウトから画像を生成し、色、テクスチャ、形状、テキストなどの複雑な属性を高い品質ときめ細やかな制御でレンダリングする能力を持っています。
+CreatiLayout[^33]はマルチモーダル拡散トランスフォーマー（Multi-modal Diffusion Transformer; MM‑DiT[^36]）に基づき、レイアウトから画像を生成します。色・質感・形状・テキストなど複雑な属性を高品質かつ細やかに制御しながらレンダリングできます。
 
-![](https://arxiv.org/html/2412.03859v3/x2.png)
+![Figure by [Zhang+ ICCV'25]](https://arxiv.org/html/2412.03859v3/x2.png)
 *Figure by [Zhang+ ICCV'25]*
 
-### ラスタ画像生成：多様なビジュアルをピクセル単位で操る
+### ラスタ画像生成：ピクセル単位で多様なビジュアルを操る
 
-ラスタ画像生成は、画像をピクセルという点の集合として扱う技術であり、Text-to-Image (T2I) [^34][^35][^36][^37] モデルの発展により、テキストプロンプトに基づいて高品質な画像を生成できるようになりました。この技術のもう 1 つの特徴は、既存の画像を編集したり、欠損部分を補完したりするインペインティングの能力です。ラスタ画像生成は、広告バナー、E コマースサイトの商品画像、ポスターの背景など、多岐にわたる商用クリエイティブの自動生成に活用されています。
+ラスタ画像生成は、画像をピクセルの集合として扱います。Text-to-Image（T2I）[^34][^35][^36][^37]の発展により、テキストから高品質な画像を生成でき、既存画像の編集や欠損補完（インペインティング）も可能になりました。広告バナーや EC 商品画像、ポスター背景など、商用クリエイティブの自動生成で活用が進んでいます。
 
-この分野の主要な研究事例として、以下のようなものがあります。
+主な研究は次のとおりです。
 
 #### PerFusion
 
-PerFusion[^10] は E コマースにおけるパーソナライズされた AI 生成アイテムのためのフレームワークです。ユーザーのグループレベルのパーソナライズされた好みを捉えることを目的とします。本手法によって生成されたアイテムがクリック率とコンバージョン率を向上させることを実証しています。この技術は「物理的なプロトタイプへの依存を大幅に減らし、市場投入までの時間を加速させる」ことを可能にします。特に E コマースにおいては「売れるまで作らない」という革新的なビジネスモデルを可能にします。
+PerFusion[^10]は EC におけるパーソナライズドな生成アイテムのフレームワークです。ユーザーのグループレベル嗜好を捉え、生成アイテムがクリック率・コンバージョン率を向上させることを示しました。物理プロトタイプへの依存を減らし市場投入を加速、ひいては「売れるまで作らない」というモデルを可能にします。
 
-![](https://arxiv.org/html/2503.22182v1/x1.png)
+![Figure by [Lin arXiv'25]](https://arxiv.org/html/2503.22182v1/x1.png)
 *Figure by [Lin arXiv'25]*
 
-![](https://arxiv.org/html/2503.22182v1/x2.png)
+![Figure by [Lin arXiv'25]](https://arxiv.org/html/2503.22182v1/x2.png)
 *Figure by [Lin arXiv'25]*
 
 #### PAID
 
-PAID[^38] は、製品の全景画像、マーケティング対象の情報、およびターゲットサイズのみに基づいて広告画像を自動生成する、製品中心の広告画像デザインフレームワークです。
+PAID[^38]は、製品の全景画像・マーケティング対象・目標サイズのみを入力として、製品中心の広告画像を自動生成するフレームワークです。
 
-![](https://arxiv.org/html/2501.14316v2/x1.png)
+![Figure by [Chen+ arXiv'25]](https://arxiv.org/html/2501.14316v2/x1.png)
 *Figure by [Chen+ arXiv'25]*
 
 #### BizGen
 
-BizGen[^20] はインフォグラフィック生成における記事レベルのビジュアルテキストレンダリングを可能にする技術です。超高密度なレイアウトにも対応し、スケーラブルなデータエンジンとレイアウトガイド付きクロスアテンションスキームを活用します。これによりデータ不足と非常に長いコンテキスト長の課題を解決し、長文テキストの正確な表示を実現します。
+BizGen[^20]は、記事レベルのビジュアルテキストレンダリングを実現するインフォグラフィック生成技術です。スケーラブルなデータエンジンとレイアウトガイド付きクロスアテンションで、データ不足や超長文という課題を克服し、長文テキストの正確な表示を可能にします。
 
-![](https://arxiv.org/html/2503.20672v2/extracted/6590311/img/infographics-example-final.png)
+![Figure by [Peng+ CVPR'25]](https://arxiv.org/html/2503.20672v2/extracted/6590311/img/infographics-example-final.png)
 *Figure by [Peng+ CVPR'25]*
 
-![](https://arxiv.org/html/2503.20672v2/extracted/6590311/img/retrieval_augmented_infographics_gen_new.png)
+![Figure by [Peng+ CVPR'25]](https://arxiv.org/html/2503.20672v2/extracted/6590311/img/retrieval_augmented_infographics_gen_new.png)
 *Figure by [Peng+ CVPR'25]*
 
 #### CreatiDesign
 
-CreatiDesign[^28] は、グラフィックデザイン生成において、拡散モデルが複数の異種要素（主要な視覚要素、二次的な視覚要素、テキスト要素）を正確に制御し、調和の取れた配置を可能にするソリューションを提供します。
+CreatiDesign[^28]は、主要視覚要素・副次視覚要素・テキスト要素という異種要素の正確な制御と調和配置を可能にする、拡散モデルベースの生成手法です。
 
-![](https://arxiv.org/html/2505.19114v2/x3.png)
+![Figure by [Zhang+ arXiv'25]](https://arxiv.org/html/2505.19114v2/x3.png)
 *Figure by [Zhang+ arXiv'25]*
 
 #### DreamPoster
 
-DreamPoster[^39] は、ユーザー提供の画像とテキストプロンプトから高品質なポスターを合成する Text-to-Image 生成フレームワークであり、コンテンツの忠実度を維持しつつ、柔軟な解像度とレイアウト出力に対応します。
+DreamPoster[^39]は、ユーザー提供の画像とテキストから高品質なポスターを合成する T2I フレームワークで、コンテンツ忠実度を保ったまま解像度やレイアウトの柔軟性を実現します。
 
-![](https://arxiv.org/html/2507.04218v1/x2.png)
+![Figure by [Hu+ arXiv'25]](https://arxiv.org/html/2507.04218v1/x2.png)
 *Figure by [Hu+ arXiv'25]*
 
-#### TKG-DM
+#### TKG‑DM
 
-TKG-DM[^40] は、トレーニングなしでクロマキーコンテンツを生成する拡散モデルであり、「前景と背景の独立した制御が重要」な様々な生成アプリケーションに拡張できる可能性を持っています。
+TKG‑DM[^40]は、学習なしでクロマキーコンテンツを生成する拡散モデルです。前景と背景を独立に制御したい多様な生成アプリケーションへの展開が期待されます。
 
-![](https://arxiv.org/html/2411.15580v3/x1.png)
+![Figure by [Morita+ CVPR'25]](https://arxiv.org/html/2411.15580v3/x1.png)
 *Figure by [Morita+ CVPR'25]*
 
-### ベクタ画像生成：コンポーネントを自在に操る
+### ベクタ画像生成：コンポーネントを自在に扱う
 
-ベクタ画像生成は、画像データをピクセルではなく、点、線、多角形、曲線などの幾何学的なプリミティブの集合として表現する技術です。この形式の主な利点は、拡大・縮小してもロスレススケーリング可能であり画質が劣化せず、ファイルサイズが小さいこと、そして個々の要素が分離されているため編集性に優れている点です。SVG 形式は XML テキストでシーンを表現し、LLM は直接 SVG コードを処理できる利点があります。ロゴ、アイコン、イラスト、グラフなどのデザイン要素の生成に特に適しており、LIPS のようなプラットフォームで編集可能なデザイン資産を効率的に生成・管理する上で重要な技術となります。
+ベクタ画像生成は、点・線・多角形・曲線といった幾何学プリミティブで画像を表現します。ロスレスに拡大縮小でき、軽量で、要素ごとに編集しやすいのが利点です。SVG は XML でシーンを表し、LLM が直接コードを取り扱える点も強みです。ロゴやアイコン、イラスト、グラフなどの生成に適し、LIPS のようなプラットフォームで編集可能な資産を効率的に運用できます。
 
-この分野の主要な研究事例として、以下のようなものがあります。
+主な研究は次のとおりです。
 
 #### LLM4SVG
 
-LLM4SVG[^41] は、「学習可能なセマンティックトークンを通じて SVG コンポーネントのより深い理解」を促進します。
+LLM4SVG[^41]は、学習可能なセマンティックトークンにより SVG コンポーネントの理解を深めるアプローチです。
 
-![](https://arxiv.org/html/2412.11102v3/x3.png)
+![Figure by [Xiang+ CVPR'25]](https://arxiv.org/html/2412.11102v3/x3.png)
 *Figure by [Xiang+ CVPR'25]*
 
 #### SVGen
 
-SVGen[^42] は、LLM を用いた解釈可能なベクタグラフィックス生成を可能にし、CoT[^31] 推論と強化学習アルゴリズムを組み合わせて「モデルの解釈可能性と構造」を向上させます。
+SVGen[^42]は、LLM を用いた解釈可能なベクタグラフィックス生成を目指し、CoT[^31]と強化学習を組み合わせて、構造と解釈可能性を高めます。
 
-![](https://arxiv.org/html/2508.09168v1/x3.png)
+![Figure by [Wang+ arXiv'25]](https://arxiv.org/html/2508.09168v1/x3.png)
 *Figure by [Wang+ arXiv'25]*
 
 #### StarVector
 
-StarVector[^43] は、画像の意味を理解し、SVG プリミティブを使用してコンパクトで正確な出力を生成することで、画像ベクトル化を実行するマルチモーダル大規模言語モデル（MLLM）です。また、この研究では、従来のピクセルベースの指標では捉えきれない SVG の独自の品質を評価するために、新しいベンチマーク SVG-Bench を導入しています。
+StarVector[^43]は、画像の意味を理解し、SVG プリミティブでコンパクトかつ正確な出力を生成する MLLM です。従来のピクセル指標では測りにくい SVG の品質を評価する新ベンチマーク SVG‑Bench も導入しています。
 
-![](https://arxiv.org/html/2312.11556v4/x1.png)
+![Figure by [Rodriguez+ CVPR'25]](https://arxiv.org/html/2312.11556v4/x1.png)
 *Figure by [Rodriguez+ CVPR'25]*
 
 #### CreatiPoster
 
-CreatiPoster[^44] はユーザーの指示やアセットから編集可能な多層コンポジションを生成するフレームワークです。このモデルではプロトコルモデルがテキストやアセットのレイヤーに関する詳細な情報を含む JSON 仕様を生成します。背景モデルは描画された前景レイヤーに基づいて整合性のある背景を合成します。これにより「生成されたテキストを修正したり、特定のアセットを置き換えたりできる」編集性を維持しています。
+CreatiPoster[^44]は、ユーザー指示やアセットから編集可能な多層コンポジションを生成します。プロトコルモデルがテキストやアセットのレイヤー情報を含む JSON 仕様を作成し、背景モデルが前景レイヤーに整合する背景を合成します。生成後のテキスト修正やアセット差し替えが容易です。
 
-![](https://arxiv.org/html/2506.10890v1/x2.png)
+![Figure by [Wang+ arXiv'25]](https://arxiv.org/html/2506.10890v1/x2.png)
 *Figure by [Wang+ arXiv'25]*
 
-## AI エージェントによるデザイン自動化：人間との協調
+## AI エージェントによるデザイン自動化：人と AI の協調
 
-AI エージェントによるデザイン自動化は、マルチモーダル大規模言語モデル（Multi-modal Large Language Model; MLLM）を基盤とし、人間のように協調してデザインプロセス全体を自動化する新しいアプローチとして注目されています。このシステムは、戦略立案から最終的な実装までを AI が担当することで、デザイナーの生産性を劇的に向上させる可能性を秘めています。AI エージェントは、ツール呼び出しやメモリ共有機能を活用し、広範なデザイン探索空間を効率的に探索します。
+AI エージェントによる自動化は、マルチモーダル大規模言語モデル（MLLM）を基盤に、人間と協調しながらデザインプロセス全体を自動化するアプローチです。戦略立案から実装までを AI が担うことで、生産性の大幅向上が期待できます。ツール呼び出しやメモリ共有を活用し、広大な探索空間を効率良く渡り歩きます。
 
-特に AI はアイデア出しや「ゼロからの作成」タスクにおいて優れた性能を発揮します。一方で既存のデザインの「修正や編集」においては人間の専門知識、特に暗黙知にまだ及ばない部分があります。そのため AI と人間の強みを組み合わせた協調アプローチが重要であると認識されています。
-AI エージェントシステムは広告バナーの設計やプレゼンテーション資料の生成など、複雑で多段階のデザインタスクのエンドツーエンドな自動化を実現します。このことでデザインプロセスの多くの側面が効率化され、人間はより創造的で戦略的なタスクへ集中できるようになります。
+AI は特にアイデア創出や「ゼロからの作成」で力を発揮する一方、既存デザインの微修正では人間の暗黙知にまだ及ばない部分が残ります。ゆえに人と AI の協調が重要です。広告バナー設計やプレゼン資料生成など、多段階タスクのエンドツーエンド自動化により、人はより創造的・戦略的な業務に集中できます。
 
-この分野の重要な進展を示す研究として、以下のような事例が挙げられます。
+代表的な研究として以下があります。
 
 #### BannerAgency
 
-BannerAgency[^11] は、MLLM エージェントシステムとして、広告主と協力してブランドアイデンティティとバナー目標を理解し、広告バナーを自動生成するフレームワークです。このシステムは、背景画像の生成、前景デザイン要素の設計図作成、そして最終的なクリエイティブを Figma または SVG 形式の編集可能なコンポーネントとしてレンダリングする能力を持っています。特に、高精度で多用途、かつ編集可能なバナーデザインを生成する能力が強調されています。BannerAgency は、「ストラテジスト」「バックグラウンドデザイナー」「フォアグラウンドデザイナー」「デベロッパー」という 4 つの主要なエージェントコンポーネントで構成されており、それぞれが特定のデザイン段階を担います。
+<!-- textlint-disable -->
+BannerAgency[^11]は、広告主と協働してブランドアイデンティティやバナーの目的を理解し、広告バナーを自動生成する MLLM エージェントです。背景画像の生成、前景要素の設計図作成、Figma／SVG への編集可能なレンダリングまで行います。構成は広告の売り文句を考える「Strategist」、広告バナーの背景を生成する「Background Designer」、レイアウトやデザインを考える「Foreground Designer」、そしてデザインを SVG や Figma の形式に落とし込む「Developer」の 4 エージェントから成ります。特に Background Designer と Foreground Designer は、以下のような特徴を持ちます。
+<!-- textlint-enable -->
 
-- Background Desginer は、ReAct エージェント[^44] と T2I ツールを活用して、広告主に適したビジュアルキャンバスを生成。このエージェントは、生成された画像にテキストが含まれていないことを確認するための自己改善ループを採用。テキストが検出された場合にはプロンプトを修正して再生成を試みる
-- Foreground Designer は、ロゴ、キャンペーンテキスト、Call-to-Action（CTA）ボタン、装飾要素など、前景要素の詳細な配置、スタイル、内容を JSON 形式の構造化された設計図として生成。これにより、視覚的な一貫性を保ちつつ、要素レベルでの完全な編集性を実現
+<!-- textlint-disable -->
+- Background Designer は、ReAct エージェント[^45]と T2I ツールを用いて適切なビジュアルキャンバスを生成。テキスト混入を避ける自己改善ループを持ち、検出時はプロンプトを修正して再生成
+- Foreground Designer は、ロゴ・キャンペーンテキスト・CTA ボタン・装飾要素などの配置・スタイル・内容を JSON 形式の設計図として生成し、要素レベルでの完全な編集性を担保
+<!-- textlint-enable -->
 
-![](https://arxiv.org/html/2503.11060v1/x4.png)
-*Figure by [Wang+ arXiv'25]*
+![Figure by [Wang+ EMNLP'25]](https://arxiv.org/html/2503.11060v1/x4.png)
+*Figure by [Wang+ EMNLP'25]*
 
 #### PPTAgent
 
-PPTAgent[^23] は、ドキュメントからプレゼンテーションを自動生成し、その品質を評価するためのフレームワークです。このモデルは、コンテンツ、デザイン、一貫性という 3 つの主要な側面からプレゼンテーションの品質を評価します。PPTAgent のワークフローは、「プレゼンテーション分析（スライドのクラスタリングとスキーマ抽出）」と「プレゼンテーション生成（アウトラインに導かれ、フィードバックメカニズムを組み込む）」の 2 段階で構成されています。これにより、複雑な情報を構造化されたプレゼンテーション資料へと効率的に変換する能力が期待されます。
+PPTAgent[^23]は、ドキュメントからプレゼンテーションを自動生成し、その品質を評価するフレームワークです。コンテンツ・デザイン・一貫性の 3 軸で品質を測定します。ワークフローは「プレゼンテーション分析（スライドのクラスタリングとスキーマ抽出）」と「プレゼンテーション生成（アウトライン駆動＋フィードバック機構）」の二段構えです。
 
-![Figure from hoge](https://arxiv.org/html/2501.03936v3/x2.png)
+![Figure by [Zheng+ arXiv'25]](https://arxiv.org/html/2501.03936v3/x2.png)
 *Figure by [Zheng+ arXiv'25]*
 
-## デザイン品質の評価と人間からのフィードバックの活用
+## デザイン品質の評価と人間のフィードバック活用
 
-AI が生成するデザインの品質を向上させるためには、客観的な品質評価指標と主観的な人間の美的判断を統合し、その結果をモデルの改善にフィードバックするプロセスが不可欠です。このフィードバックループは、人間らしい美学や意図を AI に学習させる上で中心的な役割を担います。現在の研究では、デザイン品質の定量化、修正案の提案、人間による評価との整合性向上、生成された利用可能な画像の増加といった多面的なアプローチが採用されています。広告クリエイティブの作成支援においては、「人と計算機のコラボレーション」が中心であり、完全自動生成技術への移行には引き続き研究開発が必要な状況です。
+生成デザインの質を高めるには、客観的指標と人間の審美判断を統合し、結果をモデル改善へ還流させる仕組みが不可欠です。定量評価・修正案の提示・人間評価との整合性向上・利用可能画像の増加など、多面的な取り組みが進んでいます。広告クリエイティブ支援は当面「人と計算機のコラボレーション」が中心であり、完全自動化には継続的な R&D が必要です。
 
-デザイン品質評価の分野では、定量的な評価手法から人間の感性を模倣する評価システムまで、多様なアプローチが開発されています。
+代表的な取り組みは次のとおりです。
 
-#### Design-o-meter
+#### Design‑o‑meter
 
-Design-o-meter[^46] は、グラフィックデザインの品質を定量化し、視覚的魅力を向上させるための修正案を提案するデータ駆動型評価手法です。このシステムは「設計の良さを定量化するためのデータ駆動型手法」として機能し、「複雑な設計空間を効率的にナビゲートする」能力を持っています。Design-o-meter は、単一のテキストボックスのリファインやデザイン全体のリファインといった様々な設定で評価され、特に SWAN というコンポーネントがその性能を大きく向上させることが示されています。このシステムは、デザイン要素の位置とスケールパラメータを自動的に改善し、より視覚的に魅力的なデザインを生み出すことが定性的に確認されています。
+Design‑o‑meter[^46]は、グラフィックデザインの品質を定量化し、視覚的魅力を高める修正案を提案する手法です。複雑な設計空間を効率的にナビゲートし、要素の位置・スケールを自動改善することで、より魅力的なデザインを実現します。
 
-![](https://arxiv.org/html/2411.14959v1/x1.png)
+![Figure by [Goyal+ WACV'25]](https://arxiv.org/html/2411.14959v1/x1.png)
 *Figure by [Goyal+ WACV'25]*
 
-#### Human-mimicking Evaluator
+#### Human‑mimicking Evaluator
 
-Uni-Layout[^30] の評価フレームワーク Human-mimicking Evalutor は大規模言語モデル（LLM）を基盤とした評価システムと CoT 推論を組み合わせ、レイアウト品質を客観的に評価します。特に Dynamic-Margin Preference Optimization（DMPO）という手法を導入し、人間からのフィードバックを統合します。これにより人間による判断とのより良いアライメントを実現しています。Uni-Layout は Layout-HF100k データセットを用いて適切に配置され整理されたレイアウトと要素の配置が不適切で読みにくいテキストを含むレイアウトを区別する評価能力を示しています。コンテンツ、デザイン、一貫性という複数の側面からプレゼンテーションの品質を評価し、人間による評価と高い相関を示すことで LLM のプレゼンテーション生成能力を向上させることに貢献しています。
+Uni‑Layout[^30]では、LLM ベースの評価に CoT を組み合わせた Human‑mimicking Evaluator を導入し、DMPO により人間判断とのアライメントを高めます。Layout‑HF100k を用いた評価で、読みやすく整理されたレイアウトと不適切な配置を区別できることを示しました。プレゼンの品質評価でも人間評価と高い相関を示し、生成能力の向上に寄与しています。
+
+![Figure by [Lu+ ACM MM'25]](https://arxiv.org/html/2508.02374v1/samples/images/Outline.png)
+*Figure by [Lu+ ACM MM'25]*
 
 #### RFNet
 
-RFNet[^47] は、広告画像生成において、人間の検査官の役割を果たす Reliable Feedback Network（RFNet）を導入する画期的な手法です。このシステムは、生成された広告画像の利用可能性を評価し、結果として「生成された利用可能な画像の数を大幅に増やす」ことに成功しています。
+RFNet[^47]は、広告画像生成に人間検査官の役割を果たす Reliable Feedback Network を導入し、生成された「利用可能」画像の数を大幅に増やすことに成功しました。
 
-![](https://arxiv.org/html/2408.00418v1/extracted/5767848/Fig3.png)
+![Figure by [Du+ ECCV'24]](https://arxiv.org/html/2408.00418v1/extracted/5767848/Fig3.png)
 *Figure by [Du+ ECCV'24]*
 
 #### PPTEval
 
-PPTEval[^23] はプレゼンテーションの生成と評価をするためのフレームワークであり、コンテンツ、デザイン、一貫性という 3 つの主要な側面から品質を評価します。このフレームワークは LLM のプレゼンテーション生成能力を向上させることに貢献し、人間による評価との高い相関を示しています。PPTEval は PPTAgent[^23] のワークフローの一部であり、類似のスライドのクラスタリングやコンテンツスキーマの抽出、入力文書と参照プレゼンテーションに基づいたスライドの選択・生成といったプロセスを通じて機能します。
+PPTEval[^23]は、コンテンツ・デザイン・一貫性の 3 軸でプレゼン品質を評価するフレームワークです。類似スライドのクラスタリングやコンテンツスキーマ抽出、参照プレゼンに基づくスライド選択・生成から成り、人間評価と高い相関を示します。
 
-![](https://arxiv.org/html/2501.03936v3/x3.png)
+![Figure by [Zheng+ arXiv'25]](https://arxiv.org/html/2501.03936v3/x3.png)
 *Figure by [Zheng+ arXiv'25]*
 
 #### AesthetiQ
 
-AesthetiQ[^48] は、美的視点を取り入れたレイアウトデザインの品質向上フレームワークです。このモデルは、マルチモーダル大規模言語モデル（MLLM）を評価者として利用し、美的評価に基づいてレイアウト候補をランク付けする AAPA（Aesthetic-Aware Preference Alignment）という手法を導入しています。
+AesthetiQ[^48]は、美的観点を取り入れてレイアウト品質を高める枠組みです。MLLM を評価者として用い、美的評価に基づくランク付け（AAPA）で候補を選別します。
 
-![](https://arxiv.org/html/2503.00591v1/extracted/6244445/imgs/heroFigureLayout.png)
+![Figure by [Patnaik+ CVPR'25]](https://arxiv.org/html/2503.00591v1/extracted/6244445/imgs/heroFigureLayout.png)
 *Figure by [Patnaik+ CVPR'25]*
 
 #### Infogen
 
-Infogen[^19] は、文書から複雑な統計的インフォグラフィックを生成するフレームワークです。人間による評価では、Infogen が他のベースラインと比較して、可読性、視覚的魅力、データ精度、アライメントスコアのすべてにおいて優れていると報告されています。Infogen では、メタデータから最終的なインフォグラフィックコードを生成するために、コーダーモジュールとフィードバックモジュールという 2 つの LLM モジュールが反復的に連携し、コードを洗練させます。
+Infogen[^19]は、文書から複雑な統計インフォグラフィックを生成します。人手評価で可読性・視覚的魅力・データ精度・アライメントの各指標で高評価を獲得。コーダー／フィードバックの 2 つの LLM モジュールが反復連携し、最終コードを洗練します。
 
-![](https://arxiv.org/html/2507.20046v1/Final_diagram.png)
+![Figure by [Ghosh+ ACL'25]](https://arxiv.org/html/2507.20046v1/Final_diagram.png)
 *Figure by [Ghosh+ ACL'25]*
 
-これらの評価とフィードバックの仕組みは、AI が生成するデザインが単なる技術的な成果にとどまらず、人間の美学や実用的なニーズに深く合致するよう進化していく上で不可欠な要素です。
+これらの評価・フィードバック機構により、AI 生成デザインは技術的達成にとどまらず、人間の美学や実用ニーズにより深く適合していきます。
 
 ## LIPS における UGC 活用の未来：AI との共創
 
-AppBrew が運営する日本最大級のコスメ・美容プラットフォーム LIPS は、毎日数千件もの口コミが投稿され、ユーザーの「なりたい自分」をサポートし、美容関心層のニーズを的確に捉える貴重な UGC の宝庫です。この膨大なデータ資産と最新の AI グラフィックデザイン技術を組み合わせることで、LIPS はさらなる進化を遂げ、美容業界のデジタルマーケティングに新たな価値を創造する可能性を秘めています。
+LIPS には毎日数千件のクチコミが蓄積され、ユーザーの「なりたい自分」を後押しする UGC の宝庫となっています。このデータ資産と最新の AI グラフィックデザイン技術の掛け合わせは、美容領域のデジタルマーケティングに新たな価値をもたらし得ます。
 
 ### LIPS のデータ資産と AI の可能性
 
-従来の広告制作は専門的なスキルと時間を要するタスクでした。しかし LIPS が持つ「口コミから購入へ」というユーザー体験の強みと日々更新されるニーズを AI が分析・活用することで、状況は大きく変わります。コスメ市場の多様化するニーズに迅速に対応し、パーソナライズされた魅力的なクリエイティブを大規模に生成することが可能になります。AI 駆動型デザインシステムは物理的なプロトタイプへの依存を大幅に減らし、市場投入までの時間を加速させる「売れるまで作らない」[^10] といった革新的なビジネスモデルを可能にします。特に E コマースにおいては極めて重要です。
+従来は専門スキルと時間が必要だった広告制作も、LIPS の「クチコミから購入へ」という体験設計と、AI による需要分析を組み合わせれば様変わりし得ます。多様化するニーズに迅速に応え、パーソナライズされた魅力的なクリエイティブを大規模に生み出せる可能性があります。AI 駆動型デザインは物理プロトタイプを大幅に減らし、リードタイムを短縮する「売れるまで作らない」[^10]といった革新的なモデルも後押しします。EC においては特に重要です。
 
 ### LIPS での UGC 活用ロードマップ
 
-LIPS のような UGC を豊富に保有するプラットフォームにおいては、以下の具体的なロードマップを通じて、AI グラフィックデザインの最新技術との統合により、ユーザー体験の向上とビジネス価値の創出が期待できるでしょう。
+UGC が豊富な LIPS では、次のロードマップが有効だと考えます（いずれも**筆者の提案**であり、実装状況や方針を示すものではありません）。
 
 まず、口コミ画像からの高精度な商品画像生成が挙げられます。PerFusion[^10] のようなフレームワークを活用することで、ユーザーのグループレベルの好みを捉えた AI 生成アイテムを生み出すことができ、LIPS ユーザーの興味を惹きつける商品画像を最適化することが期待されます。
 
-次に多様な広告クリエイティブの自動生成に AI エージェントシステムを応用します。BannerAgency[^11] は広告主と協力してブランドアイデンティティとバナー目標を理解します。高精度で多用途かつ編集可能な広告バナーを Figma や SVG 形式で自動生成します。CreatiDesign[^28] は拡散モデルを用いて主要な視覚要素、二次的な視覚要素、テキスト要素といった複数の異種要素を正確に制御します。調和の取れたグラフィックデザイン生成を実現するソリューションを提供します。これらの技術により LIPS は高品質で多様な広告クリエイティブを効率的に制作できるようになるでしょう。
+次に多様な広告クリエイティブの自動生成に AI エージェントシステムを応用します。BannerAgency[^11] は広告主と協力してブランドアイデンティティとバナー目標を理解します。
+高精度で多用途かつ編集可能な広告バナーを Figma や SVG 形式で自動生成します。CreatiDesign[^28] は拡散モデルを用いて主要な視覚要素、二次的な視覚要素、テキスト要素といった複数の異種要素を正確に制御します。調和の取れたグラフィックデザイン生成を実現するソリューションを提供します。これらの技術によりコスメ企業のデザイナーや LIPS ユーザに高品質で多様な広告クリエイティブを効率的に制作できる支援ができるでしょう。
 
 さらに LIPS に蓄積された膨大なデータを活用した魅力的な情報可視化も可能です。Infogen[^19] は文書から複雑な統計的インフォグラフィックを生成するフレームワークであり、人間による評価で高い可読性、視覚的魅力、データ精度を示すことが報告されています。これを活用して LIPS に蓄積されたユーザーの美容事情や「毛穴・角栓ケア」といったビューティートレンドを複雑な統計的インフォグラフィックとして自動生成できます。これによりブランド向けのマーケティング支援ツール「[LIPS for BRANDS](https://biz.lipscosme.com/lips_for_brands)」での情報提供を強化できます。
 
+https://biz.lipscosme.com/lips_for_brands
+
 また編集可能なデザイン資産の創出も重要な方向性です。LLM4SVG[^41]、SVGen[^42]、StarVector[^43] といったベクター画像生成技術を LIPS のデザインシステムと連携させます。これにより拡大縮小しても劣化しないロゴ、アイコン、グラフなどの編集可能なデザイン要素を効率的に生成・管理できるようになります。ベクター画像はロスレススケーリングが可能であり、LLM との統合に適しています。
 
-最後に人間と AI の協調デザインの促進です。Design-o-meter[^46] や Uni-Layout[^30] のような品質評価・フィードバックシステムを導入します。これにより LIPS ユーザーやコスメ専門家の知見を AI に組み込み、AppBrew の企業バリューである「USER FIRST」を体現します。同時に「LEAN」なプロセスで迅速に学び「OPEN」な姿勢でチーム強化を実現できます。
+最後に人間と AI の協調デザインの促進です。Design‑o‑meter[^46] や Uni-Layout[^30] のような品質評価・フィードバックシステムを導入します。これにより LIPS ユーザーやコスメ専門家の知見を AI に組み込み、AppBrew の企業バリューである「USER FIRST」を体現します。同時に「LEAN」なプロセスで迅速に学び「OPEN」な姿勢でチーム強化を実現できます。
 
 ## まとめと展望
 
-本記事では、AI グラフィックデザインの最新の研究事例を概観し、コスメ・美容プラットフォーム LIPS が保有する膨大な UGC を源泉として、商品画像や広告クリエイティブの生成にどのように応用できるかを考察してきました。本稿では、レイアウト生成技術、ラスタおよびベクタ画像生成の進化、AI エージェントによるデザイン自動化、そしてデザイン品質の評価と人間からのフィードバック活用という多角的なアプローチが、デザインプロセスを劇的に変革する可能性を示しました。
+本記事では、AI グラフィックデザインの最新研究を概観し、LIPS の豊富な UGC を源泉に、商品画像や広告クリエイティブへどう応用できるかを外部の視点から考察しました。レイアウト生成、ラスタ／ベクタ画像生成、AI エージェントによる自動化、そして品質評価と人間フィードバックという多角的アプローチが、デザインプロセスを大きく変えうることを示しました。
 
-AI グラフィックデザインはその進化を断片から全体へと進めており、個別のサブタスクの処理からグラフィックデザイン全体を扱う包括的な研究が 2023 年以降に台頭しています。大規模言語モデル（LLM）とマルチモーダルアプローチはローカライズされた視覚的特徴とグローバルなデザイン意図とのギャップを埋める上で重要な役割を果たしています。さらに AI 駆動型グラフィックデザイン（AIGD）においてはピクセル形式からベクタ形式への移行が注目されています。これはベクタ画像が「ロスレススケーリング」などの特性を持ち、LLM との統合に非常に適しているためです。
+AI グラフィックデザインは、個別サブタスクから全体最適へと進化しています。LLM とマルチモーダルの活用は、ローカルな視覚特徴とグローバルなデザイン意図の溝を埋めます。さらに、AIGD ではピクセルからベクタへのシフトにも注目が集まっています。ロスレススケーリングや編集性に優れ、LLM と統合しやすいためです。
 
-AI との共創により、LIPS はよりパーソナライズされ、視覚的に魅力的で、ユーザーの心に響くコンテンツを提供できるようになります。これは、LIPS のユーザーエンゲージメントを向上させるだけでなく、美容業界全体のデジタルマーケティングを革新し、新しいビジネス価値を創出する大きな一歩となると考えられます。AppBrew は「仮説検証を基にした意思決定で「ユーザーが求めるものを作る」にフォーカスし、新しいインターネットサービスを開発するチーム」であり、このような挑戦を共に進めていく仲間を探しています。
+AI との共創により、LIPS はよりパーソナライズされ、視覚的に魅力的で心に響くコンテンツを提供できるようになる――その可能性を外部の立場から展望しました。
+
+<!-- textlint-disable -->
+:::message
+AppBrew の取り組みに関心のある方は、以下の採用情報をご覧ください。
+:::
+<!-- textlint-enable -->
 
 https://appbrew.io/careers/
 
 <!-- textlint-disable -->
-[^1]: AppBrew が取り組むアルムナイ施策：第２回同窓会開催レポート！｜AppBrew @appbrew_inc https://note.com/appbrew/n/n3b2b9b83041f
+
+[^1]: AppBrew が取り組むアルムナイ施策：第２回同窓会開催レポート！｜AppBrew @appbrew_inc [https://note.com/appbrew/n/n3b2b9b83041f](https://note.com/appbrew/n/n3b2b9b83041f)
+
 [^2]: お声がけ頂いた AppBrew のみなさん、ありがとうございます。この場をお借りしてお礼申し上げます。
-[^3]: [前回寄稿したとき](https://zenn.dev/appbrew/articles/lips-ad-creative-research) は、はてなブログへ公開していただきましたが、今回からは Zenn で公開していただきました。> AppBrew のテックブログをはてなブログから Zenn にお引越ししました！ https://zenn.dev/appbrew/articles/tech-blog-migration
-[^4]: What is User Generated Content (UGC)? | Webopedia https://www.webopedia.com/definitions/ugc/
-[^5]: AIS Electronic Library (AISeL) - ICIS 2024 Proceedings: The Impact of Generative AI on Advertising Effectiveness https://aisel.aisnet.org/icis2024/digital_comm/digital_comm/
-[^6]: [2503.18641] From Fragment to One Piece: A Survey on AI-Driven Graphic Design https://arxiv.org/abs/2503.18641
-[^7]: DesignScape | Proceedings of the 33rd Annual ACM Conference on Human Factors in Computing Systems https://dl.acm.org/doi/abs/10.1145/2702123.2702149
-[^8]: [2507.05601] Rethinking Layered Graphic Design Generation with a Top-Down Approach https://arxiv.org/abs/2507.05601
-[^9]: [2506.10741] PosterCraft: Rethinking High-Quality Aesthetic Poster Generation in a Unified Framework https://arxiv.org/abs/2506.10741
-[^10]: [2503.22182] Sell It Before You Make It: Revolutionizing E-Commerce with Personalized AI-Generated Items https://arxiv.org/abs/2503.22182
-[^11]: [2503.11060] BannerAgency: Advertising Banner Design with Multimodal LLM Agents https://arxiv.org/abs/2503.11060
-[^12]: [2505.07843] PosterO: Structuring Layout Trees to Enable Language Models in Generalized Content-Aware Layout Generation https://arxiv.org/abs/2505.07843
-[^13]: [2504.06632] PosterMaker: Towards High-Quality Product Poster Generation with Accurate Text Rendering https://arxiv.org/abs/2504.06632
-[^14]: [2303.08605] RICO: Regularizing the Unobservable for Indoor Compositional Reconstruction https://arxiv.org/abs/2303.08605
-[^15]: [2403.03163] Design2Code: Benchmarking Multimodal Code Generation for Automated Front-End Engineering https://arxiv.org/abs/2403.03163
-[^16]: [2409.16689] Layout-Corrector: Alleviating Layout Sticking Phenomenon in Discrete Diffusion Model https://arxiv.org/abs/2409.16689
-[^17]: [2404.14368] Graphic Design with Large Multimodal Model https://arxiv.org/abs/2404.14368
-[^18]: [2403.09093] Desigen: A Pipeline for Controllable Design Template Generation https://arxiv.org/abs/2403.09093
-[^19]: [2507.20046] Infogen: Generating Complex Statistical Infographics from Documents https://arxiv.org/abs/2507.20046
-[^20]: [2503.20672] BizGen: Advancing Article-level Visual Text Rendering for Infographics Generation https://arxiv.org/abs/2503.20672
-[^21]: Integrating LLM, VLM, and Text-to-Image Models for Enhanced Information Graphics: A Methodology for Accurate and Visually Engaging Visualizations | IJCAI https://www.ijcai.org/proceedings/2024/995
-[^22]: [2101.11796] DOC2PPT: Automatic Presentation Slides Generation from Scientific Documents https://arxiv.org/abs/2101.11796
-[^23]: [2501.03936] PPTAgent: Generating and Evaluating Presentations Beyond Text-to-Slides https://arxiv.org/abs/2501.03936
-[^24]: [2308.12700] A Parse-Then-Place Approach for Generating Graphic Layouts from Textual Descriptions https://arxiv.org/abs/2308.12700
-[^25]: Content-aware generative modeling of graphic design layouts | ACM Transactions on Graphics https://dl.acm.org/doi/10.1145/3306346.3322971
-[^26]: [2204.02701] Aesthetic Text Logo Synthesis via Content-aware Layout Inferring https://arxiv.org/abs/2204.02701
-[^27]: [2411.11435] GLDesigner: Leveraging Multi-Modal LLMs as Designer for Enhanced Aesthetic Text Glyph Layouts https://arxiv.org/abs/2411.11435
-[^28]: [2505.19114] CreatiDesign: A Unified Multi-Conditional Diffusion Transformer for Creative Graphic Design https://arxiv.org/abs/2505.19114
-[^29]: Intelligent layout generation based on deep generative models: A comprehensive survey - ScienceDirect https://www.sciencedirect.com/science/article/abs/pii/S1566253523002567
-[^30]: [2508.02374] Uni-Layout: Integrating Human Feedback in Unified Layout Generation and Evaluation https://arxiv.org/abs/2508.02374
-[^31]: [2201.11903] Chain-of-Thought Prompting Elicits Reasoning in Large Language Models https://arxiv.org/abs/2201.11903
-[^32]: [2502.14005] Smaller But Better: Unifying Layout Generation with Smaller Large Language Models https://arxiv.org/abs/2502.14005
-[^33]: [2412.03859] CreatiLayout: Siamese Multimodal Diffusion Transformer for Creative Layout-to-Image Generation https://arxiv.org/abs/2412.03859
-[^34]: [2112.10752] High-Resolution Image Synthesis with Latent Diffusion Models https://arxiv.org/abs/2112.10752
-[^35]: [2307.01952] SDXL: Improving Latent Diffusion Models for High-Resolution Image Synthesis https://arxiv.org/abs/2307.01952
-[^36]: [2403.03206] Scaling Rectified Flow Transformers for High-Resolution Image Synthesis https://arxiv.org/abs/2403.03206
-[^37]: [2403.12015] Fast High-Resolution Image Synthesis with Latent Adversarial Diffusion Distillation https://arxiv.org/abs/2403.12015
-[^38]: [2501.14316] PAID: A Framework of Product-Centric Advertising Image Design https://arxiv.org/abs/2501.14316
-[^39]: [2507.04218] DreamPoster: A Unified Framework for Image-Conditioned Generative Poster Design https://arxiv.org/abs/2507.04218
-[^40]: [2411.15580] TKG-DM: Training-free Chroma Key Content Generation Diffusion Model https://arxiv.org/abs/2411.15580
-[^41]: [2412.11102] Empowering LLMs to Understand and Generate Complex Vector Graphics https://arxiv.org/abs/2412.11102
-[^42]: [2508.09168] SVGen: Interpretable Vector Graphics Generation with Large Language Models https://www.arxiv.org/abs/2508.09168
-[^43]: [2312.11556] StarVector: Generating Scalable Vector Graphics Code from Images and Text https://arxiv.org/abs/2312.11556
-[^44]: [2506.10890] CreatiPoster: Towards Editable and Controllable Multi-Layer Graphic Design Generation https://arxiv.org/abs/2506.10890
-[^45]: [2210.03629] ReAct: Synergizing Reasoning and Acting in Language Models https://arxiv.org/abs/2210.03629 
-[^46]: [2411.14959] Design-o-meter: Towards Evaluating and Refining Graphic Designs https://arxiv.org/abs/2411.14959
-[^47]: [2408.00418] Towards Reliable Advertising Image Generation Using Human Feedback https://arxiv.org/abs/2408.00418
-[^48]: [2503.00591] AesthetiQ: Enhancing Graphic Layout Design via Aesthetic-Aware Preference Alignment of Multi-modal Large Language Models https://arxiv.org/abs/2503.00591
+
+[^3]: [前回寄稿したとき](https://zenn.dev/appbrew/articles/lips-ad-creative-research) は、はてなブログへ公開していただきましたが、今回からは Zenn で公開していただきました。> AppBrew のテックブログをはてなブログから Zenn にお引越ししました！ [https://zenn.dev/appbrew/articles/tech-blog-migration](https://zenn.dev/appbrew/articles/tech-blog-migration)
+
+[^4]: What is User Generated Content (UGC)? | Webopedia [https://www.webopedia.com/definitions/ugc/](https://www.webopedia.com/definitions/ugc/)
+
+[^5]: AIS Electronic Library (AISeL) - ICIS 2024 Proceedings: The Impact of Generative AI on Advertising Effectiveness [https://aisel.aisnet.org/icis2024/digital_comm/digital_comm/](https://aisel.aisnet.org/icis2024/digital_comm/digital_comm/)
+
+[^6]: [2503.18641] From Fragment to One Piece: A Survey on AI-Driven Graphic Design [https://arxiv.org/abs/2503.18641](https://arxiv.org/abs/2503.18641)
+
+[^7]: DesignScape | Proceedings of the 33rd Annual ACM Conference on Human Factors in Computing Systems [https://dl.acm.org/doi/abs/10.1145/2702123.2702149](https://dl.acm.org/doi/abs/10.1145/2702123.2702149)
+
+[^8]: [2507.05601] Rethinking Layered Graphic Design Generation with a Top-Down Approach [https://arxiv.org/abs/2507.05601](https://arxiv.org/abs/2507.05601)
+
+[^9]: [2506.10741] PosterCraft: Rethinking High-Quality Aesthetic Poster Generation in a Unified Framework [https://arxiv.org/abs/2506.10741](https://arxiv.org/abs/2506.10741)
+
+[^10]: [2503.22182] Sell It Before You Make It: Revolutionizing E-Commerce with Personalized AI-Generated Items [https://arxiv.org/abs/2503.22182](https://arxiv.org/abs/2503.22182)
+
+[^11]: [2503.11060] BannerAgency: Advertising Banner Design with Multimodal LLM Agents [https://arxiv.org/abs/2503.11060](https://arxiv.org/abs/2503.11060)
+
+[^12]: [2505.07843] PosterO: Structuring Layout Trees to Enable Language Models in Generalized Content-Aware Layout Generation [https://arxiv.org/abs/2505.07843](https://arxiv.org/abs/2505.07843)
+
+[^13]: [2504.06632] PosterMaker: Towards High-Quality Product Poster Generation with Accurate Text Rendering [https://arxiv.org/abs/2504.06632](https://arxiv.org/abs/2504.06632)
+
+[^14]: [2303.08605] RICO: Regularizing the Unobservable for Indoor Compositional Reconstruction [https://arxiv.org/abs/2303.08605](https://arxiv.org/abs/2303.08605)
+
+[^15]: [2403.03163] Design2Code: Benchmarking Multimodal Code Generation for Automated Front-End Engineering [https://arxiv.org/abs/2403.03163](https://arxiv.org/abs/2403.03163)
+
+[^16]: [2409.16689] Layout-Corrector: Alleviating Layout Sticking Phenomenon in Discrete Diffusion Model [https://arxiv.org/abs/2409.16689](https://arxiv.org/abs/2409.16689)
+
+[^17]: [2404.14368] Graphic Design with Large Multimodal Model [https://arxiv.org/abs/2404.14368](https://arxiv.org/abs/2404.14368)
+
+[^18]: [2403.09093] Desigen: A Pipeline for Controllable Design Template Generation [https://arxiv.org/abs/2403.09093](https://arxiv.org/abs/2403.09093)
+
+[^19]: [2507.20046] Infogen: Generating Complex Statistical Infographics from Documents [https://arxiv.org/abs/2507.20046](https://arxiv.org/abs/2507.20046)
+
+[^20]: [2503.20672] BizGen: Advancing Article-level Visual Text Rendering for Infographics Generation [https://arxiv.org/abs/2503.20672](https://arxiv.org/abs/2503.20672)
+
+[^21]: Integrating LLM, VLM, and Text-to-Image Models for Enhanced Information Graphics: A Methodology for Accurate and Visually Engaging Visualizations | IJCAI [https://www.ijcai.org/proceedings/2024/995](https://www.ijcai.org/proceedings/2024/995)
+
+[^22]: [2101.11796] DOC2PPT: Automatic Presentation Slides Generation from Scientific Documents [https://arxiv.org/abs/2101.11796](https://arxiv.org/abs/2101.11796)
+
+[^23]: [2501.03936] PPTAgent: Generating and Evaluating Presentations Beyond Text-to-Slides [https://arxiv.org/abs/2501.03936](https://arxiv.org/abs/2501.03936)
+
+[^24]: [2308.12700] A Parse-Then-Place Approach for Generating Graphic Layouts from Textual Descriptions [https://arxiv.org/abs/2308.12700](https://arxiv.org/abs/2308.12700)
+
+[^25]: Content-aware generative modeling of graphic design layouts | ACM Transactions on Graphics [https://dl.acm.org/doi/10.1145/3306346.3322971](https://dl.acm.org/doi/10.1145/3306346.3322971)
+
+[^26]: [2204.02701] Aesthetic Text Logo Synthesis via Content-aware Layout Inferring [https://arxiv.org/abs/2204.02701](https://arxiv.org/abs/2204.02701)
+
+[^27]: [2411.11435] GLDesigner: Leveraging Multi-Modal LLMs as Designer for Enhanced Aesthetic Text Glyph Layouts [https://arxiv.org/abs/2411.11435](https://arxiv.org/abs/2411.11435)
+
+[^28]: [2505.19114] CreatiDesign: A Unified Multi-Conditional Diffusion Transformer for Creative Graphic Design [https://arxiv.org/abs/2505.19114](https://arxiv.org/abs/2505.19114)
+
+[^29]: Intelligent layout generation based on deep generative models: A comprehensive survey - ScienceDirect [https://www.sciencedirect.com/science/article/abs/pii/S1566253523002567](https://www.sciencedirect.com/science/article/abs/pii/S1566253523002567)
+
+[^30]: [2508.02374] Uni-Layout: Integrating Human Feedback in Unified Layout Generation and Evaluation [https://arxiv.org/abs/2508.02374](https://arxiv.org/abs/2508.02374)
+
+[^31]: [2201.11903] Chain-of-Thought Prompting Elicits Reasoning in Large Language Models [https://arxiv.org/abs/2201.11903](https://arxiv.org/abs/2201.11903)
+
+[^32]: [2502.14005] Smaller But Better: Unifying Layout Generation with Smaller Large Language Models [https://arxiv.org/abs/2502.14005](https://arxiv.org/abs/2502.14005)
+
+[^33]: [2412.03859] CreatiLayout: Siamese Multimodal Diffusion Transformer for Creative Layout-to-Image Generation [https://arxiv.org/abs/2412.03859](https://arxiv.org/abs/2412.03859)
+
+[^34]: [2112.10752] High-Resolution Image Synthesis with Latent Diffusion Models [https://arxiv.org/abs/2112.10752](https://arxiv.org/abs/2112.10752)
+
+[^35]: [2307.01952] SDXL: Improving Latent Diffusion Models for High-Resolution Image Synthesis [https://arxiv.org/abs/2307.01952](https://arxiv.org/abs/2307.01952)
+
+[^36]: [2403.03206] Scaling Rectified Flow Transformers for High-Resolution Image Synthesis [https://arxiv.org/abs/2403.03206](https://arxiv.org/abs/2403.03206)
+
+[^37]: [2403.12015] Fast High-Resolution Image Synthesis with Latent Adversarial Diffusion Distillation [https://arxiv.org/abs/2403.12015](https://arxiv.org/abs/2403.12015)
+
+[^38]: [2501.14316] PAID: A Framework of Product-Centric Advertising Image Design [https://arxiv.org/abs/2501.14316](https://arxiv.org/abs/2501.14316)
+
+[^39]: [2507.04218] DreamPoster: A Unified Framework for Image-Conditioned Generative Poster Design [https://arxiv.org/abs/2507.04218](https://arxiv.org/abs/2507.04218)
+
+[^40]: [2411.15580] TKG-DM: Training-free Chroma Key Content Generation Diffusion Model [https://arxiv.org/abs/2411.15580](https://arxiv.org/abs/2411.15580)
+
+[^41]: [2412.11102] Empowering LLMs to Understand and Generate Complex Vector Graphics [https://arxiv.org/abs/2412.11102](https://arxiv.org/abs/2412.11102)
+
+[^42]: [2508.09168] SVGen: Interpretable Vector Graphics Generation with Large Language Models [https://www.arxiv.org/abs/2508.09168](https://www.arxiv.org/abs/2508.09168)
+
+[^43]: [2312.11556] StarVector: Generating Scalable Vector Graphics Code from Images and Text [https://arxiv.org/abs/2312.11556](https://arxiv.org/abs/2312.11556)
+
+[^44]: [2506.10890] CreatiPoster: Towards Editable and Controllable Multi-Layer Graphic Design Generation [https://arxiv.org/abs/2506.10890](https://arxiv.org/abs/2506.10890)
+
+[^45]: [2210.03629] ReAct: Synergizing Reasoning and Acting in Language Models [https://arxiv.org/abs/2210.03629](https://arxiv.org/abs/2210.03629)
+
+[^46]: [2411.14959] Design-o-meter: Towards Evaluating and Refining Graphic Designs [https://arxiv.org/abs/2411.14959](https://arxiv.org/abs/2411.14959)
+
+[^47]: [2408.00418] Towards Reliable Advertising Image Generation Using Human Feedback [https://arxiv.org/abs/2408.00418](https://arxiv.org/abs/2408.00418)
+
+[^48]: [2503.00591] AesthetiQ: Enhancing Graphic Layout Design via Aesthetic-Aware Preference Alignment of Multi-modal Large Language Models [https://arxiv.org/abs/2503.00591](https://arxiv.org/abs/2503.00591)
+
 <!-- textlint-enable -->
