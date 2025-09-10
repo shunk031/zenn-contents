@@ -289,7 +289,7 @@ AppBrew の取り組みに関心のある方は、以下の採用情報をご覧
 :::
 <!-- textlint-enable -->
 
-https://appbrew.io/careers/
+https://herp.careers/v1/appbrew
 
 <!-- textlint-disable -->
 
