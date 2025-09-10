@@ -149,7 +149,7 @@ LLM4SVG[^41]は、学習可能なセマンティックトークンにより SVG 
 
 SVGen[^42]は、LLM を用いた解釈可能なベクタグラフィックス生成を目指し、CoT[^31]と強化学習を組み合わせて、構造と解釈可能性を高めます。
 
-![Figure by [Wang+ arXiv'25]](https://arxiv.org/html/2508.09168v1/x3.png)
+![Figure by [Wang+ arXiv'25]](https://ar5iv.labs.arxiv.org/html/2508.09168/assets/x3.png)
 *Figure by [Wang+ arXiv'25]*
 
 #### StarVector
@@ -255,12 +255,17 @@ LIPS には毎日数千件のクチコミが蓄積され、ユーザーの「な
 
 ### LIPS での UGC 活用ロードマップ
 
-UGC が豊富な LIPS では、次のロードマップが有効だと考えます（いずれも**筆者の提案**であり、実装状況や方針を示すものではありません）。
+UGC が豊富な LIPS では、次のロードマップが有効だと考えます。
+
+<!-- textlint-disable -->
+:::message
+いずれも**筆者の提案**であり、実装状況や方針を示すものではありません
+:::
+<!-- textlint-enable -->
 
 まず、口コミ画像からの高精度な商品画像生成が挙げられます。PerFusion[^10] のようなフレームワークを活用することで、ユーザーのグループレベルの好みを捉えた AI 生成アイテムを生み出すことができ、LIPS ユーザーの興味を惹きつける商品画像を最適化することが期待されます。
 
-次に多様な広告クリエイティブの自動生成に AI エージェントシステムを応用します。BannerAgency[^11] は広告主と協力してブランドアイデンティティとバナー目標を理解します。
-高精度で多用途かつ編集可能な広告バナーを Figma や SVG 形式で自動生成します。CreatiDesign[^28] は拡散モデルを用いて主要な視覚要素、二次的な視覚要素、テキスト要素といった複数の異種要素を正確に制御します。調和の取れたグラフィックデザイン生成を実現するソリューションを提供します。これらの技術によりコスメ企業のデザイナーや LIPS ユーザに高品質で多様な広告クリエイティブを効率的に制作できる支援ができるでしょう。
+次に多様な広告クリエイティブの自動生成に AI エージェントシステムを応用します。BannerAgency[^11] は広告主と協力してブランドアイデンティティとバナー目標を理解します。高精度で多用途かつ編集可能な広告バナーを Figma や SVG 形式で自動生成します。CreatiDesign[^28] は拡散モデルを用いて主要な視覚要素、二次的な視覚要素、テキスト要素といった複数の異種要素を正確に制御します。これらの技術によりコスメ企業のデザイナーや LIPS ユーザに高品質で多様な広告クリエイティブを効率的に制作できる支援ができるでしょう。
 
 さらに LIPS に蓄積された膨大なデータを活用した魅力的な情報可視化も可能です。Infogen[^19] は文書から複雑な統計的インフォグラフィックを生成するフレームワークであり、人間による評価で高い可読性、視覚的魅力、データ精度を示すことが報告されています。これを活用して LIPS に蓄積されたユーザーの美容事情や「毛穴・角栓ケア」といったビューティートレンドを複雑な統計的インフォグラフィックとして自動生成できます。これによりブランド向けのマーケティング支援ツール「[LIPS for BRANDS](https://biz.lipscosme.com/lips_for_brands)」での情報提供を強化できます。
 
@@ -280,7 +285,7 @@ AI との共創により、LIPS はよりパーソナライズされ、視覚的
 
 <!-- textlint-disable -->
 :::message
-AppBrew の取り組みに関心のある方は、以下の採用情報をご覧ください。
+AppBrew の取り組みに関心のある方は、以下の採用情報をご覧ください！
 :::
 <!-- textlint-enable -->
 
@@ -370,7 +375,7 @@ https://appbrew.io/careers/
 
 [^41]: [2412.11102] Empowering LLMs to Understand and Generate Complex Vector Graphics [https://arxiv.org/abs/2412.11102](https://arxiv.org/abs/2412.11102)
 
-[^42]: [2508.09168] SVGen: Interpretable Vector Graphics Generation with Large Language Models [https://www.arxiv.org/abs/2508.09168](https://www.arxiv.org/abs/2508.09168)
+[^42]: [2508.09168] SVGen: Interpretable Vector Graphics Generation with Large Language Models [https://www.arxiv.org/abs/2508.09168](https://arxiv.org/abs/2508.09168)
 
 [^43]: [2312.11556] StarVector: Generating Scalable Vector Graphics Code from Images and Text [https://arxiv.org/abs/2312.11556](https://arxiv.org/abs/2312.11556)
 
