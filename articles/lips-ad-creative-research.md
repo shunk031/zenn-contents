@@ -7,7 +7,7 @@ publication_name: appbrew
 published: true
 published_at: 2021-04-28
 ---
-こんにちは [@shunk031](https://twitter.com/shunk031) です。 ご縁があって [appbrew Tech Blog](https://tech.appbrew.io/) へ本記事を寄稿しました[^1]。 今回のお話は、私が取り組んでいる研究分野の 1 つである「機械学習と広告クリエイティブ[^2]」を特に評価していただき実現しました。
+こんにちは [@shunk031](https://twitter.com/shunk031) です。 ご縁があって [AppBrew Tech Blog](https://tech.appbrew.io/) へ本記事を寄稿しました[^1]。 今回のお話は、私が取り組んでいる研究分野の 1 つである「機械学習と広告クリエイティブ[^2]」を特に評価していただき実現しました。
 
 ここで簡単に、本記事の著者である私の自己紹介をします。私は以下のような自然言語処理の研究を中心に進めております。
 
@@ -122,7 +122,7 @@ DRMM を元にしたモデルの訓練方法として、label generation phase �
 
 #### Recommending Themes for Ad Creative Design via Visual-Linguistic Representation (WWW 2020)
 
-- WWW 2020 採択論文^[^10]
+- WWW 2020 採択論文[^10]
 - Preprint: [https://arxiv.org/abs/2001.07194](https://arxiv.org/abs/2001.07194)
 - 拙著まとめ: [Recommending Themes for Ad Creative Design via Visual-Linguistic Representation - scrapbox](https://scrapbox.io/gunosydm/Recommending_Themes_for_Ad_Creative_Design_via_Visual-Linguistic_Representation)
 
@@ -264,5 +264,4 @@ https://herp.careers/v1/appbrew/N71dKrjFhi11
 [^21]: AI Designer の逆襲！｜CrowdWorks DesignDiv｜note https://note.com/designdiv/n/nd0e3afc68c09
 [^22]: Tencent Ads: Interesting Problems and Unique Challenges | AdKDD 2019 https://www.adkdd.org/Papers/Tencent-Ads%3A-Interesting-Problems-and-Unique-Challenges/2019
 [^23]: 拙著のテンセント Ads のまとめ記事で VideoIn Ads の凄さを解説しています: テンセントの広告技術が未来すぎる！AdKDD2019 のテンセント Ads 招待講演まとめ - Gunosy データ分析ブログ https://data.gunosy.io/entry/adkdd2019-tencent-ads-invited-talk#VideoIn-Ads
-[^24]: DPA が何の略かは不明
-<!-- textlint-enable -->
+[^24]: DPA が何の略かは不明<!-- textlint-enable -->
