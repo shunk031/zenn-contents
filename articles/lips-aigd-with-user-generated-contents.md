@@ -5,7 +5,7 @@ type: "tech"
 topics: ["research"]
 publication_name: appbrew
 published: true
-published_at: 2025-09-15
+published_at: 2025-09-29
 ---
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。以前、AppBrew で業務委託としてお世話になっており、先日開催された AppBrew 同窓会[^1]に参加しました。その際にお声がけいただいたことをきっかけに、久しぶりに [AppBrew Tech Blog](https://zenn.dev/p/appbrew) へ本記事を寄稿することになりました[^2][^3]。
