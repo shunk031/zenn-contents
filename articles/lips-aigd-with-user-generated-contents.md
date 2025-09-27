@@ -2,7 +2,12 @@
 title: "ユーザー生成コンテンツ (UGC) と最新 AI 技術で切り拓く LIPS の広告クリエイティブの未来"
 emoji: "💄"
 type: "tech"
-topics: ["research"]
+topics:
+  - "research"
+  - "生成ai"
+  - "aiエージェント"
+  - "survey"
+  - "デザイン"
 publication_name: appbrew
 published: true
 published_at: 2025-09-29
