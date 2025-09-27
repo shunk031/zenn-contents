@@ -7,7 +7,6 @@
 	//
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
-		"ghcr.io/devcontainers/features/aws-cli:1": {},
 		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
 	},
 	//
@@ -24,7 +23,9 @@
 				"kimgronqvist.vscode-ido",
 				"3w36zj6.textlint",
 				"RooVeterinaryInc.roo-cline",
-				"baurine.vscode-pangu"
+				"baurine.vscode-pangu",
+				"Anthropic.claude-code",
+				"zenn.zenn-preview"
 			]
 		}
 	},
@@ -39,16 +40,7 @@
 	],
 	// Mount the AWS and Claude configuration directories
 	"mounts": [
-		"source=${localEnv:HOME}${localEnv:USERPROFILE}/.aws/,target=/home/node/.aws/,type=bind,consistency=cached",
 		"source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached",
 		"source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind,consistency=cached"
-	],
-],
-"containerEnv": {
-	"AWS_PROFILE": "shunk031",
-	"CLAUDE_CODE_USE_BEDROCK": "1",
-	"CLAUDE_CONFIG_DIR": "/home/node/.claude",
-	"DISABLE_PROMPT_CACHING": "1",
-	"ANTHROPIC_MODEL": "us.anthropic.claude-sonnet-4-20250514-v1:0"
-}
+	]
 }
