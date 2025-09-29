@@ -6,7 +6,9 @@
 	"image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
 	//
 	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
+	"features": {
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+	},
 	//
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
@@ -20,26 +22,25 @@
 			"extensions": [
 				"kimgronqvist.vscode-ido",
 				"3w36zj6.textlint",
-				"RooVeterinaryInc.roo-cline"
+				"RooVeterinaryInc.roo-cline",
+				"baurine.vscode-pangu",
+				"Anthropic.claude-code",
+				"zenn.zenn-preview"
 			]
 		}
 	},
 	//
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root",
+	"remoteUser": "node",
 	//
 	// Specify the Docker CLI arguments to use when running the container.
 	"runArgs": [
 		"--name",
 		"zenn-contents-devcontainer"
 	],
-	//
+	// Mount the AWS and Claude configuration directories
 	"mounts": [
-		"source=${localEnv:HOME}/.aws,target=${containerEnv:HOME}/.aws,type=bind,readonly"
-	],
-	//
-	// "containerEnv": {
-	// 	"AWS_CONFIG_FILE": "/root/.aws/config",
-	// 	"AWS_SHARED_CREDENTIALS_FILE": "/root/.aws/credentials"
-	// }
+		"source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached",
+		"source=${localEnv:HOME}/.claude.json,target=/home/node/.claude.json,type=bind,consistency=cached"
+	]
 }
