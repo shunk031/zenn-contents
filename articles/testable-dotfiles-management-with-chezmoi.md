@@ -193,7 +193,7 @@ jobs:
 
 #### 実際のセットアップの定期実行
 
-より重要なのは、実際のユーザー体験と同じ環境での検証です。本レポジトリのワークフローの 1 つで、毎週金曜日に [`setup.sh`](https://github.com/shunk031/dotfiles/blob/master/setup.sh) (前述した chezmoi による環境構築のワンライナーを wrap したもの) を使用したセットアップ過程を macOS と Ubuntu それぞれの Runner で自動実行しています。
+より重要なのは、実際のユーザー体験と同じ環境での検証です。本リポジトリのワークフローでは、毎週金曜日に [`setup.sh`](https://github.com/shunk031/dotfiles/blob/master/setup.sh) を使用したセットアップ過程を macOS と Ubuntu それぞれの Runner で自動実行しています。このスクリプトは前述した chezmoi による環境構築のワンライナーを wrap したものです。
 
 ```yaml:.github/workflows/remote.yaml
 name: Snippet install
