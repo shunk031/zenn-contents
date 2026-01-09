@@ -93,6 +93,18 @@ gwq は [template に Host / Owner / Repository / Branch などの変数が使�
 
 私は `'{{.Host}}/{{.Owner}}/{{.Repository}}={{.Branch}}'` の形式を採用しています。[`gwq` のデフォルトのように `{{.Branch}}` でディレクトリを分けてしまう](https://github.com/d-kuro/gwq?tab=readme-ov-file#configuration:~:text=template%20%3D%20%22%7B%7B.Host%7D%7D/%7B%7B.Owner%7D%7D/%7B%7B.Repository%7D%7D/%7B%7B.Branch%7D%7D%22)と、ghq で clone したディレクトリの中に worktree が増えてしまい、fzf で探しにくくなるので注意してください。
 
+正しく設定されると、例えば `gwq add feature-branch` したときに、以下のようなディレクトリ構成になります。
+
+```
+~/ghq/
+  github.com/shunk031/app                # オリジナル（ghq get したもの）
+  github.com/shunk031/app=feature-auth   # worktree（gwq）
+  github.com/shunk031/app=bugfix-login   # worktree（gwq）
+  ...
+  github.com/shunk031/infra              # 別レポ（ghq get したもの）
+  github.com/shunk031/infra=refactor-tf  # worktree（gwq）
+```
+
 ### “移動” を作る：ghq + fzf で dev コマンドを持つ
 
 ghq は `ghq list` コマンドで一覧が取れるので、fzf に渡すだけで「移動 UI」になります。`ghq list --full-path` コマンドを使うとフルパス出力もでき、fzf と組み合わせた “瞬時に移動” が可能になります 🥰
