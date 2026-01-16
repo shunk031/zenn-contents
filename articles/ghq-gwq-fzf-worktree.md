@@ -35,7 +35,7 @@ Anthropic のベストプラクティスでも、worktree によって複数の 
 
 https://github.com/x-motemen/ghq
 
-ghq はリモートレポジトリの clone を整理する CLI ツールで、`host/owner/repo` のように root 配下へ並べる思想です。`ghq list` コマンドで手元に clone されているレポジトリの一覧を出せるので、後述する `fzf` コマンドと繋ぐとレポジトリ間を行き来できる UI になります。`ghq list --full-path` コマンドでフルパスを出して `fzf` と組み合わせる例も、ghq の著者らが公開しているハンドブックに載っています。[^3]
+ghq はリモートレポジトリの clone を整理する CLI ツールで、`host/owner/repo` のように root 配下へ並べる思想です。`ghq list` コマンドで手元に clone されているレポジトリの一覧を出せるので、後述する `fzf` コマンドと繋ぐとレポジトリ間を行き来できる UI になります。`ghq list --full-path` コマンドでフルパスを出して fzf と組み合わせる例も、ghq の著者らが公開しているハンドブックに載っています。[^3]
 
 ## `fzf`：あらゆる一覧を “選べる UI” にする
 
@@ -49,7 +49,7 @@ fzf はコマンドライン上で動作する、高速でインタラクティ�
 
 https://github.com/d-kuro/gwq
 
-`gwq` は worktree を効率的に管理する CLI ツールで、gwq の README でも「[ghq が clone を管理するように、gwq は worktree を管理する](https://github.com/d-kuro/gwq?tab=readme-ov-file#gwq---git-worktree-manager)」と説明されています。fuzzy finder 前提の操作で、作成・切替・削除がしやすい設計です。
+gwq は worktree を効率的に管理する CLI ツールで、gwq の README でも「[ghq が clone を管理するように、gwq は worktree を管理する](https://github.com/d-kuro/gwq?tab=readme-ov-file#gwq---git-worktree-manager)」と説明されています。fuzzy finder 前提の操作で、作成・切替・削除がしやすい設計です。
 
 ![](https://raw.githubusercontent.com/d-kuro/gwq/refs/heads/main/docs/assets/usage.gif)
 
@@ -105,7 +105,7 @@ gwq は [template に Host / Owner / Repository / Branch などの変数が使�
   github.com/shunk031/infra=refactor-tf  # worktree（gwq）
 ```
 
-### “移動” を作る：ghq + fzf で dev コマンドを持つ
+## “移動” を作る：ghq + fzf で dev コマンドを持つ
 
 ghq は `ghq list` コマンドで一覧が取れるので、fzf に渡すだけで「移動 UI」になります。`ghq list --full-path` コマンドを使うとフルパス出力もでき、fzf と組み合わせた “瞬時に移動” が可能になります 🥰。
 
