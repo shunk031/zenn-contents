@@ -7,7 +7,17 @@
 
 VSCode で本レポジトリを開くと devcontainer で執筆環境が立ち上がります。
 
-* [📘 How to use](https://zenn.dev/zenn/articles/zenn-cli-guide)
+- [📘 How to use](https://zenn.dev/zenn/articles/zenn-cli-guide)
+
+## Setup
+
+```shell
+mise install
+```
+
+or you can use `devcontainer` without mise.
+
+## Commands
 
 ```shell
 make exec # to enter the devcontainer
