@@ -9,6 +9,8 @@ published_at: 2026-01-17
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。[`開発環境現状確認`](https://b.hatena.ne.jp/q/%E9%96%8B%E7%99%BA%E7%92%B0%E5%A2%83%E7%8F%BE%E7%8A%B6%E7%A2%BA%E8%AA%8D?target=text&sort=recent&users=1&safe=on)[^1][^2][^3]というタイトルの記事をいくつか見たので、自分の環境も整理してみます。
 
+![](/images/my-dev-env-2026/my-terminal-env.png)
+
 なお、環境構築に使用している dotfiles は以下で公開しています。
 
 https://github.com/shunk031/dotfiles
