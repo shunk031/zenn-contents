@@ -7,7 +7,7 @@ published: true
 published_at: 2026-01-17
 ---
 
-こんにちは [@shunk031](https://twitter.com/shunk031) です。[`開発環境現状確認`](https://b.hatena.ne.jp/q/%E9%96%8B%E7%99%BA%E7%92%B0%E5%A2%83%E7%8F%BE%E7%8A%B6%E7%A2%BA%E8%AA%8D?target=text&sort=recent&users=1&safe=on)[^1][^2][^3]というタイトルの記事をいくつか見たので、自分の環境も整理してみようと思います。
+こんにちは [@shunk031](https://twitter.com/shunk031) です。[`開発環境現状確認`](https://b.hatena.ne.jp/q/%E9%96%8B%E7%99%BA%E7%92%B0%E5%A2%83%E7%8F%BE%E7%8A%B6%E7%A2%BA%E8%AA%8D?target=text&sort=recent&users=1&safe=on)[^1][^2][^3]というタイトルの記事をいくつか見たので、自分の環境も整理してみます。
 
 なお、環境構築に使用している dotfiles は以下で公開しています。
 
@@ -19,7 +19,7 @@ https://github.com/shunk031/dotfiles
 
 私は画像生成やデザイン生成に関する研究開発に取り組む Research Scientist をしています。主に Python を使用しており、普段は手元の Macbook から、リソースリッチな GPU マシンへ接続して研究開発を行うスタイルです。
 
-開発の前提として、ローカルマシンですべてを完結させるのではなく、macOS 上でエディタやターミナルを操作しつつ、計算資源を必要とする処理は GPU サーバ（Ubuntu）側で実行する、という構成になっています。そのため、ローカルとリモートを強く意識したツール選定や設定が多く、一般的な開発環境とは少し違う点もあるかもしれません。
+開発の前提として、ローカルマシンですべてを完結させるのではなく macOS 上でエディタやターミナルを操作しつつ、計算資源を必要とする処理は GPU サーバ（Ubuntu）側で実行するという構成になっています。そのため、ローカルとリモートを強く意識したツール選定や設定が多く、一般的な開発環境とは少し違う点もありそうです。
 
 ## マシン・OS
 
@@ -30,7 +30,7 @@ https://github.com/shunk031/dotfiles
 - ローカル OS: macOS
 - リモート環境: GPU サーバ（Ubuntu）
 
-基本的には後述する VSCode の Remote SSH 機能を使い、ローカルの VSCode から GPU サーバへ接続して開発を行っています。個人端末と会社端末の差異は極力意識しないよう、ツールや設定は可能な限り共通化しています。
+基本的には後述する VSCode の Remote SSH 機能を使い、ローカルの VSCode から GPU サーバへ接続して開発しています。個人端末と会社端末の差異は極力意識しないよう、ツールや設定は可能な限り共通化しています。
 
 ## エディタ
 
@@ -74,7 +74,7 @@ https://x.com/shunk031/status/2003020715466121317?s=20
 
 https://github.com/tmux/tmux
 
-ローカル環境では `C-z` をリーダーキーにし、GPU サーバなどのリモート環境では `C-q` をリーダーキーにして運用しています。tmux の中でさらに tmux を使っている形になるため、この運用をしている人はあまり見かけず、やや異端かもしれません。
+ローカル環境では `C-z` をリーダーキーにし、GPU サーバなどのリモート環境では `C-q` をリーダーキーにして運用しています。tmux の中でさらに tmux を使っている形になるため、この運用をしている人はあまり見かけず、やや異端な使い方をしています。
 
 ## シェル環境
 
@@ -170,7 +170,7 @@ https://shop.yushakobo.jp/products/8979?srsltid=AfmBOoofj8zo9jdg0q3fJqJLPSOoYTsU
 
 https://x.com/shunk031/status/1816083351603925015?s=20
 
-自作キーボードも魅力的ですが、市販品のほうが作りがしっかりしていて持ち運びもしやすく、現在はこの構成に落ち着いています。
+自作キーボードも魅力的ですが、市販品のほうがよりしっかりとした作りになっていて持ち運びもしやすく、現在はこの構成に落ち着いています。
 
 ## モニター
 
@@ -208,7 +208,7 @@ dotfiles は chezmoi で管理しており、`chezmoi init` などをラップ�
 
 https://github.com/shunk031/dotfiles?tab=readme-ov-file#-setup
 
-また、公開リポジトリに push できないプライベートな設定については、別途 private リポジトリを作成し、そちらも chezmoi で管理しています。`setup.sh` 内でその private リポジトリを clone し、環境構築時に反映する構成にしています。
+また、公開リポジトリへ push できないプライベートな設定については、別途 private リポジトリを作成し、そちらも chezmoi で管理しています。 `setup.sh` 内でその private リポジトリを clone し、環境構築時に反映する構成を取っています。
 
 https://github.com/shunk031/dotfiles/blob/v-2026/setup.sh#L171-L178
 
@@ -226,6 +226,8 @@ https://zenn.dev/shunk031/articles/testable-dotfiles-management-with-chezmoi
 
 今後は azooKey の導入や、Claude Code の Hooks の活用方法を改善していきたいと考えています。無理に新しいツールへ移行するのではなく、現在の開発スタイルを維持しながら、少しずつ改善していく予定です。
 
+<!-- textlint-disable -->
+
 [^1]: 開発環境現状確認（2026年） - Don't Repeat Yourself https://blog-dry.com/entry/2026/01/02/145952
 
 [^2]: 開発環境現状確認2026｜laiso https://sizu.me/laiso/posts/3ssbv27ca1o0
@@ -233,3 +235,5 @@ https://zenn.dev/shunk031/articles/testable-dotfiles-management-with-chezmoi
 [^3]: 開発環境現状確認 2026 | It's okay to be weird https://okweird.net/ja/posts/2026/01/my-dev-environment-2026/
 
 [^4]: 博士課程卒業直前に学割で購入した思い出のパソコンくんです。今も現役です
+
+<!-- textlint-enable -->
