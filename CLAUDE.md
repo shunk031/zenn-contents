@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## ディレクトリ構成
 
-- `articles/` - Zenn に公開する記事のマークダウンファイル（.md）を格納
-- `images/` - 記事で使用する画像ファイルを格納（記事ごとにサブディレクトリを作成）
+- `@articles/` - Zenn に公開する記事のマークダウンファイル（.md）を格納
+- `@images/` - 記事で使用する画像ファイルを格納（記事ごとにサブディレクトリを作成）
 
 ## ブログ執筆ルール
 
