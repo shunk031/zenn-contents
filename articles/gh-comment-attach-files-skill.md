@@ -65,7 +65,13 @@ skill の中では [`attach_comment_files.py`](https://github.com/shunk031/dotfi
 }
 ```
 
-この `attachment_url` が取れれば、使い道はいろいろあります。PR コメント本文に差し込んでもいいし、調査メモからリンクしてもいい。エージェントへ「この URL 群を見て比較して」と渡すのもやりやすくなります。
+たとえば今回の記事でも、この skill を使って PR description にスクリーンショットを差し込みました。実際には次のように、概要の下へそのまま実例画像を置けます。
+
+![`gh-comment-attach-files` で PR description にスクリーンショットを添付した例](/images/gh-comment-attach-files-skill/pr-description-example.png)
+
+https://github.com/shunk031/zenn-contents/pull/19
+
+この `attachment_url` が取れると、今回のように PR description やコメントへ画像をそのまま差し込めます。調査メモからリンクしたり、エージェントへ「この URL 群を見て比較して」と渡したりもしやすくなります。
 
 # どういう場面で効くか
 
