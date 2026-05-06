@@ -14,9 +14,9 @@ published: true
 
 https://zenn.dev/shunk031/articles/testable-dotfiles-management-with-chezmoi
 
-本記事では、このスキルが何をするものかと、どういう場面で効くかを紹介します。公開している実体は [`dotfiles` 内の `gh-comment-attach-files`](https://github.com/shunk031/dotfiles/tree/master/home/dot_agents/skills/gh-comment-attach-files) です。以下、仕様の起点になる [`SKILL.md`](https://github.com/shunk031/dotfiles/blob/master/home/dot_agents/skills/gh-comment-attach-files/SKILL.md) を中心に紹介していきます。
+本記事では、このスキルが何をするものかと、どういう場面で効くかを紹介します。公開している実体は [`dotfiles` 内の `gh-comment-attach-files`](https://github.com/shunk031/dotfiles/tree/master/home/dot_config/exact_agents/skills/gh-comment-attach-files) です。以下、仕様の起点になる [`SKILL.md`](https://github.com/shunk031/dotfiles/blob/master/home/dot_config/exact_agents/skills/gh-comment-attach-files/SKILL.md) を中心に紹介していきます。
 
-https://github.com/shunk031/dotfiles/tree/master/home/dot_agents/skills/gh-comment-attach-files
+https://github.com/shunk031/dotfiles/tree/master/home/dot_config/exact_agents/skills/gh-comment-attach-files
 
 # `gh-comment-attach-files` スキルとは
 
@@ -50,7 +50,7 @@ uv run python ~/.agents/skills/gh-comment-attach-files/scripts/attach_comment_fi
 
 前提として、`npx @playwright/cli` が使えることと、`gh` を使って対象の PR / Issue を特定する場合は `gh` が認証済みであること、の 2 点が必要です。会社で GitHub Enterprise などを使っていて SSO が必要な場合でも、スキルから呼ばれたスクリプトでブラウザが立ち上がるので、その場でログインできます。
 
-スキルの中では [`attach_comment_files.py`](https://github.com/shunk031/dotfiles/blob/master/home/dot_agents/skills/gh-comment-attach-files/scripts/attach_comment_files.py) を呼び出して、コメント欄にファイルを添付し、そこで発行された URL だけを拾います。実行したスクリプトから返ってくる JSON は例えばこんな形です。
+スキルの中では [`attach_comment_files.py`](https://github.com/shunk031/dotfiles/blob/master/home/dot_config/exact_agents/skills/gh-comment-attach-files/scripts/attach_comment_files.py) を呼び出して、コメント欄にファイルを添付し、そこで発行された URL だけを拾います。実行したスクリプトから返ってくる JSON は例えばこんな形です。
 
 ```json
 {
