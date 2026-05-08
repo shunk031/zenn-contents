@@ -1,0 +1,19 @@
+title: ""
+summary: ""
+topics: []
+published: false
+price: 0 # 有料の場合200〜5000
+
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - 01-user-interface
+  - 02-sidebar
+  - 03-window
+  - 04-ui-styles
+  - 05-cursor
+  - 06-typography
+  - 07-decorations-and-hints
+  - 08-guides-and-highlights
+  - 09-scrollbars
+  - 10-suggestions
+  - 11-misc
