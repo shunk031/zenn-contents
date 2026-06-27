@@ -4,7 +4,7 @@ emoji: "🧠"
 type: "tech"
 topics: ["llm", "事後学習", "rlhf", "dpo", "強化学習"]
 published: true
-published_at: 2026-06-27
+published_at: 2026-06-28
 ---
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけで終わらない AI エージェントの構築に興味があります。
