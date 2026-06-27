@@ -474,7 +474,7 @@ LLM の事後学習は、教師信号の形から見ると整理しやすいで�
 
 <!-- textlint-disable ja-technical-writing/sentence-length -->
 
-[^api_wrapper]: GPT や Claude の API を叩いて「すごい」と驚けるタスクだけを相手にしているなら、それはそれで幸せです。こちらがやりたいのは、OpenAI や Anthropic が勝手に学習してくれていない、もう少し面倒なタスクです。便利な API を使うにしても、中身の見通しを持ったうえで、振る舞いをどう変えられるのかまで踏み込みたい、という話です。
+[^api_wrapper]: GPT や Claude の API を叩いて「すごい」と驚けるタスクだけを相手にしているなら、それはそれで幸せです。わたしがやりたいのは、OpenAI や Anthropic が勝手に学習してくれていない、もう少し面倒なタスクです。便利な API を使うにしても、中身の見通しを持ったうえで、振る舞いをどう変えられるのかまで踏み込みたい、という話です。
 
 [^chatgpt]:
     OpenAI. "Introducing ChatGPT."
