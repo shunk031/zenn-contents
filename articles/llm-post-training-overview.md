@@ -111,11 +111,15 @@ $$
 <!-- textlint-disable -->
 
 $$
-\text{訓練時: } y_{<t}=y^\ast_{<t}
+\text{訓練時: } y_{<t}
+=
+\underbrace{y^\ast_{<t}}_{\text{模範応答の途中まで}}
 $$
 
 $$
-\text{生成時: } y_{<t}\sim \pi_\theta
+\text{生成時: } y_{<t}
+\sim
+\underbrace{\pi_\theta}_{\text{モデル自身の出力}}
 $$
 
 <!-- textlint-enable -->
