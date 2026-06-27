@@ -56,8 +56,23 @@ const checks = [
   },
   {
     name: "avoid-introspective-scope-transition",
-    pattern: /(気になってきます|考えたいところです|そこを考えると)/,
+    pattern: /(気になってきます|考えたいところです|そこを考えると|そうなると、手元で動かせるモデルを前提に考えたくなります)/,
     message: "導入を筆者の内面描写でつながず、問いとして残すか次の射程説明へ吸収してください。",
+  },
+  {
+    name: "avoid-false-contrast-open-weight",
+    pattern: /一方で、open-weight な/,
+    message: "closed LLM と open-weight LLM の話が対立していないなら「一方で」でつながず、同じ動機へ向かう接続にしてください。",
+  },
+  {
+    name: "avoid-uncertain-lineage-same-as",
+    pattern: /(ChatGPT (?:では|には).{0,40}InstructGPT.{0,40}同じく|InstructGPT.{0,40}と同じく.{0,40}ChatGPT)/,
+    message: "ChatGPT と InstructGPT の関係を「同じく」と断定せず、応用されていると言われている程度に弱めてください。",
+  },
+  {
+    name: "avoid-catalog-like-intro-model-list",
+    pattern: /(Qwen3\[\^|Qwen3 以降\[\^).{0,120}(Gemma 4\[\^|GLM-5\.2\[\^)/,
+    message: "導入でモデル名をカタログのように並べず、主張を短く書いて引用を添えてください。",
   },
   {
     name: "avoid-repair-framing-at-method-intro",

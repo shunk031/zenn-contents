@@ -9,9 +9,9 @@ published_at: 2026-06-27
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけで終わらない AI エージェントの構築に興味があります。
 
-GPT や Claude のような closed LLM はもちろん強いです。一方で、open-weight な大規模言語モデル (Large Language Model; LLM) もかなり性能がよくなっています[^qwen3][^qwen35_omni][^gemma4][^glm52]。そうなると、手元で動かせるモデルを前提に考えたくなります。ただ、自分が自動化したいタスクの手順や評価基準まで、既存モデルに最初から入っているとは限りません。そこで、手元で動かせる LLM を自前で事後学習 (post-training) し、必要な振る舞いを引き出したくなります。[^api_wrapper]
+GPT や Claude のような closed LLM はもちろん強いです。ただ、OpenAI や Anthropic が学習していないタスクになると、急にこちらが欲しい手順や評価基準から外れることがあります。[^api_wrapper] しかも最近は、open-weight な大規模言語モデル (Large Language Model; LLM) もかなり性能がよくなっています[^qwen3][^qwen35_omni][^gemma4][^glm52]。手元で動かせる LLM が強くなると、自前で事後学習 (post-training) し、必要な振る舞いを引き出す選択肢も現実的になります。
 
-事後学習は、ChatGPT[^chatgpt] で指示追従や対話品質を支える技術として広く知られるようになりました。ChatGPT では InstructGPT[^instructgpt] と同じく、人間のフィードバックからの強化学習が使われています。そこから、DeepSeekMath[^deepseekmath] の GRPO や DeepSeek-R1[^deepseek_r1] のように、数学やコードのような検証しやすい課題で推論能力を伸ばす流れが目立つようになりました。さらに最近は、ローカルでも動かせる open-weight モデルの GLM-5.2[^glm52] でも、長い coding agent の軌跡を扱うために critic-based PPO が使われています。ツール利用、探索、検証、修正まで含むエージェントを考えると、Agentic Reinforcement Learning (Agentic RL)[^agentic_rl_survey] の文脈でも事後学習が重要になります。
+事後学習が大きく注目されたきっかけの 1 つは、ChatGPT[^chatgpt] の指示追従や対話品質でした。ChatGPT には、InstructGPT[^instructgpt] で導入された人間のフィードバックからの強化学習が応用されていると言われています。そこから、DeepSeek-R1[^deepseek_r1] の GRPO[^deepseekmath] のように、数学やコードのような検証しやすい課題で推論能力を伸ばす事後学習も目立つようになりました。さらに最近は、ローカルでも動かせる open-weight モデルの GLM-5.2[^glm52] でも、長い coding agent の軌跡を扱うために critic-based PPO が使われています。ツール利用、探索、検証、修正まで含むエージェントを考えると、Agentic Reinforcement Learning (Agentic RL)[^agentic_rl_survey] の文脈でも事後学習が重要になります。
 
 LLM エージェント全般と Agentic RL は、以前のスライドにまとめました。Agentic RL は事後学習とも重なりますが、スライドではエージェントの方法論まで広めに扱っています。この記事では、既存 LLM の振る舞いを変えるためのデータと学習方法を扱います。
 
@@ -474,7 +474,7 @@ LLM の事後学習は、教師信号の形から見ると整理しやすいで�
 
 <!-- textlint-disable ja-technical-writing/sentence-length -->
 
-[^api_wrapper]: GPT や Claude の API を叩いて「すごい」と驚けるタスクだけを相手にしているなら、それはそれで幸せです。わたしがやりたいのは、OpenAI や Anthropic が勝手に学習してくれていない、もう少し面倒なタスクです。便利な API を使うにしても、中身の見通しを持ったうえで、振る舞いをどう変えられるのかまで踏み込みたい、という話です。
+[^api_wrapper]: GPT や Claude の API を叩いて「すごい」と驚けるタスクだけを相手にしているなら、それはそれで幸せです。わたしがやりたいのは、OpenAI や Anthropic が勝手に学習してくれていない、もう少し面倒なタスクです。便利な API を使うにしても、API の外側で驚いて終わりたくはありません。中身の見通しを持ったうえで、振る舞いをどう変えられるのかまで踏み込みたい、という話です。
 
 [^chatgpt]:
     OpenAI. "Introducing ChatGPT."
