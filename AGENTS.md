@@ -3,12 +3,6 @@
 - PR の description は日本語で書く。
 - 記事レビュー中の細かい修正は、ユーザーが `PR 出して`、`PR 更新して`、`commit`、`push` などを明示するまでローカル変更と検証に留める。各指摘ごとに commit / push / PR 更新しない。
 
-## Subagent Progress
-
-- `gh-workflow-manager` などの subagent を待つときに `wait_agent(timeout_ms=180000)` が timeout したら、すぐ `send_input` で現在段階、次の段階、ブロッカーの有無を確認する。
-- 状態確認後は、再び 180 秒待たず、まず 60 秒だけ待つ。60 秒で応答がなければ停滞として扱い、完了済みでない限り agent を閉じて再起動する。
-- timeout 後に追加で待つ場合は、ユーザーへ「問い合わせ済み」「再起動する」「まだ待つ」のどれかを短く報告する。黙って次の長い待機に入らない。
-
 ## Article Editing
 
 - 記事を書く・直す前に `docs/article-editing-guidelines.md` を確認し、略語、引用、用語統一、段落構成の方針を反映する。
