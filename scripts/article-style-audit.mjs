@@ -50,6 +50,36 @@ const checks = [
     message: "分類軸の宣言だけで済ませず、データ形式、評価対象、必要なモデル、更新ループのどれが変わるのかを書いてください。",
   },
   {
+    name: "avoid-reader-error-framing",
+    pattern: /(取り違えやすい|取り違えないように|見誤りやすい|間違えやすい)/,
+    message: "導入で読者のミスを指摘する形にせず、データ形式や訓練構成の関係として書いてください。",
+  },
+  {
+    name: "avoid-introspective-scope-transition",
+    pattern: /(気になってきます|考えたいところです|そこを考えると)/,
+    message: "導入を筆者の内面描写でつながず、問いとして残すか次の射程説明へ吸収してください。",
+  },
+  {
+    name: "avoid-repair-framing-at-method-intro",
+    pattern: /(崩れ|不足).{0,20}直すなら/,
+    message: "手法の章冒頭を後付けの修理として書かず、データ形式と学習対象から入ってください。",
+  },
+  {
+    name: "avoid-mechanical-notation-preface",
+    pattern: /以降の式では、.*次の記号で表します/,
+    message: "記法章の前置きは作業説明で済ませず、複数の手法で同じ記号を使うために一度まとめる、という理由を書いてください。",
+  },
+  {
+    name: "avoid-mixed-bare-noun-list-in-notation-preface",
+    pattern: /(模範応答、報酬、比較、蒸留|報酬、比較、蒸留)/,
+    message: "記法章の前置きで粒度の違う裸名詞を並べず、式で扱う対象として並べてください。",
+  },
+  {
+    name: "avoid-slogan-like-technical-transition",
+    pattern: /なら、[^。\n]*(?:したい|見たい|使いたい|入れたい)。/,
+    message: "章冒頭でキャッチコピー調の短文を置かず、次の手法が使うデータ、分布、目的関数へ直接入ってください。",
+  },
+  {
     name: "avoid-vague-local-data",
     pattern: /(手元のデータ|手元に残っているデータ|手元に残ってるデータ|手元の失敗)/,
     message: "データ、ログ、教師信号を分けて書いてください。",
@@ -286,6 +316,74 @@ function reportLooseTopicShiftAfterExternalMaterial(file, lines) {
   }
 }
 
+function reportPrematureWinnerLoserTerms(file, lines) {
+  const notationIndex = lines.findIndex((line) => /^##\s+共通の記法\s*$/.test(line));
+  if (notationIndex < 0) {
+    return;
+  }
+
+  for (let index = 0; index < notationIndex; index += 1) {
+    if (!/(勝ち応答|負け応答)/.test(lines[index])) {
+      continue;
+    }
+
+    report(
+      file,
+      index + 1,
+      "avoid-premature-winner-loser-terms",
+      "記法導入前に勝ち応答 / 負け応答を出さず、応答同士の比較や選好ペアとして書いてください。",
+      lines[index],
+    );
+  }
+}
+
+function reportRepeatedScopeDeclarations(file, lines) {
+  const scopePattern = /(このメモでは|この記事では|本稿では|本記事では)/;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!scopePattern.test(lines[index])) {
+      continue;
+    }
+
+    for (let nextIndex = index + 1; nextIndex <= Math.min(index + 4, lines.length - 1); nextIndex += 1) {
+      if (!scopePattern.test(lines[nextIndex])) {
+        continue;
+      }
+
+      report(
+        file,
+        nextIndex + 1,
+        "avoid-repeated-scope-declarations",
+        "導入で「このメモでは」「この記事では」などの射程宣言を近接して重ねないでください。役割を分け、射程宣言は 1 箇所へ寄せてください。",
+        lines[nextIndex],
+      );
+    }
+  }
+}
+
+function reportFloatingQuestionParagraph(file, lines) {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (!/^.+どう.+か。$/.test(line)) {
+      continue;
+    }
+
+    const previous = lines[index - 1]?.trim() ?? "";
+    const next = lines[index + 1]?.trim() ?? "";
+    if (previous !== "" || next !== "") {
+      continue;
+    }
+
+    report(
+      file,
+      index + 1,
+      "avoid-floating-question-paragraph",
+      "問いだけの独立段落を残さず、前段へ吸収するか、直後で何を読むのかまで同じ段落でつなげてください。",
+      lines[index],
+    );
+  }
+}
+
 function reportMarkdownSensitiveMathLines(file, lines) {
   let inMathBlock = false;
 
@@ -362,6 +460,9 @@ for (const file of files) {
   const lines = text.split(/\r?\n/);
 
   reportLooseTopicShiftAfterExternalMaterial(file, lines);
+  reportPrematureWinnerLoserTerms(file, lines);
+  reportRepeatedScopeDeclarations(file, lines);
+  reportFloatingQuestionParagraph(file, lines);
   reportMarkdownSensitiveMathLines(file, lines);
   reportMarkdownSensitiveInlineMath(file, text);
 

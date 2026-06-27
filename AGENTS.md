@@ -12,6 +12,7 @@
 - 記事編集で受けた指摘は、表面的な修正例ではなく「なぜ読みにくいか」「次にどう判断するか」まで抽象化して `docs/article-editing-guidelines.md` に短く反映する。
 - 記事を変更したら `npx textlint ./articles/<slug>.md` を実行する。
 - 記事を変更したら `npm run article-style:audit -- ./articles/<slug>.md` を実行し、過去に指摘された表現が再発していないか確認する。
+- `article-style:audit` は既知の表面症状を拾う補助であり、品質保証として扱わない。audit が通っても、修正した段落と前後 1〜2 段落を読み、段落の役割、引用位置、用語の初出、表や図への接続を人間の判断で確認する。
 - 記事レビューでは、ユーザーが明示的に求めない限りスクリーンショット取得や `npx zenn preview` を実行しない。本文修正と lint / audit を優先する。
 - bare URL は埋め込み用途のことがあるため、意図を確認せずに markdown link へ書き換えない。
 - 表記揺れを見つけたら、記事全体で統一する。
