@@ -50,6 +50,11 @@ const checks = [
     message: "著者名に対応する引用は「Shen ら[^...] は」のように置いてください。",
   },
   {
+    name: "cite-named-system-not-sentence-instructgpt",
+    pattern: /InstructGPT (?:では|でも|の).*?\[\^[^\]]+\]/,
+    message: "システム名に対応する引用は「InstructGPT[^...] では」のように置いてください。",
+  },
+  {
     name: "cite-each-method-in-combined-label",
     pattern: /\b[A-Z][A-Z0-9-]*(?: \/ | \+ )[A-Z][A-Z0-9-]*(?: 系)?\[\^[^\]]+\](?:\[\^[^\]]+\])+/,
     message: "複数手法を並べるときは「RLVR[^...] / GRPO[^...]」のように各手法名の直後へ引用を置いてください。",
@@ -95,6 +100,16 @@ function hasNearbyFootnote(line, termIndex) {
   return line.slice(termIndex, termIndex + 100).includes("[^");
 }
 
+function nextNonEmptyLine(lines, startIndex) {
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    if (lines[index].trim() !== "") {
+      return lines[index];
+    }
+  }
+
+  return "";
+}
+
 for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
@@ -117,7 +132,12 @@ for (const file of files) {
     for (let index = 0; index < bodyLines.length; index += 1) {
       const line = bodyLines[index];
 
-      if (line.startsWith("[^")) {
+      if (
+        line.startsWith("[^")
+        || line.startsWith("!")
+        || line.startsWith("*")
+        || nextNonEmptyLine(bodyLines, index).startsWith("!")
+      ) {
         continue;
       }
 
