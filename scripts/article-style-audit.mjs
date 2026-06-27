@@ -30,11 +30,6 @@ const checks = [
     message: "導入で失敗例を連発してから主題へ戻ると、本文へ入る前の寄り道になります。本文の論点を進めない例示は削ってください。",
   },
   {
-    name: "avoid-reversed-llm-post-training-definition",
-    pattern: /事後学習 \(post-training\) によって、既存の大規模言語モデル \(Large Language Model; LLM\)/,
-    message: "初出定義のために情報順を崩さないでください。対象の LLM を先に置き、その処理として事後学習を出してください。",
-  },
-  {
     name: "avoid-subjectless-procedure-ending",
     pattern: /(訓練構成を選びます|手法を選びます|候補を選びます|決めるところから始めます|使う手法は.+決まります|失敗の単位に合わせて組み合わせます)/,
     message: "主語の曖昧な手順語尾を避け、関係として書くか筆者の推奨として書いてください。",
@@ -43,6 +38,16 @@ const checks = [
     name: "avoid-vague-training-data-metaphor",
     pattern: /(学習に戻せるデータ|データを学習に戻す|応答を学習に戻す)/,
     message: "データを学習に戻すという曖昧な比喩ではなく、データ形式と必要な構成要素を書いてください。",
+  },
+  {
+    name: "avoid-vague-signal-location-metaphor",
+    pattern: /(信号が入る場所|信号がどこに入る|どこに信号を入れ|途中の文脈まで信号を入れる)/,
+    message: "教師信号を空間比喩だけで説明せず、訓練データの形、評価する出力の単位、必要なモデルや更新ループを書いてください。",
+  },
+  {
+    name: "avoid-empty-classification-signpost",
+    pattern: /(手法名ではなく[^。\n]*(?:分類して|分類し|読|見)|[^。\n]*(?:軸|粒度|場所|観点)[^。\n]*(?:分類して|分類し)[^。\n]*(?:読|見))/,
+    message: "分類軸の宣言だけで済ませず、データ形式、評価対象、必要なモデル、更新ループのどれが変わるのかを書いてください。",
   },
   {
     name: "avoid-vague-local-data",
@@ -263,6 +268,24 @@ function report(file, lineNumber, name, message, line) {
   console.error(`  ${line}`);
 }
 
+function reportLooseTopicShiftAfterExternalMaterial(file, lines) {
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/(以前|前).*(スライド|記事|資料).*(扱いました|まとめました)/.test(lines[index])) {
+      continue;
+    }
+
+    if (/その後、関心は.*へ移りました/.test(lines[index])) {
+      report(
+        file,
+        index + 1,
+        "avoid-loose-topic-shift-after-external-material",
+        "外部資料から本文へ移るときに、包含関係を確認せず別領域へ移ったように書かないでください。前の資料の範囲と本文の範囲を明示してください。",
+        lines[index],
+      );
+    }
+  }
+}
+
 function reportMarkdownSensitiveMathLines(file, lines) {
   let inMathBlock = false;
 
@@ -298,6 +321,28 @@ function reportMarkdownSensitiveMathLines(file, lines) {
   }
 }
 
+function reportMarkdownSensitiveInlineMath(file, text) {
+  const displayMathPattern = /\$\$\n[\s\S]*?\n\$\$/g;
+  const masked = text.replace(displayMathPattern, (match) => " ".repeat(match.length));
+  const inlineMathPattern = /(?<!\$)\$([^$\n]+?)\$(?!\$)/g;
+  let match;
+
+  while ((match = inlineMathPattern.exec(masked)) !== null) {
+    if (!/[<>]/.test(match[1])) {
+      continue;
+    }
+
+    const lineNumber = text.slice(0, match.index).split(/\r?\n/).length;
+    report(
+      file,
+      lineNumber,
+      "avoid-markdown-sensitive-inline-math",
+      "GitHub の数式表示では inline math 内の < や > が HTML と衝突して崩れることがあります。\\lt / \\gt を使ってください。",
+      match[0],
+    );
+  }
+}
+
 function summarySectionStart(lines) {
   return lines.findIndex((line) => line.trim() === "## まとめ");
 }
@@ -306,7 +351,9 @@ for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
 
+  reportLooseTopicShiftAfterExternalMaterial(file, lines);
   reportMarkdownSensitiveMathLines(file, lines);
+  reportMarkdownSensitiveInlineMath(file, text);
 
   for (const check of checks) {
     for (let index = 0; index < lines.length; index += 1) {
