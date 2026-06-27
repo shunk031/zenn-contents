@@ -13,6 +13,7 @@ VSCode で本レポジトリを開くと devcontainer で執筆環境が立ち�
 
 ```shell
 mise install
+lefthook install
 ```
 
 or you can use `devcontainer` without mise.

@@ -1,0 +1,21 @@
+pre-commit:
+  parallel: true
+  commands:
+    textlint-articles:
+      glob: "articles/*.md"
+      run: npx textlint {staged_files}
+
+    textlint-docs:
+      glob: "docs/*.md"
+      run: npx textlint {staged_files}
+
+    article-style-audit:
+      glob: "articles/*.md"
+      run: npm run article-style:audit -- {staged_files}
+
+    article-style-audit-syntax:
+      glob: "scripts/article-style-audit.mjs"
+      run: node --check scripts/article-style-audit.mjs
+
+    diff-check:
+      run: git diff --cached --check

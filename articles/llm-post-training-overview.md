@@ -9,7 +9,7 @@ published_at: 2026-06-27
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけで終わらない AI エージェントの構築に興味があります。
 
-GPT や Claude のような closed LLM はもちろん強いです。ただ、OpenAI や Anthropic が学習していないタスクになると、急にこちらが欲しい手順や評価基準から外れることがあります。[^api_wrapper] しかも最近は、open-weight な大規模言語モデル (Large Language Model; LLM) もかなり性能がよくなっています[^qwen3][^qwen35_omni][^gemma4][^glm52]。手元で動かせる LLM が強くなると、自前で事後学習 (post-training) し、必要な振る舞いを引き出す選択肢も現実的になります。
+GPT や Claude のような closed な大規模言語モデル (Large Language Model; LLM)[^chatgpt] はもちろん強いです。ただ、OpenAI や Anthropic が学習していないタスクになると、急にこちらが欲しい手順や評価基準から外れることがあります。[^api_wrapper] 最近は open-weight な LLM もかなり性能がよくなっています[^qwen3][^qwen35_omni][^gemma4][^glm52]。手元で動かせる LLM が強くなると、自前で事後学習 (post-training) し、必要な振る舞いを引き出す選択肢も現実的になります。
 
 事後学習が大きく注目されたきっかけの 1 つは、ChatGPT[^chatgpt] の指示追従や対話品質でした。ChatGPT には、InstructGPT[^instructgpt] で導入された人間のフィードバックからの強化学習が応用されていると言われています。そこから、DeepSeek-R1[^deepseek_r1] の GRPO[^deepseekmath] のように、数学やコードのような検証しやすい課題で推論能力を伸ばす事後学習も目立つようになりました。さらに最近は、ローカルでも動かせる open-weight モデルの GLM-5.2[^glm52] でも、長い coding agent の軌跡を扱うために critic-based PPO が使われています。ツール利用、探索、検証、修正まで含むエージェントを考えると、Agentic Reinforcement Learning (Agentic RL)[^agentic_rl_survey] の文脈でも事後学習が重要になります。
 
