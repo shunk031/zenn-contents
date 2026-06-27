@@ -30,6 +30,11 @@ const checks = [
     message: "導入で失敗例を連発してから主題へ戻ると、本文へ入る前の寄り道になります。本文の論点を進めない例示は削ってください。",
   },
   {
+    name: "avoid-reversed-llm-post-training-definition",
+    pattern: /事後学習 \(post-training\) によって、既存の大規模言語モデル \(Large Language Model; LLM\)/,
+    message: "初出定義のために情報順を崩さないでください。対象の LLM を先に置き、その処理として事後学習を出してください。",
+  },
+  {
     name: "avoid-subjectless-procedure-ending",
     pattern: /(訓練構成を選びます|手法を選びます|候補を選びます|決めるところから始めます|使う手法は.+決まります|失敗の単位に合わせて組み合わせます)/,
     message: "主語の曖昧な手順語尾を避け、関係として書くか筆者の推奨として書いてください。",
