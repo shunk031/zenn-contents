@@ -7,7 +7,7 @@ published: true
 published_at: 2026-06-27
 ---
 
-こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけではない AI エージェントの構築に興味があります。API を叩くだけでも便利ですが、中身の見通しを持ったうえで、もう少し踏み込んでいろいろやりたい気持ちがあります。[^api_wrapper] 本記事では、既存の大規模言語モデル (Large Language Model; LLM) の事後学習 (post-training) を、失敗へ返せる教師信号の違いから整理します。
+こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけではない AI エージェントの構築に興味があります。API を叩くだけでも便利ですが、中身の見通しを持ったうえで、もう少し踏み込んでいろいろやりたい気持ちがあります。[^api_wrapper] 本記事では、既存の大規模言語モデル (Large Language Model; LLM) の事後学習 (post-training) を、どの教師信号を使うかという観点から整理します。
 
 関連して、以前まとめたスライドも載せます。1 本目は LLM エージェント全般、2 本目は Agentic Reinforcement Learning (Agentic RL)[^agentic_rl_survey] の整理です。
 
@@ -15,7 +15,7 @@ https://speakerdeck.com/shunk031/large-language-model-agent-a-survey-on-methodol
 
 https://speakerdeck.com/shunk031/the-landscape-of-agentic-reinforcement-learning-for-llms-a-survey
 
-事後学習の手法は増えていますが、名前だけを追っても関係が見えにくいです。自分がまず見たいのは、失敗した応答に何を返せるかです。模範応答なのか、人間評価や比較データなのか、検証できる正誤なのか、生成途中の教師分布なのか。そこから逆算すると、必要なデータや訓練構成を切り分けやすくなります。
+事後学習の手法は増えていますが、名前だけを追っても関係が見えにくいです。自分がまず見たいのは、学習時に何を教師信号として使うかです。模範応答なのか、人間評価や比較データなのか、検証できる正誤なのか、生成途中の教師分布なのか。そこから逆算すると、必要なデータや訓練構成を切り分けやすくなります。
 
 教師信号が変わると、モデルの更新のされ方も変わります。Shen ら[^opd_geometry] の比較では、模範応答で学ぶ方法、検証可能な報酬で学ぶ方法、オンポリシー蒸留が、それぞれ別の軌跡をたどる更新として描かれています。
 
