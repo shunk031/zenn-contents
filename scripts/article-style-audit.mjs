@@ -11,8 +11,68 @@ const files = targets.length > 0 ? targets : fs.readdirSync("articles")
 const checks = [
   {
     name: "avoid-vague-fillers",
-    pattern: /(だいたい|ざっくり|豊かなフィードバック|一言で整理すると|次のようになります|以下の解説もわかりやすいです|追う必要があります|次の目的を大きくします|距離を小さくします|補助線)/,
+    pattern: /(だいたい|ざっくり|豊かなフィードバック|一言で整理すると|次のようになります|以下の解説もわかりやすいです|追う必要があります|次の目的を大きくします|距離を小さくします|補助線|下の表では|最初の候補はこうなります|対応する手法を並べます|左の列から読むと早いです|教えません|教えてくれます|素直な出発点になります|自然な出発点になります|候補になります)/,
     message: "ぼかし語や定型句を具体的な表現に直してください。",
+  },
+  {
+    name: "avoid-abstract-starting-point",
+    pattern: /(まず\s+[A-Z][A-Z0-9-]*\s+が自然です|[A-Z][A-Z0-9-]*\s+は.*出発点になります)/,
+    message: "手法を開始位置として評価せず、どのデータで何を学習に入れるのかを書いてください。",
+  },
+  {
+    name: "avoid-author-side-navigation",
+    pattern: /(その入り口として|入り口として|読み直します|先に置きます|置いておきます|この記事では、以下|本記事では、以下|そこから訓練構成を選びます|このあと扱う手法)/,
+    message: "書き手側の段取りではなく、読者が受け取る論点として書いてください。",
+  },
+  {
+    name: "avoid-subjectless-procedure-ending",
+    pattern: /(訓練構成を選びます|手法を選びます|候補を選びます|決めるところから始めます|使う手法は.+決まります|失敗の単位に合わせて組み合わせます)/,
+    message: "主語の曖昧な手順語尾を避け、関係として書くか筆者の推奨として書いてください。",
+  },
+  {
+    name: "avoid-vague-training-data-metaphor",
+    pattern: /(学習に戻せるデータ|データを学習に戻す|応答を学習に戻す)/,
+    message: "データを学習に戻すという曖昧な比喩ではなく、データ形式と必要な構成要素を書いてください。",
+  },
+  {
+    name: "avoid-vague-local-data",
+    pattern: /(手元のデータ|手元に残っているデータ|手元に残ってるデータ|手元の失敗)/,
+    message: "データ、ログ、教師信号を分けて書いてください。",
+  },
+  {
+    name: "avoid-inconsistent-acronym-variant-order",
+    pattern: /(SDPO\s+(?:自己蒸留型|区間型)|(?:自己蒸留型|区間型) SDPO.*SDPO\s+(?:自己蒸留型|区間型)|SDPO\s+(?:自己蒸留型|区間型).*(?:自己蒸留型|区間型) SDPO)/,
+    message: "同じ略語の派生名は、修飾語の位置をそろえてください。",
+  },
+  {
+    name: "avoid-fragment-question-list",
+    pattern: /なのか[、。].*なのか[、。]/,
+    message: "「A なのか、B なのか」の断片列挙で済ませず、データ形式と訓練構成の対応を書いてください。",
+  },
+  {
+    name: "avoid-empty-taxonomy-recap",
+    pattern: /[A-Za-z0-9]+(?:、[A-Za-z0-9]+){2,} は、.+(分けられます|分類できます|整理できます)。/,
+    message: "手法列挙の再分類で締めず、次に必要な差分を書くか削除してください。",
+  },
+  {
+    name: "avoid-weak-link-bridge",
+    pattern: /(次の記事は|次の記事が詳しいです|以下の記事では|話が扱われています|参考になります)/,
+    message: "外部リンク前は、リンク先が本文のどの論点を補うのかを書いてください。",
+  },
+  {
+    name: "avoid-medium-as-link-bridge-subject",
+    pattern: /(note|ブログ記事|ブログ|Qiita|Zenn)(?: の)?(?:解説|記事)?では、(この|その|以下)/,
+    message: "外部リンク前で媒体名を急に主語にせず、直前の論点とリンク先が補う内容をつないでください。",
+  },
+  {
+    name: "avoid-abstract-evaluation-ending",
+    pattern: /(追いやすくなります|整理しやすくなります|見えます|分かりやすくなります|扱いやすいです|使いやすいです)/,
+    message: "評価で閉じず、何が減る・何を分ける・何を判断できるのかを書いてください。",
+  },
+  {
+    name: "avoid-anthropomorphic-distillation-visibility",
+    pattern: /(教師側|生徒側).{0,40}(見られます|見られません|見えます|見えません)/,
+    message: "自己蒸留ではモデルを人扱いせず、追加情報を条件にする分布として書いてください。",
   },
   {
     name: "avoid-leading-nanode",
@@ -69,6 +129,11 @@ const checks = [
     pattern: /GRPO \/ RLVR|GRPO や RLVR|GRPO および RLVR/,
     message: "RLVR は広い枠組み、GRPO は具体的な方策更新なので、RLVR / GRPO の順にしてください。",
   },
+  {
+    name: "avoid-mixed-method-series-label",
+    pattern: /[A-Z][A-Z0-9-]* \/ [ぁ-んァ-ヶ一-龠ー]+ \/ [A-Z][A-Z0-9-]*/u,
+    message: "略語列挙に日本語の一般名詞を混ぜず、粒度と表記を揃えてください。",
+  },
 ];
 
 let failed = false;
@@ -110,6 +175,88 @@ function nextNonEmptyLine(lines, startIndex) {
   return "";
 }
 
+function headingText(line) {
+  const match = /^##\s+(.+)$/.exec(line);
+  return match ? match[1].trim() : null;
+}
+
+function nonEmptyLineCount(lines, startIndex, endIndex) {
+  return lines
+    .slice(startIndex + 1, endIndex)
+    .filter((line) => line.trim() !== "")
+    .length;
+}
+
+function isTableLine(line) {
+  return /^\s*\|.*\|\s*$/.test(line);
+}
+
+function isFormalMethodIntroductionWithoutCitation(line) {
+  if (isTableLine(line) || line.startsWith("[^")) {
+    return false;
+  }
+
+  const formalIntroPattern = /[A-Za-z][A-Za-z -]+ \([A-Z][A-Z0-9-]+\)(?:\[\^[^\]]+\])?\s+は/;
+  const recommendedIntroPattern = /[ぁ-んァ-ヶ一-龠ー]+ \([A-Za-z][A-Za-z -]+; [A-Z][A-Z0-9-]+\)(?:\[\^[^\]]+\])?\s+は/u;
+  const match = formalIntroPattern.exec(line) ?? recommendedIntroPattern.exec(line);
+
+  if (!match) {
+    return false;
+  }
+
+  return !line.slice(match.index, match.index + match[0].length + 20).includes("[^");
+}
+
+function previousNonEmptyLine(lines, startIndex) {
+  for (let index = startIndex - 1; index >= 0; index -= 1) {
+    if (lines[index].trim() !== "") {
+      return { index, line: lines[index] };
+    }
+  }
+
+  return { index: -1, line: "" };
+}
+
+function isPlainTextLine(line) {
+  return line.trim() !== ""
+    && !line.startsWith("#")
+    && !line.startsWith("|")
+    && !line.startsWith("!")
+    && !line.startsWith("[^")
+    && !line.startsWith("http")
+    && !line.startsWith("<!--")
+    && !line.startsWith("$$")
+    && !line.startsWith("- ")
+    && !/^\d+\.\s/.test(line);
+}
+
+function countMethodLikeItems(line) {
+  const acronyms = line.match(/\b[A-Z][A-Z0-9-]{1,}\b/g) ?? [];
+  const quotedTerms = line.match(/`[^`]+`/g) ?? [];
+  const japaneseListItems = line.match(/[A-Za-z0-9ぁ-んァ-ヶ一-龠ー]+(?:、[A-Za-z0-9ぁ-んァ-ヶ一-龠ー]+){2,}/gu) ?? [];
+  return acronyms.length + quotedTerms.length + japaneseListItems.length * 3;
+}
+
+function isEmptyTaxonomyRecapBeforeHeading(line) {
+  if (!isPlainTextLine(line)) {
+    return false;
+  }
+
+  return countMethodLikeItems(line) >= 3
+    && /(分けられます|分類できます|整理できます|整理しやすくなります|見通せます|見えます)。$/.test(line)
+    && !/(次|ここから|以降|ただし|一方|このため|そのため)/.test(line);
+}
+
+function report(file, lineNumber, name, message, line) {
+  failed = true;
+  console.error(`${file}:${lineNumber}: ${name}: ${message}`);
+  console.error(`  ${line}`);
+}
+
+function summarySectionStart(lines) {
+  return lines.findIndex((line) => line.trim() === "## まとめ");
+}
+
 for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
@@ -117,9 +264,99 @@ for (const file of files) {
   for (const check of checks) {
     for (let index = 0; index < lines.length; index += 1) {
       if (check.pattern.test(lines[index])) {
-        failed = true;
-        console.error(`${file}:${index + 1}: ${check.name}: ${check.message}`);
-        console.error(`  ${lines[index]}`);
+        report(file, index + 1, check.name, check.message, lines[index]);
+      }
+    }
+  }
+
+  const h2s = lines
+    .map((line, index) => ({ index, text: headingText(line) }))
+    .filter((heading) => heading.text !== null);
+
+  for (let index = 0; index < h2s.length - 1; index += 1) {
+    const current = h2s[index];
+    const next = h2s[index + 1];
+
+    if (
+      current.text === "背景"
+      && /全体像/.test(next.text)
+      && nonEmptyLineCount(lines, current.index, next.index) <= 6
+    ) {
+      report(
+        file,
+        current.index + 1,
+        "avoid-short-background-before-overview",
+        "短い「背景」が直後の「全体像」と役割重複していないか確認し、必要なら統合してください。",
+        lines[current.index],
+      );
+    }
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^#{2,3}\s+/.test(lines[index])) {
+      continue;
+    }
+
+    const previous = previousNonEmptyLine(lines, index);
+    if (previous.index >= 0 && isEmptyTaxonomyRecapBeforeHeading(previous.line)) {
+      report(
+        file,
+        previous.index + 1,
+        "avoid-empty-section-ending-recap",
+        "見出し直前で分類をなぞるだけの文になっています。次の節へ渡す差分がなければ削除してください。",
+        previous.line,
+      );
+    }
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!isTableLine(lines[index]) || (index > 0 && isTableLine(lines[index - 1]))) {
+      continue;
+    }
+
+    const previous = previousNonEmptyLine(lines, index);
+
+    if (
+      previous.line !== ""
+      && /(並べます|対応させています|見ると早い|候補|こうなります|下の表|以下の表|手法名より)/.test(previous.line)
+    ) {
+      report(
+        file,
+        previous.index + 1,
+        "avoid-table-author-instruction",
+        "表の前置きが配置説明になっています。表が本文のどの論点を引き受けるのかを書いてください。",
+        previous.line,
+      );
+    }
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (isFormalMethodIntroductionWithoutCitation(lines[index])) {
+      report(
+        file,
+        index + 1,
+        "cite-formal-method-introduction",
+        "本文で手法を正式名称つきで導入する箇所には引用を置いてください。表の引用だけで代用しないでください。",
+        lines[index],
+      );
+    }
+  }
+
+  const summaryStart = summarySectionStart(lines);
+  if (summaryStart >= 0) {
+    for (let index = summaryStart + 1; index < lines.length; index += 1) {
+      if (/^#{1,2}\s+/.test(lines[index])) {
+        break;
+      }
+
+      if (/(最後は、|から考えます|見えるなら|作れます|先に決めるのがよいと思っています)/.test(lines[index])) {
+        report(
+          file,
+          index + 1,
+          "avoid-procedural-summary",
+          "まとめを手順書調で閉じず、冒頭の動機へ戻して筆者の判断を書いてください。",
+          lines[index],
+        );
       }
     }
   }
@@ -148,9 +385,13 @@ for (const file of files) {
       }
 
       if (!hasNearbyFootnote(line, match.index)) {
-        failed = true;
-        console.error(`${file}:${index + 1}: cite-first-acronym-use: 略語の本文初出では、正式名称と引用を同じ箇所に置いてください。`);
-        console.error(`  ${line}`);
+        report(
+          file,
+          index + 1,
+          "cite-first-acronym-use",
+          "略語の本文初出では、正式名称と引用を同じ箇所に置いてください。",
+          line,
+        );
       }
 
       break;
