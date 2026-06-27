@@ -16,6 +16,8 @@ mise install
 lefthook install
 ```
 
+`lefthook install` を実行すると、commit 前に textlint と記事の style audit が走ります。
+
 or you can use `devcontainer` without mise.
 
 ## Commands
