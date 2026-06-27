@@ -7,7 +7,7 @@ published: true
 published_at: 2026-06-27
 ---
 
-こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけではない AI エージェントの構築に興味があります。API を叩くだけでも便利ですが、失敗した挙動をプロンプトで吸収するのか、データ、報酬、蒸留で直すのかまでは判断しにくいです。[^api_wrapper] 本記事では、既存の大規模言語モデル (Large Language Model; LLM) の事後学習 (post-training) を、失敗へ返せる教師信号の違いから整理します。
+こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけではない AI エージェントの構築に興味があります。API を叩くだけでも便利ですが、中身の見通しを持ったうえで、もう少し踏み込んでいろいろやりたい気持ちがあります。[^api_wrapper] 本記事では、既存の大規模言語モデル (Large Language Model; LLM) の事後学習 (post-training) を、失敗へ返せる教師信号の違いから整理します。
 
 関連して、以前まとめたスライドも載せます。1 本目は LLM エージェント全般、2 本目は Agentic Reinforcement Learning (Agentic RL)[^agentic_rl_survey] の整理です。
 
