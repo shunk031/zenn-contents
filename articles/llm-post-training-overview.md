@@ -69,10 +69,10 @@ https://nrehiew.github.io/blog/sft_rl_opd/
 ここで $\pi_\theta$ は、入力 $x$ に対して応答 $y$ を出す確率分布です。強化学習の言葉では、この確率分布を方策と呼びます。LLM では、ここまでの文脈から次に出すトークンを選ぶ確率分布として扱います。応答全体の確率は、各時点の出力確率の積として分解できます。
 
 $$
+\begin{aligned}
 \pi_\theta(y \mid x)
-=
-\prod_{t=1}^{T}
-\pi_\theta(y_t \mid x, y_{<t})
+&= \prod_{t=1}^{T} \pi_\theta(y_t \mid x, y_{<t})
+\end{aligned}
 $$
 
 ## 模範応答から学ぶ
@@ -84,13 +84,14 @@ $$
 <!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{SFT}}(\theta)
-= - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}}
-\left(
+&= - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}}
+\left[
 \sum_{t=1}^{T}
-\log
-\pi_\theta(y_t^\ast \mid x, y_{<t}^\ast)
-\right)
+\log \pi_\theta(y_t^\ast \mid x, y_{<t}^\ast)
+\right]
+\end{aligned}
 $$
 
 <!-- textlint-enable -->
@@ -107,33 +108,41 @@ SFT の信号は、基本的に模範応答上の文脈に限られます。訓�
 
 強化学習では、モデルが自分で応答を生成し、その応答に点数をつけます。その点数が高くなるようにモデルを更新します。もっとも単純には、期待報酬 $J(\theta)$ を最大化します。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 J(\theta)
-=
+&=
 \mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi_\theta(\cdot \mid x)}
-\left(
-r(x, y)
-\right)
+\left[ r(x, y) \right]
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 強化学習で上げたいのは、モデルが自分で生成した応答の期待報酬です。ただし報酬だけを見ると、基準モデルから大きく外れた応答も選ばれやすくなります。期待報酬を上げつつ基準モデルからのずれを抑えるために、Kullback-Leibler (KL) 正則化を入れることが多いです。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \max_\theta
 \mathbb{E}_{x \sim \mathcal{D}}
-\left(
+&\left(
 \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}
-\left[
-r(x, y)
-\right]
-- \beta
+\left[ r(x, y) \right]
+{}- \beta
 \mathrm{KL}
 \left(
 \pi_\theta(\cdot \mid x)
 \| \pi_{\mathrm{ref}}(\cdot \mid x)
 \right)
 \right)
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 後半の KL 項は、現在のモデルが基準モデルからどれくらい離れたかを表します。$\beta$ は、その離れ具合をどれくらい強く抑えるかを決める係数です。
 
@@ -145,60 +154,68 @@ InstructGPT で使われたような RLHF 構成では、この報酬 $r(x, y)$ 
 
 同じ問いに対する複数の応答を人間に比べてもらい、勝ち応答 $y_w$ と負け応答 $y_l$ の組を作ります。報酬モデル $r_\phi(x, y)$ は、勝ち応答に高い点をつけるように学習します。
 
+<!-- textlint-disable -->
+
 $$
-P(y_w \succ y_l \mid x)
-=
-\sigma
-\left(
-r_\phi(x, y_w) - r_\phi(x, y_l)
-\right)
+P(y_w \succ y_l \mid x) = \sigma \left( r_\phi(x, y_w) - r_\phi(x, y_l) \right)
 $$
+
+<!-- textlint-enable -->
 
 ここで $\sigma$ は、報酬差を勝ち応答の確率として読める値に写す活性化関数です。
 
 報酬モデルの損失関数は、たとえば次のように書けます。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{RM}}(\phi)
-=
-- \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
-\left(
-\log
-\sigma
+&= - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
+\left[
+\log \sigma
 \left(
 r_\phi(x, y_w) - r_\phi(x, y_l)
 \right)
-\right)
+\right]
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 この式は、$r_\phi(x, y_w) > r_\phi(x, y_l)$ となるように報酬モデルを学習している、と読めます。
 
 PPO は、この方策更新を安定させるための代表的な手法です。古い方策 $\pi_{\mathrm{old}}$ と新しく更新したい方策 $\pi_\theta$ の確率比を、次のように定義します。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \rho_t(\theta)
-=
-\frac{
-\pi_\theta(y_t \mid x, y_{<t})
-}{
-\pi_{\mathrm{old}}(y_t \mid x, y_{<t})
-}
+&=
+\frac{\pi_\theta(y_t \mid x, y_{<t})}
+{\pi_{\mathrm{old}}(y_t \mid x, y_{<t})}
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 この比が大きすぎると、モデルは急に変わりすぎます。PPO では、この比を一定範囲で切ります。これにより、更新を「少しずつ変える」形にします。利得を $A_t$、クリップ幅を $\epsilon$ とします。このとき、よく見る目的関数は次の形です。
 
 <!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{PPO}}(\theta)
-= \mathbb{E}_t
-\left(
+&= \mathbb{E}_t
+\left[
 \min
 \left(
 \rho_t(\theta) A_t,
 \mathrm{clip}(\rho_t(\theta), 1 - \epsilon, 1 + \epsilon) A_t
 \right)
-\right)
+\right]
+\end{aligned}
 $$
 
 <!-- textlint-enable -->
@@ -215,83 +232,90 @@ $$
 
 DPO が捨てたのは、明示的な報酬モデルと PPO の更新ループです。直接選好最適化 (Direct Preference Optimization; DPO)[^dpo] は、勝ち応答と負け応答の比較データから直接モデルを調整します。出発点は、RLHF でよく使う KL 正則化つきの目的関数です。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \max_\pi
 \mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi(\cdot \mid x)}
-\left(
+&\left(
 r(x, y)
--
-\beta
-\log
-\frac{\pi(y \mid x)}
-{\pi_{\mathrm{ref}}(y \mid x)}
+{}- \beta
+\log \frac{\pi(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)}
 \right)
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 この最適解は、次の形になることが知られています。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \pi^\star(y \mid x)
-=
+&=
 \frac{1}{Z(x)}
 \pi_{\mathrm{ref}}(y \mid x)
 \exp
 \left(
 \frac{1}{\beta}r(x, y)
 \right)
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 ここで $Z(x)$ は正規化定数です。この式を変形すると、報酬は次のように書けます。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 r(x, y)
-=
+&=
 \beta
-\log
-\frac{\pi^\star(y \mid x)}
-{\pi_{\mathrm{ref}}(y \mid x)}
-+
+\log \frac{\pi^\star(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)}
+{}+
 \beta \log Z(x)
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 DPO は、この関係を使って、明示的な報酬モデル $r_\phi(x, y)$ を学習せずに済ませます。勝ち応答 $y_w$ と負け応答 $y_l$ があるとき、DPO の損失は次のように書けます。
 
-<!-- textlint-disable ja-technical-writing/sentence-length -->
+<!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{DPO}}(\theta)
-= - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
-\left(
+&= - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
+\left[
 \log \sigma
 \left(
-\beta
-\log
-\frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)}
-- \beta
-\log
-\frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
+\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)}
+{}- \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
 \right)
-\right)
+\right]
+\end{aligned}
 $$
 
-<!-- textlint-enable ja-technical-writing/sentence-length -->
+<!-- textlint-enable -->
 
 DPO が上げたいのは、絶対的な報酬ではなく、基準モデルに対する勝ち応答と負け応答の差です。報酬モデルを別に持たず、訓練中のサンプリングも不要なので、PPO より訓練構成を減らせます。
 
 より細かく見ると、勝ち応答 $y_w$ では次の量が大きくなるように更新します。
 
 $$
-\log
-\frac{\pi_\theta(y_w \mid x)}
-{\pi_{\mathrm{ref}}(y_w \mid x)}
+\log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)}
 $$
 
 負け応答 $y_l$ では、対応する量が小さくなるように更新します。
 
 $$
-\log
-\frac{\pi_\theta(y_l \mid x)}
-{\pi_{\mathrm{ref}}(y_l \mid x)}
+\log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
 $$
 
 DPO は、基準モデルに対して勝ち応答の相対対数確率を上げ、負け応答の相対対数確率を下げます。
@@ -304,88 +328,98 @@ DPO の後は、報酬モデル、基準モデル、ペア比較のどれを残�
 
 Identity Preference Optimization (IPO)[^ipo] は、DPO の近似がどの条件で崩れやすいかを、より一般的な選好学習の枠組みから見直します。DPO では、次の差を大きくし続けやすいと解釈できます。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \Delta_\theta
-=
-\log
-\frac{\pi_\theta(y_w \mid x)}
-{\pi_{\mathrm{ref}}(y_w \mid x)}
--
-\log
-\frac{\pi_\theta(y_l \mid x)}
-{\pi_{\mathrm{ref}}(y_l \mid x)}
+&=
+\log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)}
+{}-
+\log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 IPO では、この差を無限に大きくするのではなく、有限の目標値に近づけます。代表的には、次のような二乗誤差として書けます。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{IPO}}
-=
+&=
 \mathbb{E}
+\left[
 \left(
-\left(
-\Delta_\theta
--
-\frac{1}{2\beta}
+\Delta_\theta - \frac{1}{2\beta}
 \right)^2
-\right)
+\right]
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 オッズ比選好最適化 (Odds Ratio Preference Optimization; ORPO)[^orpo] は、SFT と選好最適化を分けません。好ましい応答を学びながら、好ましくない応答のオッズを下げます。記号を単純化して $\mathrm{odds}_\theta(y \mid x)=\pi_\theta(y \mid x)/(1-\pi_\theta(y \mid x))$ と置くと、ORPO の選好項はオッズ比の差を使います。
 
-<!-- textlint-disable ja-technical-writing/sentence-length -->
+<!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{OR}}
-=
-- \mathbb{E}
-\log
-\sigma
+&= - \mathbb{E}
+\log \sigma
 \left(
-\log
-\frac{\mathrm{odds}_\theta(y_w \mid x)}
+\log \frac{\mathrm{odds}_\theta(y_w \mid x)}
 {\mathrm{odds}_\theta(y_l \mid x)}
 \right)
+\end{aligned}
 $$
 
-<!-- textlint-enable ja-technical-writing/sentence-length -->
+<!-- textlint-enable -->
 
 全体としては、SFT 的な負の対数尤度とこの選好項を足した形で書けます。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{ORPO}}
-=
+&=
 \mathcal{L}_{\mathrm{NLL}}
-+
-\lambda
-\mathcal{L}_{\mathrm{OR}}
+{}+ \lambda \mathcal{L}_{\mathrm{OR}}
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 DPO は基準モデルを使いますが、ORPO はそれを省くのが特徴です。
 
 単純選好最適化 (Simple Preference Optimization; SimPO)[^simpo] は、基準モデルを使いません。応答長で正規化した平均対数確率を暗黙の報酬として使います。好ましい応答の平均対数確率が、好ましくない応答を余白 $\gamma$ だけ上回るようにします。
 
+<!-- textlint-disable -->
+
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{SimPO}}
-=
-- \mathbb{E}
-\log
-\sigma
+&= - \mathbb{E}
+\log \sigma
 \left(
 \beta
 \left(
 \frac{1}{|y_w|}
-\log
-\pi_\theta(y_w \mid x)
--
+\log \pi_\theta(y_w \mid x)
+{}-
 \frac{1}{|y_l|}
-\log
-\pi_\theta(y_l \mid x)
+\log \pi_\theta(y_l \mid x)
 \right)
--
-\gamma
+{}- \gamma
 \right)
+\end{aligned}
 $$
+
+<!-- textlint-enable -->
 
 Kahneman-Tversky 最適化 (Kahneman-Tversky Optimization; KTO)[^kto] は、ペア比較を作る負担を避けるために、望ましいかどうかの二値信号から学ぶ方向です。「この応答は望ましい」「この応答は望ましくない」という単独評価を扱うため、人間は損失に敏感で利益には鈍感、という行動経済学の考え方を目的関数に入れます。
 
@@ -398,23 +432,19 @@ Kahneman-Tversky 最適化 (Kahneman-Tversky Optimization; KTO)[^kto] は、ペ�
 <!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{SDPO\text{-}seg}}
-=
-- \mathbb{E}
-\log
-\sigma
+&= - \mathbb{E}
+\log \sigma
 \left(
 \beta
 \left(
-\log
-\frac{\pi_\theta(g_w \mid c)}
-{\pi_{\mathrm{ref}}(g_w \mid c)}
--
-\log
-\frac{\pi_\theta(g_l \mid c)}
-{\pi_{\mathrm{ref}}(g_l \mid c)}
+\log \frac{\pi_\theta(g_w \mid c)}{\pi_{\mathrm{ref}}(g_w \mid c)}
+{}-
+\log \frac{\pi_\theta(g_l \mid c)}{\pi_{\mathrm{ref}}(g_l \mid c)}
 \right)
 \right)
+\end{aligned}
 $$
 
 <!-- textlint-enable -->
@@ -432,9 +462,7 @@ GRPO で欲しいのは、価値推定器ではなく、同じ問いに対する
 同じ問い $x$ に対して、$G$ 個の応答を生成します。
 
 $$
-y_1, y_2, \dots, y_G
-\sim
-\pi_{\mathrm{old}}(\cdot \mid x)
+y_1, y_2, \dots, y_G \sim \pi_{\mathrm{old}}(\cdot \mid x)
 $$
 
 それぞれに報酬を与えます。
@@ -448,25 +476,25 @@ $$
 <!-- textlint-disable -->
 
 $$
-A_i =
-\frac{
-r_i - \mathrm{mean}(r_1, \dots, r_G)
-}{
-\mathrm{std}(r_1, \dots, r_G) + \epsilon
-}
+\begin{aligned}
+A_i
+&= \frac{r_i - \mathrm{mean}(r_1, \dots, r_G)}
+{\mathrm{std}(r_1, \dots, r_G) + \epsilon}
+\end{aligned}
 $$
 
 <!-- textlint-enable -->
 
 この $A_i$ は、その応答の報酬が同じ問いの中で平均よりどれだけ上かを表します。目的関数は PPO に近い形です。
 
-<!-- textlint-disable ja-technical-writing/sentence-length -->
+<!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{GRPO}}
-=
+&=
 \mathbb{E}
-\left(
+\left[
 \frac{1}{G}
 \sum_{i=1}^{G}
 \frac{1}{|y_i|}
@@ -476,30 +504,29 @@ $$
 \rho_{i,t} A_i,
 \mathrm{clip}(\rho_{i,t}, 1-\epsilon, 1+\epsilon) A_i
 \right)
--
-\beta
+{}- \beta
 D_{\mathrm{KL}}
 \left(
 \pi_\theta
 \| \pi_{\mathrm{ref}}
 \right)
-\right)
+\right]
+\end{aligned}
 $$
 
-<!-- textlint-enable ja-technical-writing/sentence-length -->
+<!-- textlint-enable -->
 
 ここで、$\rho_{i,t}$ は新旧方策の確率比です。
 
 <!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \rho_{i,t}
-=
-\frac{
-\pi_\theta(y_{i,t} \mid x, y_{i,<t})
-}{
-\pi_{\mathrm{old}}(y_{i,t} \mid x, y_{i,<t})
-}
+&=
+\frac{\pi_\theta(y_{i,t} \mid x, y_{i,<t})}
+{\pi_{\mathrm{old}}(y_{i,t} \mid x, y_{i,<t})}
+\end{aligned}
 $$
 
 <!-- textlint-enable -->
@@ -529,17 +556,19 @@ $$
 <!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{OPD}}(\theta)
-=
+&=
 \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}
-\left(
+\left[
 \sum_t
 D_{\mathrm{KL}}
 \left(
 \pi_T(\cdot \mid x, y_{<t})
 \| \pi_\theta(\cdot \mid x, y_{<t})
 \right)
-\right)
+\right]
+\end{aligned}
 $$
 
 <!-- textlint-enable -->
@@ -565,10 +594,11 @@ SFT は細かい信号を与えますが、文脈は固定されています。�
 <!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{OPSD}}(\theta)
-=
+&=
 \mathbb{E}_{(x, z) \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}
-\left(
+\left[
 \sum_t
 D_{\mathrm{KL}}
 \left(
@@ -578,7 +608,8 @@ D_{\mathrm{KL}}
 \right]
 \| \pi_\theta(\cdot \mid x, y_{<t})
 \right)
-\right)
+\right]
+\end{aligned}
 $$
 
 <!-- textlint-enable -->
@@ -598,10 +629,11 @@ SDPO は、実行結果や判定結果を使って、より細かい教師信号
 <!-- textlint-disable -->
 
 $$
+\begin{aligned}
 \mathcal{L}_{\mathrm{SDPO\text{-}self}}
-=
+&=
 \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x),\, f}
-\left(
+\left[
 \sum_t
 w_t
 D_{\mathrm{KL}}
@@ -612,7 +644,8 @@ D_{\mathrm{KL}}
 \right]
 \| \pi_\theta(\cdot \mid x, y_{<t})
 \right)
-\right)
+\right]
+\end{aligned}
 $$
 
 <!-- textlint-enable -->

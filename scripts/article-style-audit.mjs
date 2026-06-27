@@ -253,6 +253,31 @@ function report(file, lineNumber, name, message, line) {
   console.error(`  ${line}`);
 }
 
+function reportMarkdownSensitiveMathLines(file, lines) {
+  let inMathBlock = false;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (lines[index].trim() === "$$") {
+      inMathBlock = !inMathBlock;
+      continue;
+    }
+
+    if (!inMathBlock) {
+      continue;
+    }
+
+    if (/^\s*[-=+](?:\s|$)/.test(lines[index])) {
+      report(
+        file,
+        index + 1,
+        "avoid-markdown-sensitive-math-line",
+        "$$ ブロック内で行頭に単独の演算子を置くと、GitHub 上のレビューで Markdown として崩れて見えやすくなります。aligned の &= や {}- などへ寄せてください。",
+        lines[index],
+      );
+    }
+  }
+}
+
 function summarySectionStart(lines) {
   return lines.findIndex((line) => line.trim() === "## まとめ");
 }
@@ -260,6 +285,8 @@ function summarySectionStart(lines) {
 for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
+
+  reportMarkdownSensitiveMathLines(file, lines);
 
   for (const check of checks) {
     for (let index = 0; index < lines.length; index += 1) {
