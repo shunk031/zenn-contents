@@ -39,7 +39,8 @@ AI エージェント的なタスクでは、最終的な成功や失敗だけ�
 | SFT[^instructgpt]                                                     | 模範応答                               | 正解らしい応答をまねる                 | 入力と模範応答                   |
 | RLHF[^christiano] / PPO[^ppo]                                         | 報酬モデル                             | 高く評価される応答を増やす             | 応答のランキング、報酬           |
 | DPO[^dpo]                                                             | 選好ペア                               | 好ましい応答を直接増やす               | 勝ち応答と負け応答               |
-| RLVR[^rlvr] / GRPO[^deepseekmath]                                     | 検証可能な報酬                         | 正解する応答を相対評価で増やす         | 問題、複数応答、正誤             |
+| RLVR[^rlvr]                                                           | 検証可能な報酬                         | 自動検証で正解する応答を増やす         | 問題、応答、正誤                 |
+| GRPO[^deepseekmath]                                                   | 同じ問い内の相対利得                   | 複数応答を比べて方策を更新する         | 問題、複数応答、報酬             |
 | OPD[^opd_gkd]                                                         | 教師モデルの分布                       | 自分の生成軌跡上で教師をまねる         | 生徒生成、教師分布               |
 | OPSD[^opsd]                                                           | 追加情報つきの自己分布                 | 追加情報を使った自分を通常時へ蒸留する | 問題、検証済み解法など           |
 | SDPO 区間型[^segment_sdpo] / SDPO 自己蒸留型[^self_distillation_sdpo] | 追加情報つきの自己分布、または区間選好 | 細かい単位で方策を直す                 | フィードバック、区間、複数ターン |
@@ -63,6 +64,7 @@ https://nrehiew.github.io/blog/sft_rl_opd/
 | $r(x, y)$                        | 応答 $y$ に対する報酬            |
 | $y_w$                            | 選好ペアの勝ち応答               |
 | $y_l$                            | 選好ペアの負け応答               |
+| $\mathcal{D}$                    | 入力や比較データの分布           |
 
 $\pi_\theta$ は、入力 $x$ に対して応答 $y$ を出す確率分布です。強化学習の言葉では、この確率分布を方策と呼びます。LLM では、ここまでの文脈から次に出すトークンを選ぶ確率分布として考えると分かりやすいです。応答全体の確率は、各時点の出力確率の積として分解できます。
 
@@ -83,7 +85,7 @@ $$
 
 $$
 \mathcal{L}_{\mathrm{SFT}}(\theta)
-= - \mathbb{E}_{(x, y^\ast)}
+= - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}}
 \left(
 \sum_{t=1}^{T}
 \log
@@ -112,7 +114,7 @@ SFT は出力の各位置に細かい信号を与えられます。一方で、�
 $$
 J(\theta)
 =
-\mathbb{E}_{x, y\sim\pi_\theta}
+\mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi_\theta(\cdot \mid x)}
 \left(
 r(x, y)
 \right)
@@ -122,9 +124,12 @@ $$
 
 $$
 \max_\theta
-\mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}
+\mathbb{E}_{x \sim \mathcal{D}}
 \left(
+\mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}
+\left[
 r(x, y)
+\right]
 - \beta
 \mathrm{KL}
 \left(
@@ -136,7 +141,7 @@ $$
 
 後半の KL 項は、現在のモデルが基準モデルからどれくらい離れたかを表します。$\beta$ は、その離れ具合をどれくらい強く抑えるかを決める係数です。
 
-RLHF では、この報酬 $r(x, y)$ を人間の好みから作ります[^ziegler][^stiennon]。手順は 3 段階です。
+InstructGPT 型、または PPO 型の RLHF では、この報酬 $r(x, y)$ を人間の好みから作ります[^ziegler][^stiennon]。代表的には、次の構成を取ります。
 
 1. SFT[^instructgpt] で初期モデルを作る。
 2. 人間の比較データから報酬モデルを作る。
@@ -160,7 +165,7 @@ $$
 $$
 \mathcal{L}_{\mathrm{RM}}(\phi)
 =
-- \mathbb{E}_{(x, y_w, y_l)}
+- \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
 \left(
 \log
 \sigma
@@ -218,7 +223,7 @@ RLHF / PPO の強みは、応答の良し悪しをスカラー報酬として扱
 
 $$
 \max_\pi
-\mathbb{E}_{y\sim\pi}
+\mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi(\cdot \mid x)}
 \left(
 r(x, y)
 -
@@ -261,7 +266,7 @@ DPO は、この関係を使って、明示的な報酬モデル $r_\phi(x, y)$ 
 
 $$
 \mathcal{L}_{\mathrm{DPO}}(\theta)
-= - \mathbb{E}_{(x, y_w, y_l)}
+= - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
 \left(
 \log \sigma
 \left(
@@ -332,7 +337,26 @@ $$
 \right)
 $$
 
-オッズ比選好最適化 (Odds Ratio Preference Optimization; ORPO)[^orpo] は、SFT と選好最適化を分けません。好ましい応答を学びながら、好ましくない応答のオッズを下げます。基本形は、次のように SFT 的な負の対数尤度と選好項を足した形です。
+オッズ比選好最適化 (Odds Ratio Preference Optimization; ORPO)[^orpo] は、SFT と選好最適化を分けません。好ましい応答を学びながら、好ましくない応答のオッズを下げます。記号を単純化して $\mathrm{odds}_\theta(y \mid x)=\pi_\theta(y \mid x)/(1-\pi_\theta(y \mid x))$ と置くと、ORPO の選好項はオッズ比の差を使います。
+
+<!-- textlint-disable ja-technical-writing/sentence-length -->
+
+$$
+\mathcal{L}_{\mathrm{OR}}
+=
+- \mathbb{E}
+\log
+\sigma
+\left(
+\log
+\frac{\mathrm{odds}_\theta(y_w \mid x)}
+{\mathrm{odds}_\theta(y_l \mid x)}
+\right)
+$$
+
+<!-- textlint-enable ja-technical-writing/sentence-length -->
+
+全体としては、SFT 的な負の対数尤度とこの選好項を足した形で書けます。
 
 $$
 \mathcal{L}_{\mathrm{ORPO}}
@@ -340,7 +364,7 @@ $$
 \mathcal{L}_{\mathrm{NLL}}
 +
 \lambda
-\mathcal{L}_{\mathrm{pref}}
+\mathcal{L}_{\mathrm{OR}}
 $$
 
 DPO は基準モデルを使いますが、ORPO はそれを省くのが特徴です。
@@ -517,7 +541,7 @@ $$
 $$
 \mathcal{L}_{\mathrm{OPD}}(\theta)
 =
-\mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}
+\mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}
 \left(
 \sum_t
 D_{\mathrm{KL}}
@@ -561,7 +585,7 @@ $$
 $$
 \mathcal{L}_{\mathrm{OPSD}}(\theta)
 =
-\mathbb{E}_{x, z, y \sim \pi_\theta}
+\mathbb{E}_{(x, z) \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}
 \left(
 \sum_t
 D_{\mathrm{KL}}
@@ -594,7 +618,7 @@ SDPO は、実行結果や判定結果を使って、より細かい教師信号
 $$
 \mathcal{L}_{\mathrm{SDPO\text{-}self}}
 =
-\mathbb{E}_{x, y, f}
+\mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x),\, f}
 \left(
 \sum_t
 w_t
@@ -622,7 +646,8 @@ $$
 | SFT[^instructgpt]                        |                           使わない | 模範応答の各位置                 |             不要 |       不要 | 安定、簡単                         | 生成時のずれに弱い         |
 | RLHF[^christiano] + PPO[^ppo]            |                               使う | 応答全体の報酬                   |             必要 |   よく使う | 強力、汎用的                       | 重い、不安定になりやすい   |
 | DPO[^dpo]                                |                   基本的に使わない | 勝ち応答と負け応答の組           |             不要 |       必要 | 実装しやすい、安定                 | 比較データに依存           |
-| GRPO[^deepseekmath]                      |                               使う | 同じ問い内での相対報酬           | 不要な場合が多い |   よく使う | 価値推定器が不要、数学・コード向き | 細かい原因分析は苦手       |
+| RLVR[^rlvr]                              |                               使う | 検証可能な報酬                   | 不要な場合が多い |       任意 | 数学・コードの正誤を使いやすい     | 報酬が疎になりやすい       |
+| GRPO[^deepseekmath]                      |                               使う | 同じ問い内の相対利得             | 不要な場合が多い |   よく使う | 価値推定器が不要                   | 報酬設計は別に必要         |
 | OPD[^opd_gkd]                            |                               使う | 教師モデルの出力分布             |             不要 |       任意 | 現在の生成に沿って細かく学べる     | 教師モデルの計算が重い     |
 | OPSD[^opsd]                              |                               使う | 追加情報を見た自分の分布         |             不要 |       任意 | 外部教師が不要                     | 追加情報の設計が重要       |
 | SDPO 区間型[^segment_sdpo]               |                         場合による | 区間ごとの選好                   |             不要 | 多くは必要 | 長い会話や多段推論に向く           | 区間の選び方が難しい       |
@@ -635,15 +660,18 @@ $$
 | 入力と模範応答                       | SFT[^instructgpt]                              | 形式や基本動作を教えやすい         |
 | 勝ち応答と負け応答                   | DPO 系[^dpo]                                   | 報酬モデルなしで選好を入れやすい   |
 | 人間評価を継続的に集められる         | RLHF[^christiano] / PPO[^ppo]                  | 報酬モデルを経由して探索できる     |
-| 正誤を自動検証できる                 | RLVR[^rlvr] / GRPO[^deepseekmath]              | 複数応答を相対評価しやすい         |
-| 実行エラーや解説などの追加情報がある | OPSD[^opsd] / SDPO 系[^self_distillation_sdpo] | 追加情報を細かい学習信号にしやすい |
+| 正誤を自動検証できる                 | RLVR[^rlvr]                                    | 検証可能な報酬を作りやすい         |
+| 同じ問いに複数応答を生成できる       | GRPO[^deepseekmath]                            | 応答間の相対利得を作りやすい       |
+| 教師モデルの分布を使える             | OPD[^opd_gkd]                                  | 生成中の文脈で教師分布を渡せる     |
+| 正解や手がかりなどの追加情報がある   | OPSD[^opsd]                                    | 追加情報を見た自分を蒸留できる     |
+| 実行結果や評価文を作れる             | SDPO 自己蒸留型[^self_distillation_sdpo]       | 評価後の情報を密な信号にしやすい   |
 | 複数ターンのどこが悪いか分かる       | 区間型 SDPO[^segment_sdpo]                     | 応答全体ではなく重要区間を直せる   |
 
-実務では、どれか 1 つだけを使うとは限りません。SFT で最低限の形式を作り、DPO で選好を入れます。検証可能なタスクでは GRPO を使い、追加情報が取れるところで OPSD / SDPO 系を足す、という組み合わせも考えられます。
+実務では、どれか 1 つだけを使うとは限りません。SFT で最低限の形式を作り、DPO で選好を入れます。検証可能なタスクでは RLVR の形で報酬を作り、GRPO のような方策更新を使うことがあります。教師モデルの分布を使えるなら OPD、正解や手がかりを見た自己分布を使えるなら OPSD、実行結果や評価文を密な信号にしたいなら SDPO 自己蒸留型、と条件を分けて考えます。
 
 正解応答がたくさんあるなら、まず SFT が自然です。データは $(x, y^\ast)$ の形です。人間や評価器による比較データがあるなら、DPO が扱いやすいです。データは $(x, y_w, y_l)$ の形です。応答に点数をつけられるなら、RLHF や PPO が使えます。これは $r(x, y)$ が作れる場合です。
 
-数学やコードのように、答えが正しいか自動で判定できるなら、RLVR や GRPO が向いています。たとえば $r(x, y) \in \{0, 1\}$ のような報酬を作りやすいからです。実行エラー、判定理由、正解の推論過程、追加のヒントなどがあるなら、OPD / OPSD / SDPO 系が有力です。粗い報酬ではなく、出力の各位置や各推論段階への細かい教師信号に変換できるからです。
+数学やコードのように、答えが正しいか自動で判定できるなら、RLVR が向いています。たとえば $r(x, y) \in \{0, 1\}$ のような報酬を作りやすいからです。同じ問いに複数の応答を出して比べられるなら、GRPO のような group-relative advantage を使う更新も候補になります。実行エラー、判定理由、正解の推論過程、追加のヒントなどがある場合は、まず何を教師信号にできるかを分けます。教師モデルの分布なら OPD、追加情報を見た自分の分布なら OPSD、実行結果や評価文を見た分布なら SDPO 自己蒸留型です。
 
 ## まとめ
 
@@ -653,14 +681,15 @@ $$
 | ---------------------------------------- | ------------ | ---------------------------- | -------------------------------------------------------- |
 | SFT[^instructgpt]                        | 模範応答型   | 人間や教師が書いた応答       | 良い応答をまねる                                         |
 | RLHF[^christiano] / PPO[^ppo]            | 報酬型       | 人間評価から作った報酬       | 人間に好まれる応答に高い報酬を与えて伸ばす               |
-| GRPO[^deepseekmath]                      | 報酬型       | 検証可能な報酬               | 同じ問いへの複数応答を比べて、良い応答を伸ばす           |
+| RLVR[^rlvr]                              | 報酬型       | 検証可能な報酬               | 自動検証できる正誤を報酬にする                           |
+| GRPO[^deepseekmath]                      | 報酬型       | 同じ問い内の相対利得         | 複数応答を比べて方策を更新する                           |
 | DPO[^dpo]                                | 選好型       | 勝ち応答と負け応答の比較     | 好ましい応答を、好ましくない応答より出しやすくする       |
 | SDPO 区間型[^segment_sdpo]               | 選好型       | 会話や推論の一部分への選好   | 会話や推論の一部分に DPO をかける                        |
 | OPD[^opd_gkd]                            | 蒸留型       | 教師モデルの出力分布         | 現在のモデルが実際に出した途中文脈で、教師モデルをまねる |
 | OPSD[^opsd]                              | 自己蒸留型   | 追加情報を見た自分の分布     | 追加情報を見た自分を、通常の自分に蒸留する               |
 | SDPO 自己蒸留型[^self_distillation_sdpo] | 自己蒸留型   | 実行結果や評価文を見た分布   | 実行結果や評価文を見た自分を、通常の自分に蒸留する       |
 
-事後学習は、何を教師信号として使うかの設計です。模範応答、選好、報酬、検証結果、追加情報を見た自己分布のどれを使うかで、必要なデータ、実装の重さ、得意なタスクが変わります。新しい手法を追うと混乱しがちですが、この軸で見るとかなり整理しやすくなります。
+事後学習は、何を教師信号として使うかの設計です。模範応答、選好、報酬、検証結果、追加情報を見た自己分布のどれを使うかで、必要なデータ、訓練の構成、得意なタスクが変わります。新しい手法を読むときも、まず「何を教師信号としてモデルに戻しているのか」を見ると、SFT、RLHF、DPO、RLVR、GRPO、OPD、OPSD、SDPO の関係を追いやすくなります。
 
 <!-- textlint-disable ja-technical-writing/sentence-length -->
 
@@ -668,7 +697,7 @@ $$
 
 [^instructgpt]:
     Long Ouyang et al. "Training language models to follow instructions with human feedback."
-    arXiv:2203.02155. [https://arxiv.org/abs/2203.02155](https://arxiv.org/abs/2203.02155)
+    arXiv:2203.02155. DOI: 10.48550/arXiv.2203.02155. [https://arxiv.org/abs/2203.02155](https://arxiv.org/abs/2203.02155)
 
 [^christiano]:
     Paul F. Christiano et al. "Deep reinforcement learning from human preferences."
@@ -676,7 +705,7 @@ $$
 
 [^ppo]:
     John Schulman et al. "Proximal Policy Optimization Algorithms."
-    arXiv:1707.06347. [https://arxiv.org/abs/1707.06347](https://arxiv.org/abs/1707.06347)
+    arXiv:1707.06347. DOI: 10.48550/arXiv.1707.06347. [https://arxiv.org/abs/1707.06347](https://arxiv.org/abs/1707.06347)
 
 [^ziegler]:
     Daniel M. Ziegler et al. "Fine-Tuning Language Models from Human Preferences."
@@ -690,47 +719,47 @@ $$
 
 [^dpo]:
     Rafael Rafailov et al. "Direct Preference Optimization: Your Language Model is Secretly a Reward Model."
-    arXiv:2305.18290. [https://arxiv.org/abs/2305.18290](https://arxiv.org/abs/2305.18290)
+    arXiv:2305.18290. DOI: 10.48550/arXiv.2305.18290. [https://arxiv.org/abs/2305.18290](https://arxiv.org/abs/2305.18290)
 
 [^ipo]:
     Mohammad Gheshlaghi Azar et al. "A General Theoretical Paradigm to Understand Learning from Human Preferences."
-    arXiv:2310.12036. [https://arxiv.org/abs/2310.12036](https://arxiv.org/abs/2310.12036)
+    arXiv:2310.12036. DOI: 10.48550/arXiv.2310.12036. [https://arxiv.org/abs/2310.12036](https://arxiv.org/abs/2310.12036)
 
 [^orpo]:
     Jiwoo Hong et al. "ORPO: Monolithic Preference Optimization without Reference Model."
-    arXiv:2403.07691. [https://arxiv.org/abs/2403.07691](https://arxiv.org/abs/2403.07691)
+    arXiv:2403.07691. DOI: 10.48550/arXiv.2403.07691. [https://arxiv.org/abs/2403.07691](https://arxiv.org/abs/2403.07691)
 
 [^simpo]:
     Yu Meng et al. "SimPO: Simple Preference Optimization with a Reference-Free Reward."
-    arXiv:2405.14734. [https://arxiv.org/abs/2405.14734](https://arxiv.org/abs/2405.14734)
+    arXiv:2405.14734. DOI: 10.48550/arXiv.2405.14734. [https://arxiv.org/abs/2405.14734](https://arxiv.org/abs/2405.14734)
 
 [^kto]:
     Kawin Ethayarajh et al. "KTO: Model Alignment as Prospect Theoretic Optimization."
-    arXiv:2402.01306. [https://arxiv.org/abs/2402.01306](https://arxiv.org/abs/2402.01306)
+    arXiv:2402.01306. DOI: 10.48550/arXiv.2402.01306. [https://arxiv.org/abs/2402.01306](https://arxiv.org/abs/2402.01306)
 
 [^deepseekmath]:
     Zhihong Shao et al. "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models."
-    arXiv:2402.03300. [https://arxiv.org/abs/2402.03300](https://arxiv.org/abs/2402.03300)
+    arXiv:2402.03300. DOI: 10.48550/arXiv.2402.03300. [https://arxiv.org/abs/2402.03300](https://arxiv.org/abs/2402.03300)
 
 [^deepseek_r1]:
     DeepSeek-AI. "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning."
-    arXiv:2501.12948. [https://arxiv.org/abs/2501.12948](https://arxiv.org/abs/2501.12948)
+    arXiv:2501.12948. DOI: 10.48550/arXiv.2501.12948. [https://arxiv.org/abs/2501.12948](https://arxiv.org/abs/2501.12948)
 
 [^agentic_rl_survey]:
     Guibin Zhang et al. "The Landscape of Agentic Reinforcement Learning for LLMs: A Survey."
-    arXiv:2509.02547. [https://arxiv.org/abs/2509.02547](https://arxiv.org/abs/2509.02547)
+    arXiv:2509.02547. DOI: 10.48550/arXiv.2509.02547. [https://arxiv.org/abs/2509.02547](https://arxiv.org/abs/2509.02547)
 
 [^rlvr]:
     Xumeng Wen et al. "Reinforcement Learning with Verifiable Rewards Implicitly Incentivizes Correct Reasoning in Base LLMs."
-    arXiv:2506.14245. [https://arxiv.org/abs/2506.14245](https://arxiv.org/abs/2506.14245)
+    arXiv:2506.14245. DOI: 10.48550/arXiv.2506.14245. [https://arxiv.org/abs/2506.14245](https://arxiv.org/abs/2506.14245)
 
 [^opd_geometry]:
     Zhennan Shen et al. "On the Geometry of On-Policy Distillation."
-    arXiv:2606.07082. [https://arxiv.org/abs/2606.07082](https://arxiv.org/abs/2606.07082)
+    arXiv:2606.07082. DOI: 10.48550/arXiv.2606.07082. [https://arxiv.org/abs/2606.07082](https://arxiv.org/abs/2606.07082)
 
 [^distillation]:
     Geoffrey Hinton, Oriol Vinyals, and Jeff Dean. "Distilling the Knowledge in a Neural Network."
-    arXiv:1503.02531. [https://arxiv.org/abs/1503.02531](https://arxiv.org/abs/1503.02531)
+    arXiv:1503.02531. DOI: 10.48550/arXiv.1503.02531. [https://arxiv.org/abs/1503.02531](https://arxiv.org/abs/1503.02531)
 
 [^opd_gkd]:
     Rishabh Agarwal et al. "On-Policy Distillation of Language Models: Learning from Self-Generated Mistakes."
@@ -738,18 +767,18 @@ $$
 
 [^opd_survey]:
     Mingyang Song and Mao Zheng. "A Survey of On-Policy Distillation for Large Language Models."
-    arXiv:2604.00626. [https://arxiv.org/abs/2604.00626](https://arxiv.org/abs/2604.00626)
+    arXiv:2604.00626. DOI: 10.48550/arXiv.2604.00626. [https://arxiv.org/abs/2604.00626](https://arxiv.org/abs/2604.00626)
 
 [^opsd]:
     Siyan Zhao et al. "Self-Distilled Reasoner: On-Policy Self-Distillation for Large Language Models."
-    arXiv:2601.18734. [https://arxiv.org/abs/2601.18734](https://arxiv.org/abs/2601.18734)
+    arXiv:2601.18734. DOI: 10.48550/arXiv.2601.18734. [https://arxiv.org/abs/2601.18734](https://arxiv.org/abs/2601.18734)
 
 [^segment_sdpo]:
     Aobo Kong et al. "SDPO: Segment-Level Direct Preference Optimization for Social Agents."
-    arXiv:2501.01821. [https://arxiv.org/abs/2501.01821](https://arxiv.org/abs/2501.01821)
+    arXiv:2501.01821. DOI: 10.48550/arXiv.2501.01821. [https://arxiv.org/abs/2501.01821](https://arxiv.org/abs/2501.01821)
 
 [^self_distillation_sdpo]:
     Jonas Hübotter et al. "Reinforcement Learning via Self-Distillation."
-    arXiv:2601.20802. [https://arxiv.org/abs/2601.20802](https://arxiv.org/abs/2601.20802)
+    arXiv:2601.20802. DOI: 10.48550/arXiv.2601.20802. [https://arxiv.org/abs/2601.20802](https://arxiv.org/abs/2601.20802)
 
 <!-- textlint-enable ja-technical-writing/sentence-length -->
