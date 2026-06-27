@@ -69,10 +69,7 @@ https://nrehiew.github.io/blog/sft_rl_opd/
 ここで $\pi_\theta$ は、入力 $x$ に対して応答 $y$ を出す確率分布です。強化学習の言葉では、この確率分布を方策と呼びます。LLM では、ここまでの文脈から次に出すトークンを選ぶ確率分布として扱います。応答全体の確率は、各時点の出力確率の積として分解できます。
 
 $$
-\begin{aligned}
-\pi_\theta(y \mid x)
-&= \prod_{t=1}^{T} \pi_\theta(y_t \mid x, y_{<t})
-\end{aligned}
+\pi_\theta(y \mid x) = \prod_{t=1}^{T} \pi_\theta(y_t \mid x, y_{<t})
 $$
 
 ## 模範応答から学ぶ
@@ -84,14 +81,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{SFT}}(\theta)
-&= - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}}
-\left[
-\sum_{t=1}^{T}
-\log \pi_\theta(y_t^\ast \mid x, y_{<t}^\ast)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{SFT}}(\theta) = - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}} \left[ \sum_{t=1}^{T} \log \pi_\theta(y_t^\ast \mid x, y_{<t}^\ast) \right]
 $$
 
 <!-- textlint-enable -->
@@ -111,12 +101,7 @@ SFT の信号は、基本的に模範応答上の文脈に限られます。訓�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-J(\theta)
-&=
-\mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi_\theta(\cdot \mid x)}
-\left[ r(x, y) \right]
-\end{aligned}
+J(\theta) = \mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi_\theta(\cdot \mid x)} \left[ r(x, y) \right]
 $$
 
 <!-- textlint-enable -->
@@ -126,20 +111,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\max_\theta
-\mathbb{E}_{x \sim \mathcal{D}}
-&\left(
-\mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}
-\left[ r(x, y) \right]
-{}- \beta
-\mathrm{KL}
-\left(
-\pi_\theta(\cdot \mid x)
-\| \pi_{\mathrm{ref}}(\cdot \mid x)
-\right)
-\right)
-\end{aligned}
+\max_\theta \mathbb{E}_{x \sim \mathcal{D}} \left( \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)} \left[ r(x, y) \right] - \beta \mathrm{KL} \left( \pi_\theta(\cdot \mid x) \| \pi_{\mathrm{ref}}(\cdot \mid x) \right) \right)
 $$
 
 <!-- textlint-enable -->
@@ -169,16 +141,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{RM}}(\phi)
-&= - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
-\left[
-\log \sigma
-\left(
-r_\phi(x, y_w) - r_\phi(x, y_l)
-\right)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{RM}}(\phi) = - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}} \left[ \log \sigma \left( r_\phi(x, y_w) - r_\phi(x, y_l) \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -190,12 +153,7 @@ PPO は、この方策更新を安定させるための代表的な手法です�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\rho_t(\theta)
-&=
-\frac{\pi_\theta(y_t \mid x, y_{<t})}
-{\pi_{\mathrm{old}}(y_t \mid x, y_{<t})}
-\end{aligned}
+\rho_t(\theta) = \frac{\pi_\theta(y_t \mid x, y_{<t})} {\pi_{\mathrm{old}}(y_t \mid x, y_{<t})}
 $$
 
 <!-- textlint-enable -->
@@ -205,17 +163,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{PPO}}(\theta)
-&= \mathbb{E}_t
-\left[
-\min
-\left(
-\rho_t(\theta) A_t,
-\mathrm{clip}(\rho_t(\theta), 1 - \epsilon, 1 + \epsilon) A_t
-\right)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{PPO}}(\theta) = \mathbb{E}_t \left[ \min \left( \rho_t(\theta) A_t, \mathrm{clip}(\rho_t(\theta), 1 - \epsilon, 1 + \epsilon) A_t \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -235,15 +183,7 @@ DPO が捨てたのは、明示的な報酬モデルと PPO の更新ループ�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\max_\pi
-\mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi(\cdot \mid x)}
-&\left(
-r(x, y)
-{}- \beta
-\log \frac{\pi(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)}
-\right)
-\end{aligned}
+\max_\pi \mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi(\cdot \mid x)} \left( r(x, y) - \beta \log \frac{\pi(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)} \right)
 $$
 
 <!-- textlint-enable -->
@@ -253,16 +193,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\pi^\star(y \mid x)
-&=
-\frac{1}{Z(x)}
-\pi_{\mathrm{ref}}(y \mid x)
-\exp
-\left(
-\frac{1}{\beta}r(x, y)
-\right)
-\end{aligned}
+\pi^\star(y \mid x) = \frac{1}{Z(x)} \pi_{\mathrm{ref}}(y \mid x) \exp \left( \frac{1}{\beta}r(x, y) \right)
 $$
 
 <!-- textlint-enable -->
@@ -272,14 +203,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-r(x, y)
-&=
-\beta
-\log \frac{\pi^\star(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)}
-{}+
-\beta \log Z(x)
-\end{aligned}
+r(x, y) = \beta \log \frac{\pi^\star(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)} + \beta \log Z(x)
 $$
 
 <!-- textlint-enable -->
@@ -289,17 +213,7 @@ DPO は、この関係を使って、明示的な報酬モデル $r_\phi(x, y)$ 
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{DPO}}(\theta)
-&= - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}}
-\left[
-\log \sigma
-\left(
-\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)}
-{}- \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
-\right)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{DPO}}(\theta) = - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}} \left[ \log \sigma \left( \beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)} \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -331,13 +245,7 @@ Identity Preference Optimization (IPO)[^ipo] は、DPO の近似がどの条件�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\Delta_\theta
-&=
-\log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)}
-{}-
-\log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
-\end{aligned}
+\Delta_\theta = \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)} - \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
 $$
 
 <!-- textlint-enable -->
@@ -347,16 +255,7 @@ IPO では、この差を無限に大きくするのではなく、有限の目�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{IPO}}
-&=
-\mathbb{E}
-\left[
-\left(
-\Delta_\theta - \frac{1}{2\beta}
-\right)^2
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{IPO}} = \mathbb{E} \left[ \left( \Delta_\theta - \frac{1}{2\beta} \right)^2 \right]
 $$
 
 <!-- textlint-enable -->
@@ -366,15 +265,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{OR}}
-&= - \mathbb{E}
-\log \sigma
-\left(
-\log \frac{\mathrm{odds}_\theta(y_w \mid x)}
-{\mathrm{odds}_\theta(y_l \mid x)}
-\right)
-\end{aligned}
+\mathcal{L}_{\mathrm{OR}} = - \mathbb{E} \log \sigma \left( \log \frac{\mathrm{odds}_\theta(y_w \mid x)} {\mathrm{odds}_\theta(y_l \mid x)} \right)
 $$
 
 <!-- textlint-enable -->
@@ -384,12 +275,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{ORPO}}
-&=
-\mathcal{L}_{\mathrm{NLL}}
-{}+ \lambda \mathcal{L}_{\mathrm{OR}}
-\end{aligned}
+\mathcal{L}_{\mathrm{ORPO}} = \mathcal{L}_{\mathrm{NLL}} + \lambda \mathcal{L}_{\mathrm{OR}}
 $$
 
 <!-- textlint-enable -->
@@ -401,22 +287,7 @@ DPO は基準モデルを使いますが、ORPO はそれを省くのが特徴�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{SimPO}}
-&= - \mathbb{E}
-\log \sigma
-\left(
-\beta
-\left(
-\frac{1}{|y_w|}
-\log \pi_\theta(y_w \mid x)
-{}-
-\frac{1}{|y_l|}
-\log \pi_\theta(y_l \mid x)
-\right)
-{}- \gamma
-\right)
-\end{aligned}
+\mathcal{L}_{\mathrm{SimPO}} = - \mathbb{E} \log \sigma \left( \beta \left( \frac{1}{|y_w|} \log \pi_\theta(y_w \mid x) - \frac{1}{|y_l|} \log \pi_\theta(y_l \mid x) \right) - \gamma \right)
 $$
 
 <!-- textlint-enable -->
@@ -432,19 +303,7 @@ Kahneman-Tversky 最適化 (Kahneman-Tversky Optimization; KTO)[^kto] は、ペ�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{SDPO\text{-}seg}}
-&= - \mathbb{E}
-\log \sigma
-\left(
-\beta
-\left(
-\log \frac{\pi_\theta(g_w \mid c)}{\pi_{\mathrm{ref}}(g_w \mid c)}
-{}-
-\log \frac{\pi_\theta(g_l \mid c)}{\pi_{\mathrm{ref}}(g_l \mid c)}
-\right)
-\right)
-\end{aligned}
+\mathcal{L}_{\mathrm{SDPO\text{-}seg}} = - \mathbb{E} \log \sigma \left( \beta \left( \log \frac{\pi_\theta(g_w \mid c)}{\pi_{\mathrm{ref}}(g_w \mid c)} - \log \frac{\pi_\theta(g_l \mid c)}{\pi_{\mathrm{ref}}(g_l \mid c)} \right) \right)
 $$
 
 <!-- textlint-enable -->
@@ -476,11 +335,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-A_i
-&= \frac{r_i - \mathrm{mean}(r_1, \dots, r_G)}
-{\mathrm{std}(r_1, \dots, r_G) + \epsilon}
-\end{aligned}
+A_i = \frac{r_i - \mathrm{mean}(r_1, \dots, r_G)} {\mathrm{std}(r_1, \dots, r_G) + \epsilon}
 $$
 
 <!-- textlint-enable -->
@@ -490,28 +345,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{GRPO}}
-&=
-\mathbb{E}
-\left[
-\frac{1}{G}
-\sum_{i=1}^{G}
-\frac{1}{|y_i|}
-\sum_{t=1}^{|y_i|}
-\min
-\left(
-\rho_{i,t} A_i,
-\mathrm{clip}(\rho_{i,t}, 1-\epsilon, 1+\epsilon) A_i
-\right)
-{}- \beta
-D_{\mathrm{KL}}
-\left(
-\pi_\theta
-\| \pi_{\mathrm{ref}}
-\right)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{GRPO}} = \mathbb{E} \left[ \frac{1}{G} \sum_{i=1}^{G} \frac{1}{|y_i|} \sum_{t=1}^{|y_i|} \min \left( \rho_{i,t} A_i, \mathrm{clip}(\rho_{i,t}, 1-\epsilon, 1+\epsilon) A_i \right) - \beta D_{\mathrm{KL}} \left( \pi_\theta \| \pi_{\mathrm{ref}} \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -521,12 +355,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\rho_{i,t}
-&=
-\frac{\pi_\theta(y_{i,t} \mid x, y_{i,<t})}
-{\pi_{\mathrm{old}}(y_{i,t} \mid x, y_{i,<t})}
-\end{aligned}
+\rho_{i,t} = \frac{\pi_\theta(y_{i,t} \mid x, y_{i,<t})} {\pi_{\mathrm{old}}(y_{i,t} \mid x, y_{i,<t})}
 $$
 
 <!-- textlint-enable -->
@@ -556,19 +385,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{OPD}}(\theta)
-&=
-\mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}
-\left[
-\sum_t
-D_{\mathrm{KL}}
-\left(
-\pi_T(\cdot \mid x, y_{<t})
-\| \pi_\theta(\cdot \mid x, y_{<t})
-\right)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{OPD}}(\theta) = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \pi_T(\cdot \mid x, y_{<t}) \| \pi_\theta(\cdot \mid x, y_{<t}) \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -594,22 +411,7 @@ SFT は細かい信号を与えますが、文脈は固定されています。�
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{OPSD}}(\theta)
-&=
-\mathbb{E}_{(x, z) \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)}
-\left[
-\sum_t
-D_{\mathrm{KL}}
-\left(
-\mathrm{sg}
-\left[
-\pi_{\bar{\theta}}(\cdot \mid x, z, y_{<t})
-\right]
-\| \pi_\theta(\cdot \mid x, y_{<t})
-\right)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{OPSD}}(\theta) = \mathbb{E}_{(x, z) \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, z, y_{<t}) \right] \| \pi_\theta(\cdot \mid x, y_{<t}) \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -629,23 +431,7 @@ SDPO は、実行結果や判定結果を使って、より細かい教師信号
 <!-- textlint-disable -->
 
 $$
-\begin{aligned}
-\mathcal{L}_{\mathrm{SDPO\text{-}self}}
-&=
-\mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x),\, f}
-\left[
-\sum_t
-w_t
-D_{\mathrm{KL}}
-\left(
-\mathrm{sg}
-\left[
-\pi_{\bar{\theta}}(\cdot \mid x, f, y_{<t})
-\right]
-\| \pi_\theta(\cdot \mid x, y_{<t})
-\right)
-\right]
-\end{aligned}
+\mathcal{L}_{\mathrm{SDPO\text{-}self}} = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x),\, f} \left[ \sum_t w_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, f, y_{<t}) \right] \| \pi_\theta(\cdot \mid x, y_{<t}) \right) \right]
 $$
 
 <!-- textlint-enable -->

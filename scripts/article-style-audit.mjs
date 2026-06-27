@@ -275,6 +275,16 @@ function reportMarkdownSensitiveMathLines(file, lines) {
         lines[index],
       );
     }
+
+    if (/\\begin\{aligned\}/.test(lines[index])) {
+      report(
+        file,
+        index + 1,
+        "avoid-aligned-in-display-math",
+        "GitHub の PR 表示で崩れる場合があるため、記事本文の $$ ブロックでは aligned 環境を避け、標準的な LaTeX 式として書いてください。",
+        lines[index],
+      );
+    }
   }
 }
 
