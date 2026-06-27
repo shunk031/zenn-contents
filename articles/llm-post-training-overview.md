@@ -22,7 +22,7 @@ https://speakerdeck.com/shunk031/the-landscape-of-agentic-reinforcement-learning
 ![模範応答、オンポリシー蒸留、検証可能な報酬の更新幾何を比較した模式図](/images/llm-post-training-overview/opd-geometry-sft-rlvr.png)
 _模範応答、オンポリシー蒸留、検証可能な報酬の更新軌跡の比較。Shen et al. の Fig. 1 より。[^opd_geometry]_
 
-## はじめに
+## 背景
 
 事後学習は、事前学習済みモデルを、人間やタスクに合わせて使いやすくする段階です[^instructgpt][^ziegler]。事前学習では、大量のテキストから次のトークンを予測する力を得ます。ただ、そのままでは指示形式、安全性、推論の進め方、好ましい応答の癖まではそろいません。
 
