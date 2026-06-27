@@ -7,25 +7,18 @@ published: true
 published_at: 2026-06-27
 ---
 
-こんにちは [@shunk031](https://twitter.com/shunk031) です。
-
-最近は AI エージェントの構築に興味があります。AI の API をただ呼び出すラッパーではなく、既存の大規模言語モデル (Large Language Model; LLM) に、ツール利用、探索、検証、修正を挟みながら解きたいタスクを進めさせるにはどうすればよいかをよく考えています。そういうことを考えていると、LLM をどう事後学習 (post-training) すれば、エージェンティックにタスクを解く振る舞いへ近づけられるのかが気になってきます。
-
-関連して、LLM エージェントと Agentic RL について以前まとめたスライドを置いておきます。
+こんにちは [@shunk031](https://twitter.com/shunk031) です。最近は、GPT や Claude の API を呼び出すだけではない AI エージェントの構築に興味があります。[^api_wrapper] 既存の大規模言語モデル (Large Language Model; LLM) をどう事後学習 (post-training) すれば、ツール利用、探索、検証、修正を挟みながらタスクを解けるようになるのかを整理します。関連して、LLM エージェントと Agentic RL について以前まとめたスライドも置いておきます。
 
 https://speakerdeck.com/shunk031/large-language-model-agent-a-survey-on-methodology-applications-and-challenges
 
 https://speakerdeck.com/shunk031/the-landscape-of-agentic-reinforcement-learning-for-llms-a-survey
 
-以前からよく見る流れとして、教師ありファインチューニング (Supervised Fine-Tuning; SFT)[^instructgpt] があります。
-人間のフィードバックからの強化学習 (Reinforcement Learning from Human Feedback; RLHF)[^christiano] も、同じ事後学習の流れにあります。
-直接選好最適化 (Direct Preference Optimization; DPO)[^dpo] は、比較データから直接モデルを更新する方法です。
-Agentic RL[^agentic_rl_survey] の文脈では、検証可能な報酬による強化学習 (Reinforcement Learning with Verifiable Rewards; RLVR)[^rlvr] も追う必要があります。
-群相対方策最適化 (Group Relative Policy Optimization; GRPO)[^deepseekmath] は、その代表的な方策更新として読みます。
-さらに、オンポリシー蒸留 (On-Policy Distillation; OPD)[^opd_gkd] まで見ると、手法名だけでは関係がかなり分かりにくくなります。
-この記事は完全なサーベイではなく、実装や論文を読む前に「それぞれ何を教師信号として使っているのか」を見失わないためのメモです。
+SFT[^instructgpt] / RLHF[^christiano] / DPO[^dpo] は以前からよく見る流れです。
+Agentic RL[^agentic_rl_survey] では、検証できる報酬を使う RLVR[^rlvr] や、その更新方法としての GRPO[^deepseekmath] も出てきます。
+最近のオンポリシー蒸留系として OPD[^opd_gkd] まで見ると、手法名だけでは関係がかなり分かりにくくなります。
+今回は、手法名の違いよりも「何を教師信号にしているのか」を中心に整理します。
 
-SFT、OPD、RLVR の違いを見るために、更新軌跡を比較した図を先に置きます。Shen ら[^opd_geometry] は、OPD が SFT と RLVR の単なる中間ではなく、独自の更新幾何を持つと述べています。
+この違いは、モデルの更新のされ方にも出ます。Shen ら[^opd_geometry] の比較では、OPD は SFT と RLVR の中間というより、別の軌跡をたどる更新として描かれています。
 
 ![SFT、OPD、RLVR の更新幾何を比較した模式図](/images/llm-post-training-overview/opd-geometry-sft-rlvr.png)
 *SFT、OPD、RLVR の更新軌跡の比較。Shen et al. の Fig. 1 より。[^opd_geometry]*
@@ -59,7 +52,7 @@ SFT、OPD、RLVR の違いを見るために、更新軌跡を比較した図を
 表で見ると、SFT と DPO はどちらも静的なデータから学ぶ一方で、GRPO や OPD 系は現在のモデルが出した応答を学習に戻す色が強いです。
 この違いを式で追うために、次に共通の記法を置きます。
 
-以下の解説もわかりやすいです。
+SFT、RLVR、OPD の関係をもう少し別の切り口で見るなら、次の記事も参考になります。
 
 https://nrehiew.github.io/blog/sft_rl_opd/
 
@@ -515,7 +508,7 @@ GRPO は、答えが正しいかどうかを自動判定しやすい課題と相
 たとえば、数学の最終答えが一致するか、コードがテストを通るか、という課題です。
 一方で、この報酬は疎になりやすいです。最終結果に点はつけられても、出力のどの位置やどの推論ステップが効いたのかまでは分かりにくいからです。
 
-以下の解説もわかりやすいです。
+RLVR で生成中の修正やロールアウトをどう扱うかは、次の記事でも詳しく整理されています。
 
 https://tech-blog.abeja.asia/entry/llm-rl-rollout-correction-202606
 
@@ -596,7 +589,7 @@ $$
 
 ここで $\mathrm{sg}$ は勾配を止める操作です。つまり、教師側は更新せず、生徒側だけを教師に近づけます。直感的には、「答えや手がかりを見た自分」が「答えや手がかりを見ていない自分」に教える方法です。数学やコードのように、「解いた後なら、どこが良かったか分かる」課題と相性がよいです。
 
-以下の解説もわかりやすいです。
+OPSD や自己蒸留まわりの日本語での整理としては、次の記事も参考になります。
 
 https://note.com/kei_disign/n/nd60818508c1a
 
@@ -727,6 +720,8 @@ $$
 ## 参考文献
 
 <!-- textlint-disable ja-technical-writing/sentence-length -->
+
+[^api_wrapper]: API を叩くだけでも便利ではありますが、それだけだとあまりおもしろくない。中身の見通しを持ったうえで、もう少し踏み込んでいろいろやりたい、という気持ちです。
 
 [^instructgpt]: Long Ouyang et al. "Training language models to follow instructions with human feedback."
     arXiv:2203.02155. [https://arxiv.org/abs/2203.02155](https://arxiv.org/abs/2203.02155)

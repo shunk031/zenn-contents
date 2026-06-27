@@ -11,8 +11,13 @@ const files = targets.length > 0 ? targets : fs.readdirSync("articles")
 const checks = [
   {
     name: "avoid-vague-fillers",
-    pattern: /(だいたい|ざっくり|豊かなフィードバック|一言で整理すると|次のようになります|補助線)/,
+    pattern: /(だいたい|ざっくり|豊かなフィードバック|一言で整理すると|次のようになります|以下の解説もわかりやすいです|追う必要があります|補助線)/,
     message: "ぼかし語や定型句を具体的な表現に直してください。",
+  },
+  {
+    name: "avoid-leading-nanode",
+    pattern: /^なので/m,
+    message: "文頭の「なので」は避け、前文との関係を文中で自然につないでください。",
   },
   {
     name: "avoid-awkward-terms",
