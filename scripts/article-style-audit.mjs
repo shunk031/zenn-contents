@@ -318,6 +318,16 @@ function reportMarkdownSensitiveMathLines(file, lines) {
         lines[index],
       );
     }
+
+    if (/[<>]/.test(lines[index])) {
+      report(
+        file,
+        index + 1,
+        "avoid-markdown-sensitive-display-math",
+        "GitHub の数式表示では display math 内の < や > も HTML と衝突して崩れることがあります。\\lt / \\gt を使ってください。",
+        lines[index],
+      );
+    }
   }
 }
 

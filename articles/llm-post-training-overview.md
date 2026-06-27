@@ -69,7 +69,7 @@ https://nrehiew.github.io/blog/sft_rl_opd/
 ここで $\pi_\theta$ は、入力 $x$ に対して応答 $y$ を出す確率分布です。強化学習の言葉では、この確率分布を方策と呼びます。LLM では、ここまでの文脈から次に出すトークンを選ぶ確率分布として扱います。応答全体の確率は、各時点の出力確率の積として分解できます。
 
 $$
-\pi_\theta(y \mid x) = \prod_{t=1}^{T} \pi_\theta(y_t \mid x, y_{<t})
+\pi_\theta(y \mid x) = \prod_{t=1}^{T} \pi_\theta(y_t \mid x, y_{\lt t})
 $$
 
 ## 模範応答から学ぶ
@@ -81,7 +81,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\mathcal{L}_{\mathrm{SFT}}(\theta) = - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}} \left[ \sum_{t=1}^{T} \log \pi_\theta(y_t^\ast \mid x, y_{<t}^\ast) \right]
+\mathcal{L}_{\mathrm{SFT}}(\theta) = - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}} \left[ \sum_{t=1}^{T} \log \pi_\theta(y_t^\ast \mid x, y_{\lt t}^\ast) \right]
 $$
 
 <!-- textlint-enable -->
@@ -153,7 +153,7 @@ PPO は、この方策更新を安定させるための代表的な手法です�
 <!-- textlint-disable -->
 
 $$
-\rho_t(\theta) = \frac{\pi_\theta(y_t \mid x, y_{<t})} {\pi_{\mathrm{old}}(y_t \mid x, y_{<t})}
+\rho_t(\theta) = \frac{\pi_\theta(y_t \mid x, y_{\lt t})} {\pi_{\mathrm{old}}(y_t \mid x, y_{\lt t})}
 $$
 
 <!-- textlint-enable -->
@@ -355,7 +355,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\rho_{i,t} = \frac{\pi_\theta(y_{i,t} \mid x, y_{i,<t})} {\pi_{\mathrm{old}}(y_{i,t} \mid x, y_{i,<t})}
+\rho_{i,t} = \frac{\pi_\theta(y_{i,t} \mid x, y_{i,\lt t})} {\pi_{\mathrm{old}}(y_{i,t} \mid x, y_{i,\lt t})}
 $$
 
 <!-- textlint-enable -->
@@ -385,7 +385,7 @@ $$
 <!-- textlint-disable -->
 
 $$
-\mathcal{L}_{\mathrm{OPD}}(\theta) = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \pi_T(\cdot \mid x, y_{<t}) \| \pi_\theta(\cdot \mid x, y_{<t}) \right) \right]
+\mathcal{L}_{\mathrm{OPD}}(\theta) = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \pi_T(\cdot \mid x, y_{\lt t}) \| \pi_\theta(\cdot \mid x, y_{\lt t}) \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -411,7 +411,7 @@ SFT は細かい信号を与えますが、文脈は固定されています。�
 <!-- textlint-disable -->
 
 $$
-\mathcal{L}_{\mathrm{OPSD}}(\theta) = \mathbb{E}_{(x, z) \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, z, y_{<t}) \right] \| \pi_\theta(\cdot \mid x, y_{<t}) \right) \right]
+\mathcal{L}_{\mathrm{OPSD}}(\theta) = \mathbb{E}_{(x, z) \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, z, y_{\lt t}) \right] \| \pi_\theta(\cdot \mid x, y_{\lt t}) \right) \right]
 $$
 
 <!-- textlint-enable -->
@@ -431,7 +431,7 @@ SDPO は、実行結果や判定結果を使って、より細かい教師信号
 <!-- textlint-disable -->
 
 $$
-\mathcal{L}_{\mathrm{SDPO\text{-}self}} = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x),\, f} \left[ \sum_t w_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, f, y_{<t}) \right] \| \pi_\theta(\cdot \mid x, y_{<t}) \right) \right]
+\mathcal{L}_{\mathrm{SDPO\text{-}self}} = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x),\, f} \left[ \sum_t w_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, f, y_{\lt t}) \right] \| \pi_\theta(\cdot \mid x, y_{\lt t}) \right) \right]
 $$
 
 <!-- textlint-enable -->
