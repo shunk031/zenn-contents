@@ -250,6 +250,11 @@ function headingText(line) {
   return match ? match[1].trim() : null;
 }
 
+function h3HeadingText(line) {
+  const match = /^###\s+(.+)$/.exec(line);
+  return match ? match[1].trim() : null;
+}
+
 function nonEmptyLineCount(lines, startIndex, endIndex) {
   return lines
     .slice(startIndex + 1, endIndex)
@@ -480,6 +485,49 @@ function summarySectionStart(lines) {
   return lines.findIndex((line) => line.trim() === "## まとめ");
 }
 
+function reportPeerMethodHeadingMismatch(file, lines) {
+  const peerGroups = [
+    ["GRPO", "MAXRL"],
+  ];
+
+  const h2Indexes = lines
+    .map((line, index) => ({ index, text: headingText(line) }))
+    .filter((heading) => heading.text !== null)
+    .map((heading) => heading.index);
+
+  for (let sectionNumber = 0; sectionNumber < h2Indexes.length; sectionNumber += 1) {
+    const startIndex = h2Indexes[sectionNumber];
+    const endIndex = h2Indexes[sectionNumber + 1] ?? lines.length;
+    const sectionLines = lines.slice(startIndex + 1, endIndex);
+    const sectionText = sectionLines.join("\n");
+    const h3Headings = new Set(
+      sectionLines
+        .map((line) => h3HeadingText(line))
+        .filter((text) => text !== null),
+    );
+
+    for (const peerGroup of peerGroups) {
+      const presentTerms = peerGroup.filter((term) => new RegExp(`\\b${term}\\b`).test(sectionText));
+      if (presentTerms.length < peerGroup.length) {
+        continue;
+      }
+
+      const headingTerms = peerGroup.filter((term) => h3Headings.has(term));
+      if (headingTerms.length === 0 || headingTerms.length === peerGroup.length) {
+        continue;
+      }
+
+      report(
+        file,
+        startIndex + 1,
+        "avoid-peer-method-heading-mismatch",
+        `${peerGroup.join(" / ")} のように同じ親章で並ぶ具体手法は、片方だけ小見出しにせず見出し粒度をそろえてください。`,
+        lines[startIndex],
+      );
+    }
+  }
+}
+
 for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
@@ -490,6 +538,7 @@ for (const file of files) {
   reportFloatingQuestionParagraph(file, lines);
   reportMarkdownSensitiveMathLines(file, lines);
   reportMarkdownSensitiveInlineMath(file, text);
+  reportPeerMethodHeadingMismatch(file, lines);
 
   for (const check of checks) {
     for (let index = 0; index < lines.length; index += 1) {
