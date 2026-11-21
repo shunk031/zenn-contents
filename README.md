@@ -20,6 +20,39 @@ lefthook install
 
 or you can use `devcontainer` without mise.
 
+### 記事を書くエージェント用のスキル
+
+記事執筆の実行には、[Herdr](https://herdr.dev/tui/docs/install/) と [Google Antigravity CLI](https://antigravity.google/docs/cli) の本体を事前に導入する。
+
+リポジトリとユーザー環境の両方にスキルを入れると同名スキルの扱いがエージェントごとに異なるため、スキルは global に導入する。
+
+記事執筆では以下の 6 つのスキルを使用する。
+
+- `shunk031/skills`: `shunk031-writing-tech-article`, `shunk031-writing-gemini-japanese`, `shunk031-herdr-orchestrate-workers`, `shunk031-writing-router`
+- `coji/natural-japanese`: `natural-japanese`
+- `herdrdev/herdr`: `herdr`
+
+環境に不足しているスキルがある場合は、以下のコマンドで global に追加する。
+
+```shell
+npx skills add shunk031/skills --skill shunk031-writing-gemini-japanese shunk031-herdr-orchestrate-workers shunk031-writing-router --agent codex claude-code antigravity-cli --global --yes
+```
+
+```shell
+npx skills add shunk031/skills --skill shunk031-writing-tech-article --agent codex claude-code antigravity-cli --global --yes
+```
+
+```shell
+npx skills add coji/natural-japanese --skill natural-japanese --agent codex claude-code antigravity-cli --global --yes
+npx skills add herdrdev/herdr --skill herdr --agent codex claude-code antigravity-cli --global --yes
+```
+
+記事の執筆を始める前に、以下のコマンドで 6 つのスキルを最新に更新する。
+
+```shell
+npx skills update --global shunk031-writing-tech-article shunk031-writing-gemini-japanese shunk031-herdr-orchestrate-workers shunk031-writing-router natural-japanese herdr
+```
+
 ## Commands
 
 ```shell

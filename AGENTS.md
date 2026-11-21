@@ -5,7 +5,8 @@
 
 ## Article Editing
 
-- 記事（`articles/*.md`）と docs（`docs/*.md`）の日本語は agy worker が `shunk031-writing-gemini-japanese` スキルの手順で書き・直す。呼び出し元は本文を直接書かない。
+- 記事（`articles/*.md`）は、`shunk031-writing-tech-article` スキルで読者、目的、調査、構成を決める。
+- 記事と docs（`docs/*.md`）の日本語は agy（Google の Antigravity CLI。Gemini を使う）の worker が担当する。執筆は `shunk031-writing-gemini-japanese` スキルの手順で行い、呼び出し元は本文を直接書かない。必要なスキルと入れ方は README の Setup を見る。
 - 呼び出し元は元資料の調査、`textlint` や `article-style:audit` の実行、commit や PR を担当する。
 - 記事を書く・直す前に `docs/article-editing-guidelines.md` を確認し、略語、引用、用語統一、段落構成の方針を反映する。
 - 記事の日本語を直すときは、まず見出し、段落の役割、図表やリンクの接続、引用位置を点検し、その後で語句を直す。NG 語の置換だけで完了扱いにしない。
