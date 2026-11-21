@@ -338,6 +338,230 @@ function report(file, lineNumber, name, message, line) {
   console.error(`  ${line}`);
 }
 
+function nextBacktickRun(line, startIndex) {
+  const start = line.indexOf("`", startIndex);
+  if (start < 0) {
+    return null;
+  }
+
+  let end = start + 1;
+  while (line[end] === "`") {
+    end += 1;
+  }
+
+  return { start, end, length: end - start };
+}
+
+function maskInlineCodeAndHtmlComments(line, state) {
+  let visible = "";
+  let index = 0;
+
+  while (index < line.length) {
+    if (state.inHtmlComment) {
+      const closingIndex = line.indexOf("-->", index);
+      if (closingIndex < 0) {
+        return { line: visible + " ".repeat(line.length - index), state };
+      }
+
+      visible += " ".repeat(closingIndex + 3 - index);
+      index = closingIndex + 3;
+      state.inHtmlComment = false;
+      continue;
+    }
+
+    if (state.inlineCodeLength !== null) {
+      let closingRun = nextBacktickRun(line, index);
+      while (closingRun && closingRun.length !== state.inlineCodeLength) {
+        closingRun = nextBacktickRun(line, closingRun.end);
+      }
+
+      if (!closingRun) {
+        return { line: visible + " ".repeat(line.length - index), state };
+      }
+
+      visible += " ".repeat(closingRun.end - index);
+      index = closingRun.end;
+      state.inlineCodeLength = null;
+      continue;
+    }
+
+    const backtickRun = nextBacktickRun(line, index);
+    const commentIndex = line.indexOf("<!--", index);
+
+    if (backtickRun && (commentIndex < 0 || backtickRun.start < commentIndex)) {
+      let closingRun = nextBacktickRun(line, backtickRun.end);
+      while (closingRun && closingRun.length !== backtickRun.length) {
+        closingRun = nextBacktickRun(line, closingRun.end);
+      }
+
+      if (!closingRun) {
+        visible += line.slice(index, backtickRun.start) + " ".repeat(line.length - backtickRun.start);
+        state.inlineCodeLength = backtickRun.length;
+        return { line: visible, state };
+      }
+
+      visible += line.slice(index, backtickRun.start) + " ".repeat(closingRun.end - backtickRun.start);
+      index = closingRun.end;
+      continue;
+    }
+
+    if (commentIndex >= 0) {
+      visible += line.slice(index, commentIndex) + "    ";
+      index = commentIndex + 4;
+      state.inHtmlComment = true;
+      continue;
+    }
+
+    visible += line.slice(index);
+    break;
+  }
+
+  return { line: visible, state };
+}
+
+function linesOutsideFencedCodeAndHtmlComments(lines) {
+  let fence = null;
+  const state = { inHtmlComment: false, inlineCodeLength: null };
+
+  return lines.map((line) => {
+    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+
+    if (fence !== null) {
+      if (
+        fenceMatch
+        && fenceMatch[1][0] === fence.character
+        && fenceMatch[1].length >= fence.length
+        && fenceMatch[2].trim() === ""
+      ) {
+        fence = null;
+      }
+      return "";
+    }
+
+    if (!state.inHtmlComment && fenceMatch) {
+      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
+      state.inlineCodeLength = null;
+      return "";
+    }
+
+    const result = maskInlineCodeAndHtmlComments(line, state);
+    return result.line;
+  });
+}
+
+function stripUrls(text) {
+  return text.replace(/(?:https?:\/\/|www\.)\S+/giu, (match) => " ".repeat(match.length));
+}
+
+function stripMarkdownFormatting(text) {
+  return text
+    .replace(/(?<!\\)(\*\*|__|~~)(.+?)\1/gu, "$2")
+    .replace(/(?<!\\)([*_])([^*_]+?)\1/gu, "$2");
+}
+
+function linesInsideTextlintSpacingDisableRegion(lines) {
+  const spacingRule = "ja-spacing/ja-space-between-half-and-full-width";
+  const directivePattern = /^\s*<!--\s*textlint-(disable|enable)(?:\s+([^>]*?))?\s*-->\s*$/;
+  let fence = null;
+  let allRulesDisabled = false;
+  let spacingRuleDisabled = false;
+
+  return lines.map((line, index) => {
+    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+
+    if (fence !== null) {
+      if (
+        fenceMatch
+        && fenceMatch[1][0] === fence.character
+        && fenceMatch[1].length >= fence.length
+        && fenceMatch[2].trim() === ""
+      ) {
+        fence = null;
+      }
+      return false;
+    }
+
+    if (fenceMatch) {
+      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
+      return false;
+    }
+
+    const directive = directivePattern.exec(line);
+    const hasBlankLineAroundDirective = (index === 0 || lines[index - 1].trim() === "")
+      && (index === lines.length - 1 || lines[index + 1].trim() === "");
+    if (directive && hasBlankLineAroundDirective) {
+      const ruleNames = (directive[2] ?? "").split(/[\s,]+/).filter(Boolean);
+      if (ruleNames.length === 0) {
+        allRulesDisabled = directive[1] === "disable";
+        spacingRuleDisabled = false;
+      } else if (ruleNames.includes(spacingRule)) {
+        spacingRuleDisabled = directive[1] === "disable";
+      }
+    }
+
+    return allRulesDisabled || spacingRuleDisabled;
+  });
+}
+
+function reportHalfFullWidthSpaceOutsideTextlint(file, lines) {
+  const japaneseCharacter = "\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Han}";
+  const halfFullWidthBoundary = new RegExp(`(?:[A-Za-z0-9][${japaneseCharacter}]|[${japaneseCharacter}][A-Za-z0-9])`, "u");
+  const visibleLines = linesOutsideFencedCodeAndHtmlComments(lines);
+  const disabledLines = linesInsideTextlintSpacingDisableRegion(lines);
+  const reportedLines = new Set();
+
+  function reportIfNeeded(lineIndex, text) {
+    if (reportedLines.has(lineIndex) || !halfFullWidthBoundary.test(stripUrls(text))) {
+      return;
+    }
+
+    reportedLines.add(lineIndex);
+    report(
+      file,
+      lineIndex + 1,
+      "half-full-width-space-outside-textlint",
+      "textlint が見ないタイトル、見出し、リンク文字列でも、半角英数字と全角文字の間に半角スペースを入れてください。",
+      lines[lineIndex],
+    );
+  }
+
+  if (lines[0] === "---") {
+    const closingIndex = lines.findIndex((line, index) => index > 0 && line === "---");
+    if (closingIndex >= 0) {
+      const titleIndex = lines.findIndex((line, index) => index > 0 && index < closingIndex && /^title:\s*/.test(line));
+      if (titleIndex >= 0 && !disabledLines[titleIndex]) {
+        const titleValue = /^title:\s*(.*)$/.exec(visibleLines[titleIndex])?.[1] ?? "";
+        reportIfNeeded(titleIndex, titleValue);
+      }
+    }
+  }
+
+  const inlineLinkPattern = /(?<!!)(?<!\\)\[([^\]]+)\]\([^)]*\)/g;
+  let firstBodyLine = 0;
+
+  if (lines[0] === "---") {
+    const closingIndex = lines.findIndex((line, index) => index > 0 && line === "---");
+    if (closingIndex >= 0) {
+      firstBodyLine = closingIndex + 1;
+    }
+  }
+
+  for (let index = firstBodyLine; index < visibleLines.length; index += 1) {
+    if (disabledLines[index]) {
+      continue;
+    }
+
+    const heading = /^ {0,3}#{1,6}(?:\s+|$)(.*)$/.exec(visibleLines[index]);
+    if (heading) {
+      reportIfNeeded(index, stripMarkdownFormatting(heading[1]));
+    }
+
+    for (const match of visibleLines[index].matchAll(inlineLinkPattern)) {
+      reportIfNeeded(index, stripMarkdownFormatting(match[1]));
+    }
+  }
+}
+
 function reportFootnoteReferencesInMermaid(file, lines) {
   let fence = null;
 
@@ -588,6 +812,7 @@ for (const file of files) {
   reportFloatingQuestionParagraph(file, lines);
   reportMarkdownSensitiveMathLines(file, lines);
   reportMarkdownSensitiveInlineMath(file, text);
+  reportHalfFullWidthSpaceOutsideTextlint(file, lines);
   reportFootnoteReferencesInMermaid(file, lines);
   reportPeerMethodHeadingMismatch(file, lines);
 
