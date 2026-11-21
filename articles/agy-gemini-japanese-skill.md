@@ -1,5 +1,5 @@
 ---
-title: "キモいAI語をagy geminiスキルで一掃するゾォ〜"
+title: "AI 臭い日本語を agy gemini スキルで一掃するゾォ〜"
 emoji: "🧹"
 type: "tech"
 topics: ["ai", "gemini", "antigravity", "herdr", "claudecode"]
@@ -14,15 +14,37 @@ https://adventar.org/calendars/13106
 
 https://zenn.dev/shunk031/articles/herdr-orchestrate-workers-skill
 
-コーディングエージェントを日々の開発に組み込むと、実装や調査の速度は大幅に上がります。その一方で、プルリクエスト (Pull Request; PR) の説明文やドキュメントなどの日本語作成には課題があります。独特の不自然な定型表現や比喩が混ざりやすいためです。
+日々の開発でコーディングエージェントを使っていると、プルリクエスト (Pull Request; PR) の説明文などで Claude や Codex が書く日本語に違和感を覚える場面がありました。その一方で、Gemini の日本語は良さそうだという話を見かけました。そこで、Gemini に日本語を直させるスキルを作りました。
 
 <!-- 感想: コーディングエージェントに PR 説明文やコミットメッセージを書かせたときの不自然さに直面した経験について、実際に使ってどうだったか一言 -->
 
+そうした話の例として、田嶋正吾さんの note 記事[^1]があります。同記事では、Claude Code の Claude Opus 5.5 と Antigravity の Gemini 3.8 Flash に同じ材料で記事を書かせ、書き手を伏せて読み比べた結果を次のように述べています。
+
+<!-- textlint-disable -->
+> 書き手を伏せて読み比べた結果、私はGeminiの文章を選びました。
+<!-- textlint-enable -->
+
+また、HJR@インフィニテックさんの note 記事[^2]には、次のような一文があります。
+
+<!-- textlint-disable -->
+> Claude Codeで文章を作ってもらうと、よく「イケてないなぁ・・・」と思います。
+<!-- textlint-enable -->
+
 本記事では、この AI 特有の不自然な日本語を抑制するために運用しているスキル `shunk031-writing-gemini-japanese` を紹介します。呼び出し元のエージェント自身には日本語を書かせません。シェルコマンドの実行を拒否した agy ワーカーへ、執筆とレビューを委任する仕組みを解説します。
 
-# 「キモいAI語」とは何か
+# 「AI 臭い日本語」とは何か
 
 AI が生成する日本語には、文法上の明確な誤りではない不自然さが現れます。文脈にそぐわない定型表現や比喩、中身の薄い抽象名詞句などです。これらは技術文書としての読みやすさを損ない、読者に誤解を与える原因になります。
+
+<!-- textlint-disable ja-spacing/ja-space-between-half-and-full-width -->
+先行する整理として、ブログ「まだいる」の 2026-08-29 の記事「AI語に親しむ」があります。[^3] 同記事では、AI が喋る言葉を「AI語」と呼び、「AI臭さ」「AI-ism」「AI slop」とも呼ばれると書いています。厳密な定義ではなく、生成された文章を見て人間の側が事後的かつ主観的に判断したものとしています。水準としては単語・構文・文章構造・内容の 4 つに分類しています。例として「手触り」「解像度」「余白」のような語、「重要なのは」のような前置き、「X ではなく、Y です」の構文、3 つに分ける列挙を挙げています。いずれも仮説であり、定量的には確かめていないと断っています。
+<!-- textlint-enable ja-spacing/ja-space-between-half-and-full-width -->
+
+<!-- textlint-disable ja-spacing/ja-space-between-half-and-full-width -->
+また、todesking さんによる 2026-10-12 の記事「スロップ表現100連発」があります。[^4] 同記事では、流し読みでは自然に見えるが文字どおりに読むと意味が壊れる表現を「スロップ表現」と呼び、意味破綻型と過剰圧縮型に分けて約 100 例を集めています。例として「窓ガラスが夜をやさしく折りたたんでいる」（意味破綻型）や、「成果で働く、場所は手段」（過剰圧縮型）を挙げています。
+<!-- textlint-enable ja-spacing/ja-space-between-half-and-full-width -->
+
+本記事のスキルが直すのは、このうち PR 説明文やドキュメントで起きやすい不自然な比喩や定型句、勝手な断定です。
 
 リポジトリで参照している推敲スキルや編集ガイドラインでは、こうした表現を分類しています。主な具体例と問題点は次の通りです。
 
@@ -115,3 +137,12 @@ AI による文章作成を安定させる鍵は、プロンプトの工夫だ�
 <!-- 感想: 日本語の執筆とレビューを外部モデルに委任するワークフローを実際に開発へ組み込んでみた実感について、実際に使ってどうだったか一言 -->
 
 明日 12/3 の記事では、Markdown ベースでスライドを作成できるツール Marp を取り上げます。論文紹介スライドの構成スキル `shunk031-writing-technical-slides` と組み合わせた作成手順を紹介します。スライド本文の構成にも今回の文書作成思想が引き継がれていますので、ぜひ続けてご覧ください。
+
+<!-- textlint-disable -->
+
+[^1]: 日本語の文章はGeminiに書かせると自然になる｜Claudeと比較してもかなりAI感がない - 田嶋正吾 https://note.com/st_dev0/n/n965df27a887a
+[^2]: 文章達者は誰？ Gemini / Claude Code / ChatGPTを比べてみた - HJR@インフィニテック https://note.com/iwata9999/n/na962cdc5c829
+[^3]: AI語に親しむ - まだいる https://ktrmnm.jp/blog/2026-08-29-what-is-ai-ism-jp/
+[^4]: スロップ表現100連発 - todesking https://zenn.dev/todesking/articles/5bc43f449ecdf6
+
+<!-- textlint-enable -->
