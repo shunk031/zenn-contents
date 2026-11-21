@@ -13,7 +13,7 @@ https://adventar.org/calendars/13106
 このアドベントカレンダーでは、12/1 から 12/3 まで 3 日連続で記事を投稿します。コーディングエージェントの運用に関する続き物です。全体の予定は次の通りです。
 
 - 12/1: [herdr で複数のエージェントを対話させるシンプルなスキルの紹介](https://zenn.dev/shunk031/articles/herdr-orchestrate-workers-skill)（本記事）
-- 12/2: [キモいAI語をagy geminiスキルで一掃するゾォ〜](https://zenn.dev/shunk031/articles/agy-gemini-japanese-skill)
+- 12/2: [AI 臭い日本語を agy gemini スキルで一掃するゾォ〜](https://zenn.dev/shunk031/articles/agy-gemini-japanese-skill)
 - 12/3: [marp でいい感じに論文紹介スライドを作るぜ](https://zenn.dev/shunk031/articles/marp-paper-reading-slides)
 
 普段の開発で Claude Code や Codex を使っていると、複数の課題を同時に進めたい場面が増えてきます。調査と実装を切り分けて進めたい場面もあります。しかし、1 つのセッションに作業を任せすぎると、コンテキストウィンドウを早く消費して判断の精度が落ちます。同じ作業ディレクトリ内で変更が競合する問題も起きます。
@@ -170,7 +170,7 @@ herdr-worker-lifecycle.sh launch <your-name>-<task> --kind <kind>
 
 明日（12/2）のカレンダー 2 日目では、この基盤上で Google の Antigravity CLI (agy) を動かす応用例を紹介します。
 
-記事タイトルは [キモいAI語をagy geminiスキルで一掃するゾォ〜](https://zenn.dev/shunk031/articles/agy-gemini-japanese-skill) です。AI 特有の不自然な日本語表現を一掃する執筆・推敲スキル `shunk031-writing-gemini-japanese` を取り上げます。オーケストレーターと執筆ワーカー、確認役の連携フローを解説しますので、ぜひ続けてご覧ください。
+記事タイトルは [AI 臭い日本語を agy gemini スキルで一掃するゾォ〜](https://zenn.dev/shunk031/articles/agy-gemini-japanese-skill) です。AI 特有の不自然な日本語表現を一掃する執筆・推敲スキル `shunk031-writing-gemini-japanese` を取り上げます。オーケストレーターと執筆ワーカー、確認役の連携フローを解説しますので、ぜひ続けてご覧ください。
 
 <!-- textlint-disable -->
 
