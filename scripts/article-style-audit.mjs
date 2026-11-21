@@ -136,8 +136,18 @@ const checks = [
   },
   {
     name: "avoid-abstract-evaluation-ending",
-    pattern: /(追いやすくなります|整理しやすくなります|見えます|分かりやすくなります|扱いやすいです|使いやすいです)/,
+    pattern: /(追いやすくなります|整理しやすくなります|見えます|分かりやすくなります|扱いやすいです|使いやすいです|[^。\n]{1,80}は(?:簡潔|強固)です)/,
     message: "評価で閉じず、何が減る・何を分ける・何を判断できるのかを書いてください。",
+  },
+  {
+    name: "avoid-vague-cleanup-safety",
+    pattern: /安全な片付け/,
+    message: "安全性を形容するだけでなく、何をどう片付けるかを書いてください。",
+  },
+  {
+    name: "avoid-vague-safe-termination",
+    pattern: /安全に終了します/,
+    message: "安全性を評価するだけでなく、終了時の処理や結果を具体的に書いてください。",
   },
   {
     name: "avoid-anthropomorphic-distillation-visibility",
@@ -326,6 +336,46 @@ function report(file, lineNumber, name, message, line) {
   failed = true;
   console.error(`${file}:${lineNumber}: ${name}: ${message}`);
   console.error(`  ${line}`);
+}
+
+function reportFootnoteReferencesInMermaid(file, lines) {
+  let fence = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(lines[index]);
+
+    if (fence === null) {
+      if (match) {
+        const language = match[2].trim().split(/\s+/, 1)[0]?.toLowerCase();
+        fence = {
+          character: match[1][0],
+          length: match[1].length,
+          isMermaid: language === "mermaid",
+        };
+      }
+      continue;
+    }
+
+    if (
+      match
+      && match[1][0] === fence.character
+      && match[1].length >= fence.length
+      && match[2].trim() === ""
+    ) {
+      fence = null;
+      continue;
+    }
+
+    if (fence.isMermaid && /\[\^[^\]]+\](?!:)/.test(lines[index])) {
+      report(
+        file,
+        index + 1,
+        "avoid-footnote-reference-in-mermaid",
+        "Mermaid ブロック内の脚注参照は本文上の引用として読めないため、図の前後の本文へ移してください。",
+        lines[index],
+      );
+    }
+  }
 }
 
 function reportLooseTopicShiftAfterExternalMaterial(file, lines) {
@@ -538,6 +588,7 @@ for (const file of files) {
   reportFloatingQuestionParagraph(file, lines);
   reportMarkdownSensitiveMathLines(file, lines);
   reportMarkdownSensitiveInlineMath(file, text);
+  reportFootnoteReferencesInMermaid(file, lines);
   reportPeerMethodHeadingMismatch(file, lines);
 
   for (const check of checks) {
