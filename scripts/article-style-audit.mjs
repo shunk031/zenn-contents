@@ -570,6 +570,16 @@ function isHtmlCommentLine(line) {
   return /^[ \t]*<!--/.test(line);
 }
 
+function isFenceOpeningLine(lines, index) {
+  const indentation = /^[ \t]*/.exec(lines[index])[0];
+  if (indentation.length <= 3 && !indentation.includes("\t")) {
+    return true;
+  }
+
+  const previous = previousNonEmptyLine(lines, index);
+  return isListItemOrContinuation(lines, previous.index);
+}
+
 function isIndentedListContinuation(line) {
   return /^(?: {2,}|\t)\S/.test(line);
 }
@@ -612,7 +622,7 @@ function reportHtmlCommentsBetweenListItems(file, lines) {
       continue;
     }
 
-    if (fenceMatch) {
+    if (fenceMatch && isFenceOpeningLine(lines, index)) {
       fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
       continue;
     }
