@@ -562,6 +562,92 @@ function reportHalfFullWidthSpaceOutsideTextlint(file, lines) {
   }
 }
 
+function isMarkdownListItem(line) {
+  return /^\s*(?:[-+*]|\d+[.)])\s+\S/.test(line);
+}
+
+function isIndentedListContinuation(line) {
+  return /^(?: {2,}|\t)\S/.test(line);
+}
+
+function isListItemOrContinuation(lines, index) {
+  if (index < 0) {
+    return false;
+  }
+
+  if (isMarkdownListItem(lines[index])) {
+    return true;
+  }
+
+  let currentIndex = index;
+  while (currentIndex >= 0 && isIndentedListContinuation(lines[currentIndex])) {
+    currentIndex = previousNonEmptyLine(lines, currentIndex).index;
+    if (currentIndex >= 0 && isMarkdownListItem(lines[currentIndex])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function reportHtmlCommentsBetweenListItems(file, lines) {
+  let fence = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const fenceMatch = /^ {0,3}(\x60{3,}|~{3,})(.*)$/.exec(lines[index]);
+
+    if (fence !== null) {
+      if (
+        fenceMatch
+        && fenceMatch[1][0] === fence.character
+        && fenceMatch[1].length >= fence.length
+        && fenceMatch[2].trim() === ""
+      ) {
+        fence = null;
+      }
+      continue;
+    }
+
+    if (fenceMatch) {
+      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
+      continue;
+    }
+
+    if (!lines[index].startsWith("<!--")) {
+      continue;
+    }
+
+    const previous = previousNonEmptyLine(lines, index);
+    if (!isListItemOrContinuation(lines, previous.index)) {
+      continue;
+    }
+
+    let nextIndex = index + 1;
+    while (nextIndex < lines.length) {
+      const nextLine = lines[nextIndex];
+      if (nextLine.trim() === "") {
+        break;
+      }
+
+      if (nextLine.startsWith("<!--")) {
+        nextIndex += 1;
+        continue;
+      }
+
+      if (isMarkdownListItem(nextLine)) {
+        report(
+          file,
+          index + 1,
+          "avoid-html-comment-between-list-items",
+          "箇条書きの項目の間に HTML コメントがあります。コメントは箇条書き全体の前後に置いてください。",
+          lines[index],
+        );
+      }
+      break;
+    }
+  }
+}
+
 function reportFootnoteReferencesInMermaid(file, lines) {
   let fence = null;
 
@@ -813,6 +899,7 @@ for (const file of files) {
   reportMarkdownSensitiveMathLines(file, lines);
   reportMarkdownSensitiveInlineMath(file, text);
   reportHalfFullWidthSpaceOutsideTextlint(file, lines);
+  reportHtmlCommentsBetweenListItems(file, lines);
   reportFootnoteReferencesInMermaid(file, lines);
   reportPeerMethodHeadingMismatch(file, lines);
 
