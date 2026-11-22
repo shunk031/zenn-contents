@@ -12,3 +12,7 @@ preview:
 .PHONY: textlint
 textlint:
 	npm run textlint
+
+.PHONY: article-style-audit
+article-style-audit:
+	npm run article-style:audit
