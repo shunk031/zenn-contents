@@ -22,13 +22,13 @@ https://adventar.org/calendars/13106
 
 <!-- 感想: 1 つのエージェントに任せきりにしたときのコンテキスト肥大化や、手作業でのターミナル管理で困っていた点について、実際に使ってどうだったか一言 -->
 
-そこで本記事では、ターミナルワークスペースマネージャーの [Herdr](https://herdr.dev/tui/docs/) を使ったマルチエージェント運用を取り上げます。紹介するのは `shunk031-herdr-orchestrate-workers` スキルです。親エージェントであるオーケストレーターが、子エージェントであるワーカーへ仕事を割り振って自律的に対話させます。
+そこで本記事では、コーディングエージェントを動かすためのランタイムである [Herdr](https://herdr.dev/tui/docs/) を使ったマルチエージェント運用を取り上げます。紹介するのは `shunk031-herdr-orchestrate-workers` スキルです。親エージェントであるオーケストレーターが、子エージェントであるワーカーへ仕事を割り振って自律的に対話させます。
 
 https://github.com/shunk031/skills/tree/main/skills/herdr/shunk031-herdr-orchestrate-workers
 
 # Herdr とは
 
-Herdr は、ターミナル上で AI コーディングエージェントの作業スペースを管理するツールです。公式ドキュメントでは「Terminal workspace manager for AI coding agents」と説明されています。[^herdr-doc]
+Herdr は、ターミナル上で AI コーディングエージェントの作業スペースを管理するツールです。公式リポジトリの README では「the runtime your coding agents live on」と説明されています。[^herdr-doc]
 
 https://herdr.dev/tui/docs/
 
@@ -174,7 +174,7 @@ herdr-worker-lifecycle.sh launch <your-name>-<task> --kind <kind>
 
 <!-- textlint-disable -->
 
-[^herdr-doc]: Terminal workspace manager for AI coding agents - Herdr https://herdr.dev/tui/docs/
+[^herdr-doc]: the runtime your coding agents live on - herdrdev/herdr https://github.com/herdrdev/herdr
 [^skills-cli]: skills - Vercel Labs https://github.com/vercel-labs/skills
 
 <!-- textlint-enable -->
