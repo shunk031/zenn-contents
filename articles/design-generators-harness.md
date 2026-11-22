@@ -95,7 +95,7 @@ flowchart TD
     UV --> Verification
 ```
 
-## 1. 単一の真実の源としての指示書（`AGENTS.md`）
+## 1. 共通規則をまとめる指示書（`AGENTS.md`）
 
 リポジトリルートの [`AGENTS.md`](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/AGENTS.md)[^dg_agents_md] では、共通規則を安定かつ簡潔に保ち、実装手順はローカルスキルに置く方針としています。
 
