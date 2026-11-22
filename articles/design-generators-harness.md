@@ -54,7 +54,7 @@ https://adventar.org/calendars/13106
 | RALF[^ralf] | Retrieval-Augmented Layout Transformer for Content-Aware Layout Generation | CVPR 2024 | bit-exact |
 | TKG-DM[^tkg_dm] | TKG-DM: Training-free Chroma Key Content Generation Diffusion Model | CVPR 2025 | tolerance-verified |
 
-本リポジトリの最大の特徴は、「ベンダーパリティ」を必須としている点です。[^dg_readme] 単なる再実装にとどまらず、元論文の実装と数値的に一致するかを自動テストで照合します。カタログ掲載モデルのうち、17 個が元実装とビット完全に一致しています。[^dg_metrics] さらに 14 個が許容誤差内の一致を確認済みです。
+本リポジトリでは、移植したコードが vendor サブモジュールの元実装と数値的に一致するかを確認する方針としています。[^dg_readme] 単なる再実装にとどまらず、一致確認の自動テストで照合します。カタログ掲載モデルのうち、17 個が元実装とビット完全に一致しています。[^dg_metrics] さらに 14 個が許容誤差内の一致を確認済みです。
 
 # ハーネスの全体像
 
@@ -97,7 +97,7 @@ flowchart TD
 
 ## 1. 単一の真実の源としての指示書（`AGENTS.md`）
 
-リポジトリルートの [`AGENTS.md`](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/AGENTS.md)[^dg_agents_md] は、すべてのエージェントが最初に従うべき「真実の源」として定義されています。
+リポジトリルートの [`AGENTS.md`](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/AGENTS.md)[^dg_agents_md] では、共通規則を安定かつ簡潔に保ち、実装手順はローカルスキルに置く方針としています。
 
 ここでは共通の基本原則のみを定めています。[^dg_agents_md] 命名規則、クラス設計、ワークスペース操作、Issue やプルリクエスト (Pull Request; PR) の追跡ルールが含まれます。頻繁に変わるドメイン固有の知識は、`AGENTS.md` に直接書き込みません。リポジトリローカルなスキル群へと委任する構造を取っています。[^dg_agents_md]
 
@@ -170,7 +170,7 @@ sequenceDiagram
 
 実装段階に入ると、Issue に `in-progress` ラベルが付与されます。[^dg_agents_md] 実装作業はメインブランチを直接触らず、独立したタスク専用の Git worktree で行われます。[^dg_checklist]
 
-実装の核となるのが、元実装との一致を確認する「ゴールデンフィクスチャ」の生成です。固定シードと単一 GPU の環境下で、`vendor` サブモジュールの元コードを実行します。中間テンソルや最終出力をダンプして参照データを作成します。[^dg_checklist]
+実装の核となるのが、元実装との一致を確認するゴールデンフィクスチャの準備です。チェックリストでは、参照生成スクリプトを用い、固定シードと単一 GPU の環境でゴールデンフィクスチャを再生成する運用としています。[^dg_checklist]
 
 続いて、パイプライン基底クラスを継承してモデルパッケージを実装します。生成したフィクスチャと比較するパリティテストを実行して整合性を検証します。このとき、テスト環境には `PARITY_REQUIRE=1`[^dg_training_proto] を指定します。必要なアセットがない場合にテストをスキップさせない、フェイルクローズな設定です。これにより、アセット欠落によるテストの意図しない通過を防ぎます。
 
@@ -211,7 +211,7 @@ PR 作成後は、CI による静的解析や型検査、ユニットテスト�
 
 AI エージェントの実用化に伴い、「software factory」という言葉が注目されています。
 
-たとえば Vercel は、エージェントが実装からレビューまで担うワークフローを software factory と呼んでいます。[^vercel_factory] Stripe の Minions も、決定論的ツールを活用してテスト済み PR を生み出す仕組みを報告しています。[^stripe_minions] Uber は、開発ライフサイクル全体にわたる検証や保守を担う自律基盤を論じています。[^uber_factory] 学術界でも、共有バックログを巡回してタスクを自律消化するシステムが提案されています。[^instant_factories]
+たとえば Vercel は、エージェントが実装からレビューまで担うワークフローを software factory と呼んでいます。[^vercel_factory] Stripe の Minions も、決定論的ツールを活用してテスト済み PR を生み出す仕組みを報告しています。[^stripe_minions] Uber は、開発ライフサイクル全体にわたる検証や保守を担う自律基盤を論じています。[^uber_factory] 学術界でも、GitHub などの共有コミュニケーションボードと定常的な目標を持つエージェント群の仕組みが提案されています。[^instant_factories]
 
 これらの議論を踏まえると、本リポジトリは論文実装の再現に特化した software factory と捉えられます。
 
