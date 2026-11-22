@@ -151,8 +151,12 @@ npx skills add shunk031/skills --list
 スキルを導入した後は、ライフサイクルヘルパーを使ってワーカーを起動できます。
 
 ```bash
-herdr-worker-lifecycle.sh launch <your-name>-<task> --kind <kind>
+~/.agents/skills/shunk031-herdr-orchestrate-workers/scripts/herdr-worker-lifecycle.sh launch <worker-name> \
+  --kind codex --workspace <workspace-id> --cwd <worktree-path> \
+  --label "<tab-label>" --task <task-key> -- <agent-args>
 ```
+
+作業場所のワークスペースとディレクトリ、タブの名前、タスク名は必須で、`--` の後ろにはエージェントに渡す引数を書きます。
 
 ワーカーの実装と検証が終わったら、次のコマンドでペインを安全に回収します。
 
