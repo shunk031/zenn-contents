@@ -566,6 +566,10 @@ function isMarkdownListItem(line) {
   return /^\s*(?:[-+*]|\d+[.)])\s+\S/.test(line);
 }
 
+function isHtmlCommentLine(line) {
+  return /^[ \t]*<!--/.test(line);
+}
+
 function isIndentedListContinuation(line) {
   return /^(?: {2,}|\t)\S/.test(line);
 }
@@ -594,7 +598,7 @@ function reportHtmlCommentsBetweenListItems(file, lines) {
   let fence = null;
 
   for (let index = 0; index < lines.length; index += 1) {
-    const fenceMatch = /^ {0,3}(\x60{3,}|~{3,})(.*)$/.exec(lines[index]);
+    const fenceMatch = /^[ \t]*(\x60{3,}|~{3,})(.*)$/.exec(lines[index]);
 
     if (fence !== null) {
       if (
@@ -613,7 +617,11 @@ function reportHtmlCommentsBetweenListItems(file, lines) {
       continue;
     }
 
-    if (!lines[index].startsWith("<!--")) {
+    if (!isHtmlCommentLine(lines[index])) {
+      continue;
+    }
+
+    if (index > 0 && isHtmlCommentLine(lines[index - 1])) {
       continue;
     }
 
@@ -629,7 +637,7 @@ function reportHtmlCommentsBetweenListItems(file, lines) {
         break;
       }
 
-      if (nextLine.startsWith("<!--")) {
+      if (isHtmlCommentLine(nextLine)) {
         nextIndex += 1;
         continue;
       }
