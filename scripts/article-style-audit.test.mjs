@@ -156,3 +156,31 @@ test("adjacent heading audit uses Markdown heading nodes and ignores fenced exam
   assert.match(result.stderr, /headings\.md:4: add-lead-before-subheading/);
   assert.doesNotMatch(result.stderr, /headings\.md:(?:8|9): add-lead-before-subheading/);
 });
+
+test("HTML comments between list items are detected without scanning code fences", (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "article-style-audit-list-comments-"));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const articlePath = path.join(directory, "list-comments.md");
+  fs.writeFileSync(articlePath, [
+    "- first item",
+    "<!-- note -->",
+    "<!-- second note -->",
+    "- second item",
+    "",
+    "```md",
+    "- fenced item",
+    "<!-- ignored note -->",
+    "- fenced item",
+    "```",
+    "",
+  ].join("\n"));
+
+  const result = spawnSync(process.execPath, [scriptPath, articlePath], {
+    cwd: repositoryPath,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /list-comments\.md:2: avoid-html-comment-between-list-items/);
+  assert.doesNotMatch(result.stderr, /list-comments\.md:8: avoid-html-comment-between-list-items/);
+});

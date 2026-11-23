@@ -395,6 +395,7 @@ function createMarkdownContext(text) {
   return {
     ast,
     codeBlocks,
+    htmlNodes,
     listItems: nodes.filter((node) => node.type === "ListItem"),
     inlineCode: nodes.filter((node) => node.type === "Code"),
     comments,
@@ -451,6 +452,57 @@ function maskSourceRanges(text, ranges) {
 function isCommentOnlyHtmlNode(text, node) {
   const raw = text.slice(node.range[0], node.range[1]);
   return raw.replace(/<!--[\s\S]*?-->/g, "").trim() === "";
+}
+
+function reportHtmlCommentsBetweenListItems(file, text, lines, context) {
+  const commentNodes = context.htmlNodes
+    .filter((node) => isCommentOnlyHtmlNode(text, node))
+    .sort((left, right) => left.range[0] - right.range[0]);
+  const reportedComments = new Set();
+
+  for (const commentNode of commentNodes) {
+    if (reportedComments.has(commentNode.range[0])) {
+      continue;
+    }
+
+    const previousItem = context.listItems
+      .filter((item) => item.range[1] <= commentNode.range[0])
+      .sort((left, right) => right.range[1] - left.range[1])[0];
+    const nextItem = context.listItems
+      .filter((item) => item.range[0] >= commentNode.range[1])
+      .sort((left, right) => left.range[0] - right.range[0])[0];
+    if (!previousItem || !nextItem) {
+      continue;
+    }
+
+    const commentsBetween = commentNodes.filter((node) => (
+      node.range[0] >= previousItem.range[1] && node.range[1] <= nextItem.range[0]
+    ));
+    let cursor = previousItem.range[1];
+    let nonCommentText = "";
+    for (const node of commentsBetween) {
+      nonCommentText += text.slice(cursor, node.range[0]);
+      cursor = node.range[1];
+    }
+    nonCommentText += text.slice(cursor, nextItem.range[0]);
+    const lastComment = commentsBetween.at(-1);
+    const trailingText = text.slice(lastComment.range[1], nextItem.range[0]);
+    if (!/^\s*$/u.test(nonCommentText) || !/^[ \t]*\r?\n[ \t]*$/u.test(trailingText)) {
+      continue;
+    }
+
+    for (const node of commentsBetween) {
+      reportedComments.add(node.range[0]);
+    }
+    const lineIndex = commentNode.loc.start.line - 1;
+    report(
+      file,
+      lineIndex + 1,
+      "avoid-html-comment-between-list-items",
+      "箇条書きの項目の間に HTML コメントがあります。コメントは箇条書き全体の前後に置いてください。",
+      lines[lineIndex],
+    );
+  }
 }
 
 function listItemContainsOnlyComment(text, listItem, comment) {
@@ -899,6 +951,7 @@ for (const file of files) {
   reportMarkdownSensitiveMathLines(file, lines);
   reportMarkdownSensitiveInlineMath(file, text);
   reportHalfFullWidthSpaceOutsideTextlint(file, text, lines, markdown);
+  reportHtmlCommentsBetweenListItems(file, text, lines, markdown);
   reportFootnoteReferencesInMermaid(file, lines, markdown);
   reportPeerMethodHeadingMismatch(file, lines);
 
