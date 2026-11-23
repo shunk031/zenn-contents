@@ -4,7 +4,7 @@ This kit recreates the visual changes in the 11 chapters of `books/igorbabko-vsc
 
 ## Supported route
 
-The canonical route is the macOS desktop build of VS Code. The runner downloads VS Code **1.101.1**, commit `18e3a1ec544e6907be1e944a94c496e302073435`, for Apple Silicon from Microsoft's update service. It keeps the app copy under ignored `output/runtime/`. The runner fixes the window at **1200 × 800** points. It opens the same sample project files throughout. It uses a new user-data directory and an empty extension directory. It captures the VS Code window by its Core Graphics window ID and drives interactive groups through a loopback-only Chromium DevTools connection. The zero state uses VS Code's default macOS editor font stack, which starts with Menlo.
+The canonical route is the macOS desktop build of VS Code. The runner downloads VS Code **1.101.1**, commit `18e3a1ec544e6907be1e944a94c496e302073435`, for Apple Silicon from Microsoft's update service. It keeps the app copy under ignored `output/runtime/`. The runner fixes the window at **1200 × 800** points. It opens the same sample project files throughout. It uses a new user-data directory and an empty extension directory. macOS VS Code needs a short user-data path for its IPC socket, so the profile uses a temporary PID-scoped folder and is removed after the run. It captures the VS Code window by its Core Graphics window ID and drives interactive groups through a loopback-only Chromium DevTools connection. The zero state uses VS Code's default macOS editor font stack, which starts with Menlo.
 
 The kit requires an Apple Silicon Mac, Node.js from `mise.toml`, Swift, Swift Compiler, Git, and network access to Microsoft's update service, the pinned source repository, and the Marketplace. Docker and Linux are **not yet supported**.
 
@@ -32,13 +32,13 @@ node ./demos/vscode-setup-screenshots/scripts/run.mjs
 
 Or run `node ./scripts/run.mjs` from this directory. The runner builds a fresh isolated profile and fetches all 11 pinned source snapshots. It installs each chapter's recommended extensions as that chapter is reached. It applies groups cumulatively, captures the screenshots, and writes `output/image-index.csv`. The index has one English description per image. All runtime files, app copies, fetched settings, extension files, and PNGs are ignored.
 
-The run needs a visible logged-in macOS desktop because the screenshots come from the real VS Code window. The app is started with workspace-trust prompts, telemetry, and update checks disabled. Notifications are cleared before capture. The fixture uses neutral names and a synthetic Git identity.
+The run needs a visible logged-in macOS desktop because the screenshots come from the real VS Code window. The app is started with workspace-trust prompts, telemetry, and update checks disabled. Unexpected dialogs and toasts stop capture. The fixture uses neutral names and a synthetic Git identity. App copies, fetched sources, extensions, and screenshots remain under ignored `output/`.
 
 ## Visual limits
 
-The kit intentionally does not capture dialogs or notification toasts. The confirmation settings and recommendation-notification setting therefore have no safe, persistent UI difference to show in their pairs. `editor.multiCursorModifier` changes which click modifier creates extra cursors; the kit uses the same Option-click gesture before and after so the interaction difference is visible. The chapter's `Dank Mono` family is not bundled; font rendering falls back to macOS's available fonts.
+The runner captures the expected recommendation toast only in the before image for that pair. It creates a runtime-only recommendation for `ms-python.python`, opens the Python fixture, then removes the recommendation. The operation-confirmation pair attempts to move a fixture file into `components`. In VS Code 1.101.1, the CDP drag does not trigger the confirmation or move the file, so the pair is indexed as inconclusive. `editor.multiCursorModifier` changes which click modifier creates extra cursors; the kit uses the same Option-click gesture before and after. The chapter's `Dank Mono` family is not bundled; font rendering falls back to macOS's available fonts.
 
-In this build, `surface-boundaries`, `cursor-colors`, `code-style`, `code-decorations`, `save-and-diff`, `marker-colors`, and `selected-suggestion-color` show no clear change. The cursor gradient overrides the cursor color setting. Dank Mono is unavailable, and the theme already italicizes comments. These pairs remain in the index and are reported as visually inconclusive instead of implying an effect that the screenshots do not show.
+The fixture includes focused examples for color decorations, diagnostics, whitespace trimming, surface scrolling, and ligature operators. `surface-boundaries`, `cursor-colors`, `code-style`, `marker-colors`, and `selected-suggestion-color` also remain inconclusive in this VS Code build. Each reason is recorded in `output/image-index.csv`.
 
 ## Kit layout
 
@@ -47,7 +47,7 @@ In this build, `surface-boundaries`, `cursor-colors`, `code-style`, `code-decora
 - `scripts/fetch-sources.mjs`: fetches commit-pinned settings and extension recommendations.
 - `scripts/run.mjs`: prepares the fresh profile, applies the cumulative settings groups, drives interactive examples, captures all images, and writes the index.
 - `scripts/groups.mjs`: maps each visual group key to its setting paths and UI interaction.
-- `scripts/cdp.mjs`: controls the editor and checks that no dialog or toast is visible.
+- `scripts/cdp.mjs`: controls the editor and checks for unexpected dialogs or toasts, with narrow assertions for the two intentional before states.
 - `scripts/window-id.swift`: finds the disposable VS Code window for window-only capture.
 - `output/`: ignored run artifacts.
 

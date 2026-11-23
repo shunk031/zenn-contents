@@ -171,6 +171,56 @@ export class VSCodeControl {
     return points;
   }
 
+  async moveToSelector(selector) {
+    const point = await this.evaluate(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element) return null;
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    })()`);
+    if (!point) throw new Error(`Visible UI element not found: ${selector}`);
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: point.x, y: point.y });
+  }
+
+  async clickExplorerFile(filename) {
+    const point = await this.evaluate(`(() => {
+      const rows = [...document.querySelectorAll('.monaco-list-row')];
+      const row = rows.find((element) => {
+        const label = element.getAttribute('aria-label') || '';
+        return label.includes(${JSON.stringify(filename)}) || element.textContent.includes(${JSON.stringify(filename)});
+      });
+      if (!row) return null;
+      const rect = row.getBoundingClientRect();
+      return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    })()`);
+    if (!point) throw new Error(`Explorer file row not found: ${filename}`);
+    await this.click(point.x, point.y);
+  }
+
+  async dragExplorerFileToFolder(filename, folderName) {
+    const points = await this.evaluate(`(() => {
+      const findRow = (name) => [...document.querySelectorAll('.explorer-folders-view .monaco-list-row')]
+        .find((element) => element.getAttribute('aria-label') === name);
+      const source = findRow(${JSON.stringify(filename)});
+      const target = findRow(${JSON.stringify(folderName)});
+      if (!source || !target) return null;
+      const sourceRect = source.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      return {
+        source: { x: sourceRect.x + sourceRect.width / 2, y: sourceRect.y + sourceRect.height / 2 },
+        target: { x: targetRect.x + targetRect.width / 2, y: targetRect.y + targetRect.height / 2 }
+      };
+    })()`);
+    if (!points) throw new Error(`Explorer drag rows not found: ${filename} -> ${folderName}`);
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.source.x, y: points.source.y });
+    await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: points.source.x, y: points.source.y, button: 'left', buttons: 1, clickCount: 1 });
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.source.x + 6, y: points.source.y + 3, button: 'left', buttons: 1 });
+    await delay(150);
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.target.x, y: points.target.y, button: 'left', buttons: 1 });
+    await delay(500);
+    await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: points.target.x, y: points.target.y, button: 'left', buttons: 0, clickCount: 1 });
+  }
+
   async clearNotifications() {
     const count = await this.evaluate("document.querySelectorAll('.notifications-toasts .notification-toast').length");
     if (count > 0) await this.command('Notifications: Clear All Notifications');
@@ -178,14 +228,34 @@ export class VSCodeControl {
   }
 
   async assertNoModalOrToast() {
-    const counts = await this.evaluate(`({
-      toasts: document.querySelectorAll('.notifications-toasts .notification-toast').length,
-      dialogs: document.querySelectorAll('.monaco-dialog-box, .monaco-dialog-modal-block, [aria-modal="true"]').length,
+    const state = await this.notificationState();
+    if (state.toasts.length || state.dialogs.length || state.restartPrompt) {
+      throw new Error(`Unexpected toast or dialog in capture: ${JSON.stringify(state)}`);
+    }
+  }
+
+  async assertExpectedOperationConfirmation() {
+    const state = await this.notificationState();
+    const text = state.dialogs.join('\n');
+    if (!/move|drag/i.test(text) || state.toasts.length || state.restartPrompt) {
+      throw new Error(`Expected an Explorer move confirmation dialog, found ${JSON.stringify(state)}`);
+    }
+  }
+
+  async assertExpectedRecommendationToast() {
+    const state = await this.notificationState();
+    const text = state.toasts.join('\n');
+    if (!/recommend/i.test(text) || state.dialogs.length || state.restartPrompt) {
+      throw new Error(`Expected an extension recommendation toast, found ${JSON.stringify(state)}`);
+    }
+  }
+
+  async notificationState() {
+    return this.evaluate(`({
+      toasts: [...document.querySelectorAll('.notifications-toasts .notification-toast')].map((element) => element.innerText),
+      dialogs: [...document.querySelectorAll('.monaco-dialog-box, .monaco-dialog-modal-block, [aria-modal="true"]')].map((element) => element.innerText),
       restartPrompt: document.body.innerText.includes('requires a restart to take effect')
     })`);
-    if (counts.toasts || counts.dialogs || counts.restartPrompt) {
-      throw new Error(`Unexpected toast or dialog in capture: ${JSON.stringify(counts)}`);
-    }
   }
 
   close() {

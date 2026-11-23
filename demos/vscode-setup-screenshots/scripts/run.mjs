@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { access, cp, mkdir, readFile, rm, writeFile, appendFile } from 'node:fs/promises';
+import { access, cp, mkdir, readFile, rename, rm, writeFile, appendFile } from 'node:fs/promises';
 import { execFileSync, spawn } from 'node:child_process';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -13,7 +14,7 @@ const outputDir = path.join(kitDir, 'output');
 const runtimeDir = path.join(outputDir, 'runtime');
 const vscodeArchive = path.join(outputDir, 'vscode-1.101.1-darwin-arm64.zip');
 const sourceDir = path.join(runtimeDir, 'sources');
-const profileDir = path.join(runtimeDir, 'user-data');
+const profileDir = path.join(os.tmpdir(), `vss-${process.pid}`);
 const extensionsDir = path.join(runtimeDir, 'extensions');
 const workspaceDir = path.join(runtimeDir, 'workspace');
 const appPath = path.join(runtimeDir, 'Visual Studio Code.app');
@@ -28,10 +29,16 @@ const windowSize = '1200,800';
 const fixtureDir = path.join(kitDir, 'fixture');
 const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
+if (process.argv.includes('--help')) {
+  console.log('Usage: node ./scripts/run.mjs\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set.');
+  process.exit(0);
+}
+
 if (process.platform !== 'darwin') throw new Error('This screenshot route requires macOS.');
 await mkdir(outputDir, { recursive: true });
 await rm(runtimeDir, { recursive: true, force: true });
 await mkdir(runtimeDir, { recursive: true });
+await rm(profileDir, { recursive: true, force: true });
 await rm(imageDir, { recursive: true, force: true });
 await mkdir(imageDir, { recursive: true });
 await mkdir(extensionsDir, { recursive: true });
@@ -117,6 +124,12 @@ async function writeSettings(settings) {
   await delay(600);
 }
 
+async function writeTransientSettings(settings) {
+  const nextSettings = deepMerge(structuredClone(appliedSettings), settings);
+  await writeFile(userSettingsPath, `${JSON.stringify(nextSettings, null, 2)}\n`, { mode: 0o600 });
+  await delay(600);
+}
+
 function sourceFile(chapterNumber, filename) {
   return path.join(sourceDir, `ch${String(chapterNumber).padStart(2, '0')}`, filename);
 }
@@ -173,30 +186,54 @@ async function openFixedFiles() {
   for (const file of fixedFiles) await windowControl.openFile(file);
 }
 
-async function startApp() {
+async function startApp({ clearNotifications = true } = {}) {
   if (appChild) return;
   const child = spawn(appExecutable, launchArgs(), { detached: true, stdio: 'ignore' });
   child.unref();
-  appChild = true;
+  appChild = child;
   await delay(2500);
   windowControl = new VSCodeControl(devtoolsPort);
   await windowControl.connect();
   await openFixedFiles();
-  await windowControl.clearNotifications();
+  if (clearNotifications) await windowControl.clearNotifications();
   await delay(800);
 }
 
-async function stopApp() {
+async function quitApp() {
   if (windowControl) {
     try { await windowControl.key('Q', 'KeyQ', 4); } catch {}
   }
-  await delay(1200);
+  await delay(700);
+  if (appChild?.exitCode === null) {
+    appChild.kill('SIGTERM');
+    await delay(700);
+    if (appChild.exitCode === null) appChild.kill('SIGKILL');
+  }
   windowControl?.close();
   windowControl = null;
-  appChild = false;
+  appChild = null;
+  const deadline = Date.now() + 12_000;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${devtoolsPort}/json`);
+      if (!response.ok) return;
+    } catch {
+      return;
+    }
+    await delay(250);
+  }
+  throw new Error('VS Code did not exit before restart.');
 }
 
-async function restartApp() {
+async function stopApp() {
+  try {
+    await quitApp();
+  } catch {
+    // Preserve the capture failure while the disposable profile is cleaned up.
+  }
+}
+
+async function restartApp({ clearNotifications = true } = {}) {
   if (windowControl) {
     const restartPrompt = await windowControl.evaluate("document.body.innerText.includes('requires a restart to take effect')");
     if (restartPrompt) {
@@ -218,32 +255,13 @@ async function restartApp() {
       windowControl = new VSCodeControl(devtoolsPort);
       await windowControl.connect();
       await openFixedFiles();
-      await windowControl.clearNotifications();
+      if (clearNotifications) await windowControl.clearNotifications();
       return;
     }
-    try { await windowControl.key('Q', 'KeyQ', 4); } catch {}
   }
-  windowControl?.close();
-  windowControl = null;
-  appChild = false;
-  const deadline = Date.now() + 12_000;
-  let portClosed = false;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${devtoolsPort}/json`);
-      if (!response.ok) {
-        portClosed = true;
-        break;
-      }
-      await delay(250);
-    } catch {
-      portClosed = true;
-      break;
-    }
-  }
-  if (!portClosed) throw new Error('VS Code did not exit before restart.');
-  await startApp();
-  await windowControl.clearNotifications();
+  await quitApp();
+  await startApp({ clearNotifications });
+  if (clearNotifications) await windowControl.clearNotifications();
 }
 
 function sourceSettingsFor(chapter) {
@@ -273,6 +291,13 @@ async function runInteraction(name, phase, chapterSettings) {
       await open('src/main.ts');
       await goto(5, 1);
       await delay(1800);
+      break;
+    case 'surface-boundaries':
+      await open('src/surface-scroll.ts');
+      await goto(34, 1);
+      await windowControl.clickExplorerFile('surface-scroll.ts');
+      await windowControl.moveToSelector('.sidebar .title');
+      await delay(400);
       break;
     case 'tree-layout':
       await open('src/components/common/Button/index.ts');
@@ -322,10 +347,20 @@ async function runInteraction(name, phase, chapterSettings) {
       break;
     case 'selected-suggestion':
       await open('src/suggestions.ts');
-      await windowControl.key('ArrowDown', 'ArrowDown', 4);
-      await windowControl.key('End', 'End');
-      await windowControl.key('Space', 'Space', 2);
-      await delay(900);
+      await goto(7, 7);
+      await windowControl.type('.');
+      await delay(500);
+      let suggestionVisible = await windowControl.evaluate("!!document.querySelector('.suggest-widget')?.getBoundingClientRect().height");
+      if (!suggestionVisible) {
+        await windowControl.key('Space', 'Space', 2);
+        await delay(500);
+        suggestionVisible = await windowControl.evaluate("!!document.querySelector('.suggest-widget')?.getBoundingClientRect().height");
+      }
+      if (!suggestionVisible) throw new Error('The selected-suggestion example did not open the completion widget.');
+      await windowControl.key('ArrowDown', 'ArrowDown');
+      await delay(500);
+      const selectedSuggestion = await windowControl.evaluate("!!document.querySelector('.suggest-widget .monaco-list-row.focused, .suggest-widget .monaco-list-row.selected, .suggest-widget .monaco-list-row[aria-selected=\"true\"]')");
+      if (!selectedSuggestion) throw new Error('The completion widget has no visibly selected item.');
       break;
     case 'autosave':
       await open('src/autosave.ts');
@@ -334,20 +369,68 @@ async function runInteraction(name, phase, chapterSettings) {
       await windowControl.type(' // edit');
       if (phase === 'after') await delay(1800);
       break;
-    case 'delete-cancel':
-    case 'recommendations':
-      await open('src/main.ts');
+    case 'operation-confirmations': {
+      const file = path.join(workspaceDir, 'src', 'delete-me.txt');
+      await writeFile(file, await readFile(path.join(fixtureDir, 'src', 'delete-me.txt')));
+      await open('src/delete-me.txt');
+      await windowControl.command('File: Reveal Active File in Explorer');
+      await windowControl.dragExplorerFileToFolder('delete-me.txt', 'components');
+      await delay(700);
+      if (phase === 'after') {
+        const movedFile = path.join(workspaceDir, 'src', 'components', 'delete-me.txt');
+        try {
+          await access(movedFile);
+          await rename(movedFile, file);
+        } catch (error) {
+          if (error.code !== 'ENOENT') throw error;
+        }
+        await delay(500);
+        await open('src/delete-me.txt');
+      }
       break;
-    case 'save-diff':
-      await open('src/changed.ts');
+    }
+    case 'recommendations': {
+      const vscodeDir = path.join(workspaceDir, '.vscode');
+      await mkdir(vscodeDir, { recursive: true });
+      await writeFile(path.join(vscodeDir, 'extensions.json'), `${JSON.stringify({ recommendations: ['ms-python.python'] }, null, 2)}\n`);
+      if (phase === 'before') await restartApp({ clearNotifications: false });
+      await open('src/sample.py');
+      await delay(1600);
+      break;
+    }
+    case 'code-style':
+      await open('src/code-style.ts');
       await goto(1, 1);
       break;
+    case 'code-decorations': {
+      await open('src/styles.css');
+      const [color] = await windowControl.moveToText('#9b87f5');
+      await windowControl.click(color.x, color.y);
+      await delay(600);
+      break;
+    }
+    case 'marker-colors': {
+      await open('src/diagnostics.ts');
+      await goto(1, 35);
+      await delay(1200);
+      break;
+    }
+    case 'save-diff': {
+      const file = path.join(workspaceDir, 'src', 'save-state.ts');
+      await writeFile(file, 'const saved = "same";   ');
+      await open('src/save-state.ts');
+      await goto(1, 1);
+      await windowControl.key('End', 'End');
+      await windowControl.key('S', 'KeyS', 4);
+      await delay(600);
+      break;
+    }
     default:
       throw new Error(`Unknown UI interaction: ${name}`);
   }
 }
 
-async function resetInteraction(name) {
+async function resetInteraction(name, phase) {
   if (!name) return;
   switch (name) {
     case 'automatic-suggestions':
@@ -359,6 +442,9 @@ async function resetInteraction(name) {
       await windowControl.key('Z', 'KeyZ', 4);
       break;
     case 'selected-suggestion':
+      await windowControl.key('Escape', 'Escape');
+      await windowControl.key('Z', 'KeyZ', 4);
+      break;
     case 'find-widget':
     case 'overview-ruler-search':
     case 'hover':
@@ -367,9 +453,26 @@ async function resetInteraction(name) {
     case 'multi-cursor':
       await windowControl.key('Escape', 'Escape');
       break;
+    case 'operation-confirmations':
+      await windowControl.key('Escape', 'Escape');
+      await rm(path.join(workspaceDir, 'src', 'components', 'delete-me.txt'), { force: true });
+      await writeFile(path.join(workspaceDir, 'src', 'delete-me.txt'), await readFile(path.join(fixtureDir, 'src', 'delete-me.txt')));
+      await delay(400);
+      break;
+    case 'recommendations':
+      await windowControl.clearNotifications();
+      break;
+    case 'surface-boundaries':
+    case 'code-style':
+    case 'code-decorations':
+    case 'marker-colors':
+      break;
+    case 'save-diff':
+      await writeFile(path.join(workspaceDir, 'src', 'save-state.ts'), await readFile(path.join(fixtureDir, 'src', 'save-state.ts')));
+      break;
     case 'autosave':
       await windowControl.key('Escape', 'Escape');
-      await windowControl.key('Z', 'KeyZ', 4);
+      if (phase === 'before') await windowControl.key('Z', 'KeyZ', 4);
       await writeFile(path.join(workspaceDir, 'src', 'autosave.ts'), await readFile(path.join(fixtureDir, 'src', 'autosave.ts')));
       break;
     default:
@@ -386,8 +489,10 @@ function imageFilename(name) {
   return path.join(imageDir, name);
 }
 
-async function capture(name, chapter, group, description) {
-  await windowControl.assertNoModalOrToast();
+async function capture(name, chapter, group, description, captureState = 'none') {
+  if (captureState === 'operation-confirmation') await windowControl.assertExpectedOperationConfirmation();
+  else if (captureState === 'recommendation-toast') await windowControl.assertExpectedRecommendationToast();
+  else await windowControl.assertNoModalOrToast();
   const destination = imageFilename(name);
   const [windowId, width, height] = run(finderBinary, [appPath]).split(/\s+/);
   if (width !== '1200' || height !== '800') {
@@ -403,17 +508,43 @@ async function capturePair(chapter, groupKey, currentSettings) {
   const spec = groupSpecs[groupKey];
   const beforeName = `ch${String(chapter.chapter).padStart(2, '0')}-${groupKey}-before.png`;
   const afterName = `ch${String(chapter.chapter).padStart(2, '0')}-${groupKey}-after.png`;
+  if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'before', appliedSettings);
-  await capture(beforeName, chapter.chapter, groupKey, `The sample project editor and Explorer show the cumulative state before ${groupKey} is applied.`);
-  await resetInteraction(spec.interaction);
+  let operationInconclusiveReason = '';
+  if (groupKey === 'operation-confirmations') {
+    const state = await windowControl.notificationState();
+    if (!/move|drag/i.test(state.dialogs.join('\n'))) {
+      operationInconclusiveReason = 'Inconclusive: the CDP Explorer drag did not trigger a move confirmation in VS Code 1.101.1.';
+    }
+  }
+  const beforeText = groupKey === 'operation-confirmations'
+    ? operationInconclusiveReason || 'Before operation-confirmations, dragging the fixture file into components opens a confirmation dialog.'
+    : groupKey === 'recommendation-notifications'
+      ? 'Before recommendation-notifications, opening the Python fixture shows an extension recommendation toast.'
+      : spec.inconclusiveReason || `The sample project editor and Explorer show the cumulative state before ${groupKey} is applied.`;
+  const beforeCaptureState = groupKey === 'operation-confirmations'
+    ? operationInconclusiveReason ? 'none' : 'operation-confirmation'
+    : groupKey === 'recommendation-notifications'
+      ? 'recommendation-toast'
+      : 'none';
+  await capture(beforeName, chapter.chapter, groupKey, beforeText, beforeCaptureState);
+  await resetInteraction(spec.interaction, 'before');
+  if (spec.previewSettings) await writeSettings(appliedSettings);
 
   const groupSettings = copyGroupSettings(currentSettings, spec.settings);
   const nextSettings = deepMerge(structuredClone(appliedSettings), groupSettings);
   await writeSettings(nextSettings);
   if (spec.restart) await restartApp();
+  if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'after', currentSettings);
-  await capture(afterName, chapter.chapter, groupKey, `After ${groupKey} is applied, ${spec.description}`);
-  await resetInteraction(spec.interaction);
+  const afterText = operationInconclusiveReason || spec.inconclusiveReason || `After ${groupKey} is applied, ${spec.description}`;
+  await capture(afterName, chapter.chapter, groupKey, afterText);
+  await resetInteraction(spec.interaction, 'after');
+  if (spec.previewSettings) await writeSettings(appliedSettings);
+
+  if (groupKey === 'recommendation-notifications') {
+    await rm(path.join(workspaceDir, '.vscode', 'extensions.json'), { force: true });
+  }
 
   if (spec.interaction === 'autosave') {
     await writeFile(path.join(workspaceDir, 'src', 'autosave.ts'), await readFile(path.join(fixtureDir, 'src', 'autosave.ts')));
@@ -469,6 +600,7 @@ try {
   }
 } finally {
   await stopApp();
+  await rm(profileDir, { recursive: true, force: true });
 }
 
 if (indexRows.length !== 72 || imageNames.size !== 72) {

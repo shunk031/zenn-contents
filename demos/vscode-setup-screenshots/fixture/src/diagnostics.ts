@@ -1,2 +1,2 @@
-const expectedNumber: number = 'sample diagnostic';
+const expectedNumber: number = 'bad';
 export { expectedNumber };

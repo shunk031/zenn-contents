@@ -41,8 +41,8 @@ export const groupSpecs = {
   'operation-confirmations': {
     chapter: 2,
     settings: [setting('explorer.confirmDragAndDrop'), setting('explorer.confirmDelete')],
-    interaction: 'delete-cancel',
-    description: 'The sample editor stays visible; the confirmation dialog is omitted, so the setting leaves no visible difference.',
+    interaction: 'operation-confirmations',
+    description: 'Dragging the fixture file into components opens a confirmation before and moves without one after.',
   },
   'explorer-decorations': {
     chapter: 2,
@@ -72,7 +72,8 @@ export const groupSpecs = {
     chapter: 4,
     settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after'), setting('custom-ui-style.stylesheet', '.monaco-scrollable-element > .shadow.top'), setting('custom-ui-style.stylesheet', '.sidebar .title-label'), setting('custom-ui-style.stylesheet', '.sidebar'), setting('custom-ui-style.stylesheet', '.monaco-workbench .monaco-list:not(.element-focused):focus:before'), setting('custom-ui-style.stylesheet', '.monaco-list-row.focused'), setting('custom-ui-style.stylesheet', '.monaco-editor .scroll-decoration'), setting('custom-ui-style.stylesheet', '.title-actions'), setting('custom-ui-style.stylesheet', '.title.show-file-icons .label-container .monaco-icon-label.file-icon'), setting('custom-ui-style.stylesheet', '.title .monaco-icon-label:after')],
     restart: true,
-    description: 'The same sample editor and Explorer remain visible; the injected surface styles make no visible change in this VS Code build.',
+    interaction: 'surface-boundaries',
+    inconclusiveReason: 'Inconclusive: the scrolled editor and focused Explorer show no visible change from these injected surface styles in VS Code 1.101.1.',
   },
   'cursor-appearance': {
     chapter: 5,
@@ -91,7 +92,7 @@ export const groupSpecs = {
     chapter: 5,
     settings: [setting('workbench.colorCustomizations', 'editorCursor.background')],
     interaction: 'cursor-focus',
-    description: 'The cursor looks the same because the earlier cursor gradient style takes precedence over this background color.',
+    inconclusiveReason: 'Inconclusive: the earlier cursor gradient style takes precedence over this background color.',
   },
   'font-metrics': {
     chapter: 6,
@@ -102,14 +103,14 @@ export const groupSpecs = {
   'code-style': {
     chapter: 6,
     settings: [setting('editor.fontLigatures'), setting('editor.tokenColorCustomizations')],
-    interaction: 'editor-top',
-    description: 'The sample code looks unchanged because Dank Mono is not installed and the theme already italicizes comments.',
+    interaction: 'code-style',
+    inconclusiveReason: 'Inconclusive: Menlo fallback shows no ligatures, and Aura already italicizes comments.',
   },
   'code-decorations': {
     chapter: 7,
     settings: [setting('editor.stickyScroll.enabled'), setting('editor.colorDecorators'), setting('editor.codeLens'), setting('editor.links'), setting('editor.matchBrackets')],
-    interaction: 'code-lens',
-    description: 'The sample code looks unchanged; this VS Code and TypeScript combination shows no visible difference for this settings group.',
+    interaction: 'code-decorations',
+    description: 'The CSS color swatch beside the accent literal disappears.',
   },
   'editor-hints': {
     chapter: 7,
@@ -121,7 +122,8 @@ export const groupSpecs = {
     chapter: 7,
     settings: [setting('files.trimTrailingWhitespace'), setting('files.insertFinalNewline'), setting('scm.diffDecorations')],
     interaction: 'save-diff',
-    description: 'The modified sample file and Git gutter decoration look the same before and after these save and diff settings.',
+    previewSettings: { 'editor.renderWhitespace': 'all' },
+    description: 'Saving trims the visible trailing spaces and removes the Git diff gutter decoration.',
   },
   'line-numbers-and-indent': {
     chapter: 8,
@@ -144,8 +146,8 @@ export const groupSpecs = {
   'marker-colors': {
     chapter: 9,
     settings: [setting('editor.hideCursorInOverviewRuler'), setting('workbench.colorCustomizations', 'editorOverviewRuler.wordHighlightStrongForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.selectionHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.rangeHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.wordHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.bracketMatchForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.findMatchForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.modifiedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.deletedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.warningForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.addedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.errorForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.infoForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.border')],
-    interaction: 'overview-ruler-search',
-    description: 'The Find widget and overview ruler marks remain visible with no clear color change in this VS Code build.',
+    interaction: 'marker-colors',
+    inconclusiveReason: 'Inconclusive: the diagnostic underline and overview ruler show no clear color change in VS Code 1.101.1.',
   },
   'automatic-suggestions': {
     chapter: 10,
@@ -163,7 +165,7 @@ export const groupSpecs = {
     chapter: 10,
     settings: [setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'editorSuggestWidget.selectedBackground')],
     interaction: 'selected-suggestion',
-    description: 'The selected suggestion row looks the same because the chapter color matches the theme selection color.',
+    inconclusiveReason: 'Inconclusive: the chapter selection color matches the Aura theme color for a selected completion item.',
   },
   'sidebar-and-title': {
     chapter: 11,
@@ -182,6 +184,6 @@ export const groupSpecs = {
     settings: [setting('extensions.ignoreRecommendations'), setting('update.mode')],
     interaction: 'recommendations',
     restart: true,
-    description: 'The sample editor remains visible; no recommendation toast is captured, so the setting has no visible difference.',
+    description: 'No extension recommendation toast appears when the Python fixture is open.',
   },
 };

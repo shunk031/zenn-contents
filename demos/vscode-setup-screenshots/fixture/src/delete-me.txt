@@ -1,0 +1,1 @@
+Disposable fixture file for the confirmation example.
