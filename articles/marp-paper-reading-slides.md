@@ -157,7 +157,7 @@ $$
 
 ### 研究室向けテーマの作例
 
-現在、電気通信大学の研究室向けテーマ `uec-haralab` の追加を進めており、[shunk031/slides#3](https://github.com/shunk031/slides/pull/3) で作業を進めています。まだ main ブランチには取り込まれていませんが、作成中のスライド例は次のとおりです。
+電気通信大学の研究室向けテーマ `uec-haralab` は、[shunk031/slides#3](https://github.com/shunk031/slides/pull/3) で main ブランチへマージされ、リポジトリに追加されています。このテーマを使ったスライド例は次のとおりです。
 
 ![研究室向けテーマの表紙](/images/marp-paper-reading-slides/uec-cover.png)
 *表紙*
