@@ -16,6 +16,7 @@ test("inline textlint directives exclude wrapped title text through an enable or
   const wrappedPath = path.join(directory, "wrapped.md");
   const unclosedPath = path.join(directory, "unclosed.md");
   const plainPath = path.join(directory, "plain.md");
+  const quotedFencePath = path.join(directory, "quoted-fence.md");
   fs.writeFileSync(wrappedPath, [
     "---",
     'title: "<!-- textlint-disable ja-spacing/ja-space-between-half-and-full-width -->Codexの使い方<!-- textlint-enable ja-spacing/ja-space-between-half-and-full-width -->"',
@@ -29,6 +30,14 @@ test("inline textlint directives exclude wrapped title text through an enable or
     "",
   ].join("\n"));
   fs.writeFileSync(plainPath, ["---", 'title: "Codexの使い方"', "---", ""].join("\n"));
+  fs.writeFileSync(quotedFencePath, [
+    "> ```md",
+    "> [Codexの使い方](https://example.com)",
+    "> <!-- textlint-disable -->",
+    "> ```",
+    "> <!-- textlint-disable -->",
+    "",
+  ].join("\n"));
 
   const wrapped = spawnSync(process.execPath, [scriptPath, wrappedPath], {
     cwd: repositoryPath,
@@ -42,6 +51,10 @@ test("inline textlint directives exclude wrapped title text through an enable or
     cwd: repositoryPath,
     encoding: "utf8",
   });
+  const quotedFence = spawnSync(process.execPath, [scriptPath, quotedFencePath], {
+    cwd: repositoryPath,
+    encoding: "utf8",
+  });
 
   assert.equal(wrapped.status, 0, wrapped.stderr);
   assert.doesNotMatch(wrapped.stderr, /half-full-width-space-outside-textlint/);
@@ -49,4 +62,8 @@ test("inline textlint directives exclude wrapped title text through an enable or
   assert.doesNotMatch(unclosed.stderr, /half-full-width-space-outside-textlint/);
   assert.equal(plain.status, 1, plain.stderr);
   assert.match(plain.stderr, /half-full-width-space-outside-textlint/);
+  assert.equal(quotedFence.status, 1, quotedFence.stderr);
+  assert.doesNotMatch(quotedFence.stderr, /half-full-width-space-outside-textlint/);
+  assert.doesNotMatch(quotedFence.stderr, /quoted-fence\.md:3: avoid-standalone-textlint-comment/);
+  assert.match(quotedFence.stderr, /quoted-fence\.md:5: avoid-standalone-textlint-comment/);
 });

@@ -389,7 +389,7 @@ function reportStandaloneTextlintComments(file, lines) {
 
   for (let index = 0; index < linesWithoutMetadata.length; index += 1) {
     const line = linesWithoutMetadata[index];
-    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(stripBlockquotePrefixes(line));
 
     if (fence !== null) {
       if (
@@ -527,12 +527,16 @@ function maskInlineCodeAndHtmlComments(line, state, onHtmlComment = () => {}) {
   return { line: visible, state };
 }
 
+function stripBlockquotePrefixes(line) {
+  return line.replace(/^(?: {0,3}>[ \t]?)+/, "");
+}
+
 function linesOutsideFencedCodeAndHtmlComments(lines) {
   let fence = null;
   const state = { inHtmlComment: false, inlineCodeLength: null };
 
   return lines.map((line) => {
-    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(stripBlockquotePrefixes(line));
 
     if (fence !== null) {
       if (
@@ -563,7 +567,7 @@ function textlintDirectiveCommentsOutsideCode(lines) {
 
   return lines.map((line) => {
     const comments = [];
-    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(stripBlockquotePrefixes(line));
 
     if (fence !== null) {
       if (
