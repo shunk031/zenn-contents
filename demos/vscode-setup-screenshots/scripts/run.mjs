@@ -11,6 +11,8 @@ import { extensionPins, groupSpecs } from './groups.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const kitDir = path.resolve(here, '..');
 const outputDir = path.join(kitDir, 'output');
+const smokeMode = process.argv.includes('--smoke');
+const captureOutputDir = smokeMode ? path.join(outputDir, 'smoke') : outputDir;
 const runtimeDir = path.join(outputDir, 'runtime');
 const vscodeArchive = path.join(outputDir, 'vscode-1.101.1-darwin-arm64.zip');
 const sourceDir = path.join(runtimeDir, 'sources');
@@ -22,15 +24,16 @@ const appExecutable = path.join(appPath, 'Contents', 'MacOS', 'Electron');
 const cliPath = path.join(appPath, 'Contents', 'Resources', 'app', 'bin', 'code');
 const finderSource = path.join(here, 'window-id.swift');
 const finderBinary = path.join(runtimeDir, 'window-id');
-const imageDir = path.join(outputDir, 'images');
-const indexPath = path.join(outputDir, 'image-index.csv');
-const devtoolsPort = 9237;
+const imageDir = path.join(captureOutputDir, 'images');
+const indexPath = path.join(captureOutputDir, 'image-index.csv');
+const activePortFile = path.join(profileDir, 'DevToolsActivePort');
 const windowSize = '1200,800';
+let devtoolsPort;
 const fixtureDir = path.join(kitDir, 'fixture');
 const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
 if (process.argv.includes('--help')) {
-  console.log('Usage: node ./scripts/run.mjs\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set.');
+  console.log('Usage: node ./scripts/run.mjs [--smoke]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/.');
   process.exit(0);
 }
 
@@ -163,7 +166,7 @@ function launchArgs() {
     '--disable-workspace-trust',
     '--disable-telemetry',
     '--disable-updates',
-    '--remote-debugging-port=' + devtoolsPort,
+    '--remote-debugging-port=0',
     '--window-size=' + windowSize,
     '--skip-welcome',
     workspaceDir,
@@ -186,13 +189,40 @@ async function openFixedFiles() {
   for (const file of fixedFiles) await windowControl.openFile(file);
 }
 
+function childIsRunning(child) {
+  return child && child.exitCode === null && child.signalCode === null;
+}
+
+async function waitForDevToolsPort(child) {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (!childIsRunning(child)) throw new Error('VS Code exited before creating its DevTools port file.');
+    try {
+      const lines = (await readFile(activePortFile, 'utf8')).trim().split(/\r?\n/);
+      const port = Number(lines[0]);
+      if (Number.isInteger(port) && port > 0 && port <= 65535 && /^\/devtools\/browser\//.test(lines[1] || '')) {
+        return port;
+      }
+    } catch {}
+    await delay(250);
+  }
+  throw new Error(`VS Code did not create a valid DevTools port file at ${activePortFile}`);
+}
+
+async function waitForChildExit(child, timeout) {
+  const deadline = Date.now() + timeout;
+  while (childIsRunning(child) && Date.now() < deadline) await delay(100);
+  return !childIsRunning(child);
+}
+
 async function startApp({ clearNotifications = true } = {}) {
   if (appChild) return;
+  await rm(activePortFile, { force: true });
   const child = spawn(appExecutable, launchArgs(), { detached: true, stdio: 'ignore' });
   child.unref();
   appChild = child;
-  await delay(2500);
-  windowControl = new VSCodeControl(devtoolsPort);
+  devtoolsPort = await waitForDevToolsPort(child);
+  windowControl = new VSCodeControl(devtoolsPort, appPath);
   await windowControl.connect();
   await openFixedFiles();
   if (clearNotifications) await windowControl.clearNotifications();
@@ -200,37 +230,25 @@ async function startApp({ clearNotifications = true } = {}) {
 }
 
 async function quitApp() {
-  if (windowControl) {
-    try { await windowControl.key('Q', 'KeyQ', 4); } catch {}
-  }
-  await delay(700);
-  if (appChild?.exitCode === null) {
-    appChild.kill('SIGTERM');
-    await delay(700);
-    if (appChild.exitCode === null) appChild.kill('SIGKILL');
-  }
+  const child = appChild;
   windowControl?.close();
   windowControl = null;
-  appChild = null;
-  const deadline = Date.now() + 12_000;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${devtoolsPort}/json`);
-      if (!response.ok) return;
-    } catch {
-      return;
+  if (childIsRunning(child)) {
+    child.kill('SIGTERM');
+    if (!await waitForChildExit(child, 3000)) {
+      child.kill('SIGKILL');
+      if (!await waitForChildExit(child, 3000)) {
+        throw new Error(`Could not stop the VS Code process started by this run (PID ${child.pid}).`);
+      }
     }
-    await delay(250);
   }
-  throw new Error('VS Code did not exit before restart.');
+  appChild = null;
+  devtoolsPort = undefined;
+  await rm(activePortFile, { force: true });
 }
 
 async function stopApp() {
-  try {
-    await quitApp();
-  } catch {
-    // Preserve the capture failure while the disposable profile is cleaned up.
-  }
+  await quitApp();
 }
 
 async function restartApp({ clearNotifications = true } = {}) {
@@ -252,7 +270,7 @@ async function restartApp({ clearNotifications = true } = {}) {
       windowControl.close();
       windowControl = null;
       await delay(1800);
-      windowControl = new VSCodeControl(devtoolsPort);
+      windowControl = new VSCodeControl(devtoolsPort, appPath);
       await windowControl.connect();
       await openFixedFiles();
       if (clearNotifications) await windowControl.clearNotifications();
@@ -494,7 +512,8 @@ async function capture(name, chapter, group, description, captureState = 'none')
   else if (captureState === 'recommendation-toast') await windowControl.assertExpectedRecommendationToast();
   else await windowControl.assertNoModalOrToast();
   const destination = imageFilename(name);
-  const [windowId, width, height] = run(finderBinary, [appPath]).split(/\s+/);
+  if (!childIsRunning(appChild)) throw new Error('Refusing to capture without the VS Code process started by this run.');
+  const [windowId, width, height] = run(finderBinary, [appPath, String(appChild.pid)]).split(/\s+/);
   if (width !== '1200' || height !== '800') {
     throw new Error(`Expected a 1200x800 point window, found ${width}x${height}`);
   }
@@ -580,16 +599,19 @@ try {
   await startApp();
   await capture('00-zero.png', 0, 'zero', 'A fresh profile opens the fixed sample project with no user-installed extensions.');
 
-  for (const chapter of chapters) {
+  const selectedChapters = smokeMode ? chapters.slice(0, 1) : chapters;
+  for (const chapter of selectedChapters) {
     await installRecommendations(chapter);
     await restartApp();
     await windowControl.clearNotifications();
 
     const currentSettings = sourceSettingsFor(chapter);
-    for (const groupKey of chapter.groups) {
+    const selectedGroups = smokeMode ? chapter.groups.slice(0, 1) : chapter.groups;
+    for (const groupKey of selectedGroups) {
       await capturePair(chapter, groupKey, currentSettings);
     }
 
+    if (smokeMode) continue;
     await writeSettings(currentSettings);
     await restartApp();
     await windowControl.key('Escape', 'Escape');
@@ -603,8 +625,9 @@ try {
   await rm(profileDir, { recursive: true, force: true });
 }
 
-if (indexRows.length !== 72 || imageNames.size !== 72) {
-  throw new Error(`Expected 72 screenshots; captured ${imageNames.size}`);
+const expectedImageCount = smokeMode ? 3 : 72;
+if (indexRows.length !== expectedImageCount || imageNames.size !== expectedImageCount) {
+  throw new Error(`Expected ${expectedImageCount} screenshots; captured ${imageNames.size}`);
 }
 await writeFile(indexPath, [
   ['chapter', 'group', 'file', 'description'].map(csv).join(','),

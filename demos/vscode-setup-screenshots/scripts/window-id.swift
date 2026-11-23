@@ -2,20 +2,22 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-guard CommandLine.arguments.count == 2 else {
-    fputs("usage: window-id <app-bundle-path>\n", stderr)
+guard CommandLine.arguments.count == 3,
+      let expectedPID = pid_t(CommandLine.arguments[2]) else {
+    fputs("usage: window-id <app-bundle-path> <pid>\n", stderr)
     exit(2)
 }
 
 let bundlePrefix = URL(fileURLWithPath: CommandLine.arguments[1]).standardizedFileURL.path
 let running = NSRunningApplication.runningApplications(withBundleIdentifier: "com.microsoft.VSCode")
     .filter { app in
+        guard app.processIdentifier == expectedPID else { return false }
         guard let path = app.bundleURL?.standardizedFileURL.path else { return false }
         return path == bundlePrefix || path.hasPrefix(bundlePrefix + "/")
     }
 
-guard let app = running.sorted(by: { ($0.launchDate ?? .distantPast) > ($1.launchDate ?? .distantPast) }).first else {
-    fputs("VS Code app copy is not running\n", stderr)
+guard let app = running.first else {
+    fputs("launched VS Code process is not running from the app copy\n", stderr)
     exit(3)
 }
 

@@ -1,26 +1,42 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
 export class VSCodeControl {
-  constructor(port) {
+  constructor(port, expectedAppPath) {
     this.port = port;
+    this.expectedAppPath = expectedAppPath;
     this.socket = null;
     this.nextId = 0;
     this.pending = new Map();
   }
 
   async connect() {
+    if (!Number.isInteger(this.port) || this.port < 1 || this.port > 65535) {
+      throw new Error(`Invalid DevTools port: ${this.port}`);
+    }
+    const expectedUrlPrefix = `vscode-file://vscode-app${encodeURI(this.expectedAppPath)}/`;
     const deadline = Date.now() + 30_000;
     let target;
     while (Date.now() < deadline) {
+      let pages;
       try {
         const response = await fetch(`http://127.0.0.1:${this.port}/json`);
-        const pages = await response.json();
-        target = pages.find((page) => page.type === 'page' && page.title !== '');
-        if (target) break;
-      } catch {}
+        if (!response.ok) throw new Error(`Unexpected DevTools HTTP status ${response.status}`);
+        pages = await response.json();
+      } catch {
+        await delay(250);
+        continue;
+      }
+      const ownPages = pages.filter((page) => page.type === 'page'
+        && page.title !== ''
+        && page.url?.startsWith(expectedUrlPrefix));
+      if (ownPages.length > 1) throw new Error(`Multiple VS Code targets matched the launched app copy on port ${this.port}`);
+      if (ownPages.length === 1) {
+        target = ownPages[0];
+        break;
+      }
       await delay(250);
     }
-    if (!target) throw new Error(`No VS Code page on DevTools port ${this.port}`);
+    if (!target) throw new Error(`No page for launched VS Code app ${this.expectedAppPath} on DevTools port ${this.port}`);
 
     this.socket = new WebSocket(target.webSocketDebuggerUrl);
     await new Promise((resolve, reject) => {
@@ -51,6 +67,11 @@ export class VSCodeControl {
     this.socket.addEventListener('error', rejectPending, { once: true });
     await this.send('Page.enable');
     await this.send('Runtime.enable');
+    const attachedUrl = await this.evaluate('location.href');
+    if (!attachedUrl?.startsWith(expectedUrlPrefix)) {
+      this.close();
+      throw new Error(`Attached DevTools target changed identity: ${attachedUrl}`);
+    }
   }
 
   send(method, params = {}) {
