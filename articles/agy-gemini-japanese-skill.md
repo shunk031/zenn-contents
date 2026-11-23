@@ -3,7 +3,8 @@ title: "AI 臭い日本語を agy gemini スキルで一掃するゾォ〜"
 emoji: "🧹"
 type: "tech"
 topics: ["ai", "gemini", "antigravity", "herdr", "claudecode"]
-published: false
+published: true
+published_at: "2026-12-02 09:00"
 ---
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。本記事は [法政大学理工学部 Advent Calendar 2026](https://adventar.org/calendars/13106) の 2 日目の記事です。
