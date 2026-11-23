@@ -1,0 +1,18 @@
+:root {
+  color-scheme: dark;
+  --accent: #9b87f5;
+  --surface: #191521;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: #f3efff;
+  font-family: sans-serif;
+}
+
+.card {
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 16px;
+}
