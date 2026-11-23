@@ -45,7 +45,7 @@ Custom UI Style 拡張機能の詳細ページを開いた画面です。
 `settings.json` 内に、Custom UI Style の設定例や CSS セレクターのサンプルがコメントとして記載されている画面です。
 ![](/images/igorbabko-vscode-setup-2025/03-04.png)
 
-ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。そこでスタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。
+ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。そこでスタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。Dank Mono は有料フォントであり、[作者の公式販売ページ](https://philpl.gumroad.com/l/dank-mono)からライセンスを購入して入手できます。
 
 Electron の設定やトラフィックライト位置（`x: 20`, `y: 16`）、タイトルラベルの余白設定（`padding-left: 60px`）などを実際に記述した画面です。
 ![](/images/igorbabko-vscode-setup-2025/03-05.png)

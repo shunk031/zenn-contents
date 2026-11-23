@@ -25,7 +25,7 @@ title: "Misc"
 ## 解説
 
 ### UI 余白とサイドバー背景色の調整
-サイドバーを開いた際に、左上のウィンドウ操作ボタンとタブのファイル名表示が重なる問題を防ぎます。Custom UI Style のスタイルシート設定で `.title .monaco-icon-label.file-icon` に左右マージン `margin: 0 60px` を追加します。また、サイドバーの背景色をエディタ背景色と統一します。`workbench.colorCustomizations` 内の `[Aura Dracula Spirit (Soft)]` スコープで `sideBar.background` を `#191521` に設定します。
+サイドバーを開いた際に、左上のウィンドウ操作ボタンとタブのファイル名表示が重なる問題を防ぎます。Custom UI Style のスタイルシート設定で `.title .monaco-icon-label.file-icon` に左右マージン `margin: 0 60px` を追加します。このセレクタも、第 03 章から第 05 章で追加した `custom-ui-style.stylesheet` に追記します。また、サイドバーの背景色をエディタ背景色と統一します。第 10 章で追加した `workbench.colorCustomizations` の `[Aura Dracula Spirit (Soft)]` 内に `sideBar.background: "#191521"` を追記します。
 
 ### 自動保存と拡張機能通知の抑制
 ファイル編集後の保存忘れを防ぐため、`files.autoSave: "afterDelay"`（既定値 `"off"`）を設定します。入力後一定時間（既定の待機時間）が経過すると自動で保存されます。また、作業中のポップアップ通知を減らすため、`extensions.ignoreRecommendations: true`（既定値 `false`）を設定して拡張機能のおすすめ通知を非表示にします。
@@ -56,3 +56,9 @@ Custom UI Style によるマージン設定を正しく反映するには、VS C
 ## 変更コミット
 
 - [`da275c0`](https://github.com/igorbabko/vscode-setup/commit/da275c09488fec3b53f2541ad8d482dca51b499b)
+
+## おわりに
+
+本書では、Igor Babko 氏のセットアップ動画に基づき、テーマ設定から UI 要素の最小化、タイポグラフィ、補完や装飾の抑制までを章ごとに順を追って設定しました。
+
+各章では変更点に絞って設定スニペットを提示してきましたが、全設定を統合した完成状態は最終コミット [`da275c0`](https://github.com/igorbabko/vscode-setup/commit/da275c09488fec3b53f2541ad8d482dca51b499b) の `.vscode/settings.json` で確認できます。ご自身の環境に合わせて必要な設定を取り入れ、快適なミニマル環境を構築してください。

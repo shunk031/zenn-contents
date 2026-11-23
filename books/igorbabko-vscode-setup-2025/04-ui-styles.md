@@ -33,7 +33,7 @@ Custom UI Style 拡張機能のスタイルシート設定を活用し、影や�
 ## 解説
 
 ### スタイル適用の一括反映
-Custom UI Style のスタイル設定は、設定を変更するたびに再読み込みが必要になります。設定を個別に変更すると何度も再起動が必要になります。そのため、CSS のオーバーライド設定を `custom-ui-style.stylesheet`（既定値 `{}`）へ一括して記述し、一度の再起動でまとめて反映させています。
+Custom UI Style のスタイル設定は、設定を変更するたびに再読み込みが必要になります。設定を個別に変更すると何度も再起動が必要になります。そのため、CSS のオーバーライド設定を `custom-ui-style.stylesheet`（既定値 `{}`）へ一括して記述し、一度の再起動でまとめて反映させています。本章で追加するセレクター群は、第 3 章で作成した `custom-ui-style.stylesheet` オブジェクトの中に追記します。第 3 章のエディタタイトルの余白設定を残したまま、本章の各プロパティを並列に追加します。
 
 ### ポップアップとウィジェットの装飾整理
 通知トーストの影（`.notification-toast`）を `box-shadow: none !important` で非表示にします。クイック入力・コマンドパレットの影（`.quick-input-widget.show-file-icons`）も同様に非表示にします。コマンドパレット（`.quick-input-widget`）は画面上部から少し下げた `top: 25vh !important` の位置に移動します。パレット内のスクロールバー（`.quick-input-list .scrollbar`）や不要なアクションバー（`.monaco-action-bar.quick-input-inline-action-bar`）も非表示にします。検索ウィジェット（`.editor-widget.find-widget`）も影を消して角丸を 4px に整えます。また、`.quick-input-titlebar` の背景色を `#100B15` に設定していますが、これは VSCode Neovim 拡張機能の `/` 検索バーを開いた際の見た目を整えるための設定です。

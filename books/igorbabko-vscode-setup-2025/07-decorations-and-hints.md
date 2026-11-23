@@ -28,10 +28,10 @@ title: "Decorations and Hints"
 スクロール時に関数宣言などを上部に固定表示するスティッキースクロール（`editor.stickyScroll.enabled: false`、既定値 `true`）を無効化します。カラー値のプレビュー（`editor.colorDecorators: false`、既定値 `true`）を非表示にします。関数上部にアクションを表示する CodeLens（`editor.codeLens: false`、既定値 `true`）も非表示にします。また、エディタ内のリンク検出（`editor.links: false`、既定値 `true`）をオフにします。対応する括弧の強調ハイライト（`editor.matchBrackets: "never"`、既定値 `"always"`）もオフにして画面のノイズを減らします。
 
 ### ヒント表示とポップアップの抑制
-引数入力時に自動表示されるシグネチャヒント（`editor.parameterHints.enabled: false`、既定値 `true`）を非表示にします。コードアクション用の電球マーク（`editor.lightbulb.enabled: "off"`、既定値 `"onCode"`）を非表示にします。あわせて、マウスホバー時の説明ポップアップ（`editor.hover.enabled: false`、既定値 `true`）も非表示にします。動画では、パラメーター情報やコードアクションが必要な場合はショートカットキーから呼び出す方針をとっています。
+引数入力時に自動表示されるシグネチャヒント（`editor.parameterHints.enabled: false`、既定値 `true`）を非表示にします。コードアクション用の電球マーク（`editor.lightbulb.enabled: "off"`、既定値 `"onCode"`）を非表示にします。あわせて、マウスホバー時の説明ポップアップ（`editor.hover.enabled: false`、既定値 `true`）も非表示にします。パラメーター情報やコードアクションが必要な場合は、キーボードショートカットから手動で呼び出します。VS Code の既定のショートカットは、パラメーターヒントが macOS で `⌘⇧Space`、Windows や Linux で `Ctrl+Shift+Space` です。コードアクションは macOS で `⌘.`、Windows や Linux で `Ctrl+.` です。
 
 ### ファイル保存設定と Git 差分表示の整理
-ファイル保存時に行末の不要な空白を自動削除する `files.trimTrailingWhitespace: true`（既定値 `false`）を設定します。あわせて保存時にファイル末尾が改行で終わるよう、`files.insertFinalNewline: true`（既定値 `false`）を設定します。これによりコーディング規約に沿った形で保存できます。また、エディタ左側のガター（行番号の横）に表示される Git 変更マークを `scm.diffDecorations: "none"`（既定値 `"all"`）で非表示にします。動画では Git の差分確認をエディタ内ではなく GitHub Desktop などの外部ツールで行うため、この表示を不要としています。
+ファイル保存時に行末の不要な空白を自動削除する `files.trimTrailingWhitespace: true`（既定値 `false`）を設定します。あわせて保存時にファイル末尾が改行で終わるよう、`files.insertFinalNewline: true`（既定値 `false`）を設定します。これによりコーディング規約に沿った形で保存できます。また、エディタ左側のガター（行番号の横）に表示される Git 変更マークを `scm.diffDecorations: "none"`（既定値 `"all"`）で非表示にします。動画では Git の差分確認を GitHub Desktop などの外部ツールで行うため、エディタ内の差分表示を不要としています。
 
 ## 設定項目の一覧
 
@@ -51,7 +51,7 @@ title: "Decorations and Hints"
 
 ## 注意点
 
-ホバーやパラメーターヒント、電球マークを無効化すると、マウス操作で型定義やリファクタリング候補を確認できなくなります。必要な場合はキーボードショートカットから手動で呼び出す必要があります。
+ホバーやパラメーターヒント、電球マークを無効化すると、マウス操作で型定義やリファクタリング候補を確認できなくなります。必要な場合は、上記のショートカットキーから手動で呼び出す必要があります。
 
 ガターの Git 差分マーカー（`scm.diffDecorations`）を非表示にすると、エディタ内でどの行を変更したかが視覚的に分からなくなります。Git の変更状況はソース管理ビューや外部の Git クライアントツールなどで確認する必要があります。
 
