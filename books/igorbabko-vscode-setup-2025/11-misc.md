@@ -34,13 +34,7 @@ title: "Misc"
 設定前と比べて、設定後はタブアイコンの余白を広げて重なりを防ぎ、サイドバー背景色もエディタと同色にそろえています。
 
 ### 自動保存と拡張機能通知の抑制
-ファイル編集後の保存忘れを防ぐため、`files.autoSave: "afterDelay"`（既定値 `"off"`）を設定します。入力後一定時間（既定の待機時間）が経過すると自動で保存されます。また、作業中のポップアップ通知を減らすため、`extensions.ignoreRecommendations: true`（既定値 `false`）を設定して拡張機能のおすすめ通知を非表示にします。
-
-| Before | After |
-| --- | --- |
-| ![設定前の保存挙動](/images/igorbabko-vscode-setup-2025/ch11-autosave-before.webp) | ![設定後の保存挙動](/images/igorbabko-vscode-setup-2025/ch11-autosave-after.webp) |
-
-設定前と比べて、設定後はファイル編集後の未保存マークが残らず、一定時間の経過で自動保存されます。
+ファイル編集後の保存忘れを防ぐため、`files.autoSave: "afterDelay"`（既定値 `"off"`）を設定します。入力後一定時間（既定の待機時間）が経過すると自動で保存されます。待機時間経過後も両画像に未保存マークが残って自動保存の視覚差を確認できなかったため、本項の比較画像は除外しています。また、作業中のポップアップ通知を減らすため、`extensions.ignoreRecommendations: true`（既定値 `false`）を設定して拡張機能のおすすめ通知を非表示にします。
 
 | Before | After |
 | --- | --- |

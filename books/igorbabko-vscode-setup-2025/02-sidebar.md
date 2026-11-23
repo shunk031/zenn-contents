@@ -59,7 +59,7 @@ title: "Sidebar"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-after.webp) |
 
-左の設定前に対し、右の設定後ではオレンジ色の Git 変更色と M マーカーが消去されます（diagnostics.ts の赤文字と数字バッジ 1 は残ります）。
+設定前と比べて、設定後は Git の変更色や M マーカーが消え、diagnostics.ts の数字バッジ 1 や src の赤ドットも非表示になります（diagnostics.ts の赤文字自体は残ります）。
 
 ## 設定項目の一覧
 

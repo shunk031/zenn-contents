@@ -44,7 +44,7 @@ title: "Typography"
 | 設定 | 既定値 | 説明 |
 | --- | --- | --- |
 | `editor.fontFamily` | OS・環境依存（例: Hack Nerd Font Mono / Menlo 等） | エディタで使用するフォントファミリーを設定します。 |
-| `editor.fontSize` | `12` | エディタのフォントサイズをピクセル単位で設定します。 |
+| `editor.fontSize` | `12`（macOS）/ `14`（Windows / Linux） | エディタのフォントサイズをピクセル単位で設定します。 |
 | `editor.fontLigatures` | `false` | フォントリガチャ（合字）の有効・無効を切り替えます。 |
 | `editor.lineHeight` | `0`（自動計算） | エディタの行の高さを設定します（数値 `2.5` で行間を拡大）。 |
 | `editor.tokenColorCustomizations.textMateRules` | `{}` | 構文のスタイルをカスタマイズする TextMate トークンルールを設定します（コメントをイタリック体に設定）。 |
