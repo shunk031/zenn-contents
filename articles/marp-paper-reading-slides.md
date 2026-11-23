@@ -3,7 +3,8 @@ title: "Marp でいい感じに論文紹介スライドを作るぜ"
 emoji: "📑"
 type: "tech"
 topics: ["marp", "slides", "markdown", "presentation", "claudecode"]
-published: false
+published: true
+published_at: "2026-12-03 09:00"
 ---
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。本記事は [法政大学理工学部 Advent Calendar 2026](https://adventar.org/calendars/13106) の 3 日目の記事です。
