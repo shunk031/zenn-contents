@@ -39,6 +39,21 @@ RUN set -eu; \
     fc-match -f '%{family}\n' 'Noto Sans Mono CJK JP' | grep -F 'Noto Sans Mono CJK JP'
 
 RUN set -eu; \
+    font_dir=/usr/local/share/fonts/truetype/roboto-mono-nerd; \
+    doc_dir=/usr/local/share/doc/roboto-mono-nerd; \
+    archive=/tmp/RobotoMono.tar.xz; \
+    mkdir -p "$font_dir" "$doc_dir"; \
+    curl -fLsS --retry 3 --retry-all-errors \
+      'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/RobotoMono.tar.xz' \
+      -o "$archive"; \
+    printf '%s  %s\n' '61f53438b240a00c87c92dc2c372db0bbb264473b36a8144ea62babf787f8383' "$archive" | sha256sum -c -; \
+    tar -xJf "$archive" -C "$font_dir" --wildcards 'RobotoMonoNerdFontMono-*.ttf'; \
+    tar -xJOf "$archive" LICENSE.txt > "$doc_dir/LICENSE.txt"; \
+    rm -f "$archive"; \
+    fc-cache -f; \
+    fc-match -f '%{family}\n' 'RobotoMono Nerd Font Mono' | grep -F 'RobotoMono Nerd Font Mono'
+
+RUN set -eu; \
     case "$TARGETARCH" in \
       arm64) herdr_arch=aarch64; herdr_sha=17d7536f2da50859523680ef279dffcac8e4a235f4e46fe8da6c2ec44141897c ;; \
       amd64) herdr_arch=x86_64; herdr_sha=14d9e8bc8b4a9e0118d77c32266f76d461f09b40342eb23752960bd89f59929d ;; \

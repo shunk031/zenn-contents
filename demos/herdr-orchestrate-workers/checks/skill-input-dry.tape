@@ -2,7 +2,7 @@ Output "/out/skill-input-dry.mp4"
 Set Width 1440
 Set Height 900
 Set FontSize 18
-Set FontFamily "Noto Sans Mono CJK JP"
+Set FontFamily "RobotoMono Nerd Font Mono, Noto Sans Mono CJK JP"
 Require bash
 Require herdr
 Require claude

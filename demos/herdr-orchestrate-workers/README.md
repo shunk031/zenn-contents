@@ -2,6 +2,10 @@
 
 This kit builds a disposable container for recording a short Herdr worker demo with VHS. The image contains pinned tools, a synthetic repository, and neutral configuration. No credentials or host-specific provider settings are baked into the image.
 
+VHS uses [RobotoMono Nerd Font Mono v3.5.1](https://github.com/ryanoasis/nerd-fonts/releases/tag/v3.5.1) as its primary font. Noto Sans Mono CJK JP is the Japanese fallback.
+
+The build verifies the archive's SHA-256 and keeps its Apache License 2.0 file at `/usr/local/share/doc/roboto-mono-nerd/LICENSE.txt`.
+
 ## Prerequisites
 
 - Docker with BuildKit and network access for image builds.
@@ -25,7 +29,7 @@ From this directory, build the image:
 
 ```sh
 docker build --pull \
-  -t herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34 .
+  -t herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34-fonts3.5.1 .
 ```
 
 Record GIF and MP4 outputs into `./out`:
@@ -42,7 +46,7 @@ The tape hides setup, starts a detached Herdr server, prepares the synthetic rep
 docker run --rm \
   --mount "type=bind,source=$PWD/out,target=/out" \
   --entrypoint python3 \
-  herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34 \
+  herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34-fonts3.5.1 \
   /opt/demo/postprocess-video.py /out
 ```
 

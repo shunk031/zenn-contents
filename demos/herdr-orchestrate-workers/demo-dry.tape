@@ -3,6 +3,7 @@ Output "/out/setup-check.mp4"
 Set Width 1440
 Set Height 900
 Set FontSize 18
+Set FontFamily "RobotoMono Nerd Font Mono, Noto Sans Mono CJK JP"
 Require bash
 Require herdr
 Require claude

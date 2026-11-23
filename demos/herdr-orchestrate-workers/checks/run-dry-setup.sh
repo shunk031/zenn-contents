@@ -5,7 +5,7 @@
 set -Eeuo pipefail
 
 kit_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
-image_tag="herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34"
+image_tag="herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34-fonts3.5.1"
 claude_secret="${HOME:?}/.config/herdr-demo/claude-token"
 codex_secret="${HOME:?}/.config/herdr-demo/codex-token"
 provider_secret="${HOME:?}/.config/herdr-demo/codex-provider.toml"
