@@ -338,6 +338,102 @@ function report(file, lineNumber, name, message, line) {
   console.error(`  ${line}`);
 }
 
+function linesWithoutFrontMatter(lines) {
+  if (lines[0] !== "---") {
+    return lines;
+  }
+
+  const closingIndex = lines.findIndex((line, index) => index > 0 && line === "---");
+  if (closingIndex < 0) {
+    return lines;
+  }
+
+  return lines.map((line, index) => (index <= closingIndex ? "" : line));
+}
+
+function reportHeadingImmediatelyFollowedBySubheading(file, lines) {
+  const linesWithoutMetadata = linesWithoutFrontMatter(lines);
+  const visibleLines = linesOutsideFencedCodeAndHtmlComments(linesWithoutMetadata);
+
+  for (let index = 0; index < visibleLines.length; index += 1) {
+    const heading = /^ {0,3}(#{1,6})\s+/.exec(visibleLines[index]);
+    if (!heading) {
+      continue;
+    }
+
+    let nextIndex = index + 1;
+    while (nextIndex < visibleLines.length && visibleLines[nextIndex].trim() === "") {
+      nextIndex += 1;
+    }
+
+    const nextHeading = /^ {0,3}(#{1,6})\s+/.exec(visibleLines[nextIndex] ?? "");
+    if (!nextHeading || nextHeading[1].length <= heading[1].length) {
+      continue;
+    }
+
+    report(
+      file,
+      index + 1,
+      "add-lead-before-subheading",
+      "見出しの直後に子見出しを続けず、節の内容を示す短いリード文を置いてください。",
+      lines[index],
+    );
+  }
+}
+
+function reportStandaloneTextlintComments(file, lines) {
+  const linesWithoutMetadata = linesWithoutFrontMatter(lines);
+  const standaloneComment = /^\s*(?:>\s*)*<!--\s*textlint-(?:disable|enable)(?=\s|-->)[\s\S]*-->\s*$/;
+  let fence = null;
+  let inHtmlComment = false;
+
+  for (let index = 0; index < linesWithoutMetadata.length; index += 1) {
+    const line = linesWithoutMetadata[index];
+    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+
+    if (fence !== null) {
+      if (
+        fenceMatch
+        && fenceMatch[1][0] === fence.character
+        && fenceMatch[1].length >= fence.length
+        && fenceMatch[2].trim() === ""
+      ) {
+        fence = null;
+      }
+      continue;
+    }
+
+    if (inHtmlComment) {
+      if (line.includes("-->")) {
+        inHtmlComment = false;
+      }
+      continue;
+    }
+
+    if (fenceMatch) {
+      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
+      continue;
+    }
+
+    if (/<!--/.test(line) && !line.includes("-->")) {
+      inHtmlComment = true;
+      continue;
+    }
+
+    if (!standaloneComment.test(line)) {
+      continue;
+    }
+
+    report(
+      file,
+      index + 1,
+      "avoid-standalone-textlint-comment",
+      "textlint の disable/enable コメントは独立行にせず、対象段落のインラインに置いてください。",
+      lines[index],
+    );
+  }
+}
+
 function nextBacktickRun(line, startIndex) {
   const start = line.indexOf("`", startIndex);
   if (start < 0) {
@@ -806,6 +902,8 @@ for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
 
+  reportHeadingImmediatelyFollowedBySubheading(file, lines);
+  reportStandaloneTextlintComments(file, lines);
   reportLooseTopicShiftAfterExternalMaterial(file, lines);
   reportPrematureWinnerLoserTerms(file, lines);
   reportRepeatedScopeDeclarations(file, lines);
