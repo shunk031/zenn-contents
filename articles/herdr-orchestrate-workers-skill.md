@@ -32,7 +32,7 @@ https://github.com/shunk031/skills/tree/main/skills/herdr/shunk031-herdr-orchest
 /shunk031-herdr-orchestrate-workers Codex worker を model_reasoning_effort=low で起動して hello.txt を作らせて
 ```
 
-指示を受けた Claude Code がワーカーである Codex を起動し、Codex が `hello.txt` を作成してタブが回収されるまでの一連の流れを記録しています。録画開始からワーカーのタブ回収までの約 48 秒のうち、画面表示に変化のない待ち時間だけを早送りしています。
+親が別タブでワーカーである Codex を起動し、Codex が `hello.txt` を作成して終わったらタブを回収します。スキルがそのまま動く様子を記録しています。
 
 ![](/images/herdr-orchestrate-workers-skill/herdr-orchestration-demo.gif)
 
@@ -123,6 +123,16 @@ STATUS <worker-name>: <現在の進捗段階>
 ```
 
 先頭にワーカー名を明記することで、受信したテキストがどのワーカーの発言かを機械的に判別できます。
+
+別タブで動くワーカーを見やすくするため、タブを分けて右側に並べるよう通常と異なる指示を入力します。
+
+```text
+/shunk031-herdr-orchestrate-workers 今のタブを縦に分けて、右側で Codex worker を model_reasoning_effort=low で起動して hello.txt を作らせて。worker には終わったら親にプロンプトで DONE を報告させて、報告が届いたら右のペインを閉じて
+```
+
+ワーカーの DONE が親の入力欄にプロンプトとして届き、親が確かめてペインを閉じる様子を記録した左右分割版です。
+
+![](/images/herdr-orchestrate-workers-skill/herdr-orchestration-demo-split.gif)
 
 # 報告を鵜呑みにしない検証と独立レビュー
 
