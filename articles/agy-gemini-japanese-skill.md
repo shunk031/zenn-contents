@@ -26,13 +26,13 @@ https://zenn.dev/shunk031/articles/herdr-orchestrate-workers-skill
 実際に動かしたときの動作例です。親エージェントへ次のように指示を入力しました。
 
 ```text
-/shunk031-writing-gemini-japanese /demo/source-sentence.txt の文を、主張を変えず事実も足さずに自然な日本語へ直して。右側のペインに Herdr で書き手と確認役を順に起動して（起動には /opt/demo/start-agy-agent.sh を使う）。結果は /demo/result.md に保存して、その内容と ACCEPT か REJECT かをそのまま表示して
+/shunk031-writing-gemini-japanese /demo/source-sentence.txt の文を、主張を変えず事実も足さずに、誇張や決まり文句を取って自然な日本語へ直して。右側のペインに Herdr で書き手と確認役を順に起動して（起動には /opt/demo/start-agy-agent.sh を使う）。結果は /demo/result.md に保存して、その内容と ACCEPT か REJECT かをそのまま表示して
 ```
 
 ![](/images/agy-gemini-japanese-skill/agy-demo.gif)
 
 - <!-- textlint-disable -->直す前の文: 本PRでは、パフォーマンスの最適化を実現するとともに、ユーザー体験の向上と保守性の担保を両立させる、まさにゲームチェンジャーとなる変更を加えました。
-- 直った文: 本 PR では、パフォーマンスを最適化するとともに、ユーザー体験の向上と保守性の確保を両立させる変更を加えました。<!-- textlint-enable -->
+- 直った文: 本PRでは、パフォーマンスを最適化し、ユーザー体験の向上と保守性の確保を両立する変更を加えました。<!-- textlint-enable -->
 
 直す前の文にあった「〜を実現する」「担保」「まさにゲームチェンジャー」といった言い回しが、直った文では消えています。
 
