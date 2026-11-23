@@ -1,16 +1,13 @@
 # Herdr orchestration demo kit
 
-This kit builds a disposable container for recording a short Herdr worker demo with VHS. The image contains pinned tools, a synthetic repository, and neutral configuration. No credentials or host-specific provider settings are baked into the image.
+This kit builds a disposable container for recording two VHS variants of a Herdr worker demo. The image contains pinned tools, a synthetic repository, and neutral configuration. Credentials and host-specific provider settings stay outside the image and are mounted read-only at runtime.
 
-VHS uses [RobotoMono Nerd Font Mono v3.5.1](https://github.com/ryanoasis/nerd-fonts/releases/tag/v3.5.1) as its primary font. Noto Sans Mono CJK JP is the Japanese fallback.
-
-The build verifies the archive's SHA-256 and keeps its Apache License 2.0 file at `/usr/local/share/doc/roboto-mono-nerd/LICENSE.txt`.
+VHS uses RobotoMono Nerd Font Mono v3.5.1 as its primary font and Noto Sans Mono CJK JP as its fallback. The build verifies the primary font archive's SHA-256 and keeps its Apache License 2.0 file in the image.
 
 ## Prerequisites
 
 - Docker with BuildKit and network access for image builds.
-- A working host Codex configuration for the model service used by the demo.
-- Valid Claude Code and Codex credentials for that service.
+- A working host Codex configuration and valid Claude Code and Codex credentials for the organization's model gateway.
 - On Linux, make the runtime files readable by container UID 10001 without making them world-readable. Docker Desktop on macOS maps mounted file permissions for this image user.
 
 ## Runtime files
@@ -21,7 +18,7 @@ Create or provision these files on the host under `~/.config/herdr-demo/`:
 - `codex-token`
 - `codex-provider.toml`
 
-Run `./create-provider-secret.py` to create the provider file from the active host Codex configuration. It sets mode 600 and does not display settings. The three files are mounted read-only at runtime. The output directory is the only writable host mount.
+Run `./create-provider-secret.py` to create the provider file from the active host Codex configuration. It sets mode 600 and does not display settings. All three files are mounted read-only at runtime. The output directory is the only writable host mount.
 
 ## Build and record
 
@@ -32,23 +29,30 @@ docker build --pull \
   -t herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34-fonts3.5.1 .
 ```
 
-Record GIF and MP4 outputs into `./out`:
+Record the default single-pane variant:
 
 ```sh
 ./run.sh
 ```
 
-The tape hides setup, starts a detached Herdr server, prepares the synthetic repository, and launches the orchestration task. A hidden watcher samples the combined root and worker panes once per second. It removes ANSI escapes and normalizes spinner glyphs and elapsed-time values before comparing samples. A nonempty normalized screen with no other visible content change for at least two seconds counts as idle. Spinner-only and timer-only changes therefore count as idle. A nonempty screen with no visible change also counts as idle. These intervals intentionally compress agent thinking and waiting. Stretches with other visible content changes remain at normal speed. The watcher separately polls structured Herdr state and logs UTC lifecycle milestones to `out/timing.log`. Herdr state does not classify idle intervals. The worker-tab-closed event sets the end cut, and post-processing keeps the following three seconds. After observing closure, the watcher writes `out/finished`. The raw video is kept. The result aims for 60–90 seconds; if the recording has too little idle footage to compress, it may finish slightly below 60 seconds.
-
-`run.sh` post-processes automatically. To regenerate the final MP4 and GIF from an existing raw capture and timing log, run:
+Record the split-pane variant used for the article:
 
 ```sh
-docker run --rm \
-  --mount "type=bind,source=$PWD/out,target=/out" \
-  --entrypoint python3 \
-  herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34-fonts3.5.1 \
-  /opt/demo/postprocess-video.py /out
+./run.sh --variant split
 ```
+
+Use `--output-dir PATH` to select a different output directory. Each variant keeps its raw capture and writes separate final MP4 and GIF files into `out/`:
+
+| Variant | Raw capture                              | Final MP4                            | GIF                                  |
+| ------- | ---------------------------------------- | ------------------------------------ | ------------------------------------ |
+| Default | `herdr-orchestration-demo-raw.mp4`       | `herdr-orchestration-demo.mp4`       | `herdr-orchestration-demo.gif`       |
+| Split   | `herdr-orchestration-demo-split-raw.mp4` | `herdr-orchestration-demo-split.mp4` | `herdr-orchestration-demo-split.gif` |
+
+The default variant records at 1440 × 900. Its hidden watcher checks the combined root and worker panes once per second. It removes ANSI escapes and normalizes spinner glyphs and elapsed-time values before comparing samples. A nonempty normalized screen with no visible content change for two seconds counts as idle. Spinner-only and timer-only thinking or waiting intervals are compressed; stretches with other visible content changes stay at normal speed. Structured Herdr state does not classify idle intervals. It sets the cut three seconds after the worker tab closes.
+
+The split variant records at 2400 × 1080. Its tape sets `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` during capture. This keeps the split client in the normal screen buffer. See the [Claude Code fullscreen documentation](https://code.claude.com/docs/en/fullscreen.md). The tape keeps a fixed eight-minute raw capture. A hidden watcher polls Herdr state every 0.5 seconds. It records root activity, worker creation, worker completion, agent removal, pane closure, report receipt, and root summary completion separately. It detects the worker's `DONE` report in the root pane and writes `out/finished-split` after the root summary. The postprocessor cuts three seconds after that summary and speeds up spinner-only waiting intervals recorded by the watcher while keeping other visible content changes at normal speed. The article uses this split-pane variant with the worker's `DONE` report.
+
+The split GIF uses 2400 px width, 3 fps, 32 colors, and no dithering. The postprocessor stops with an error if the GIF exceeds Zenn's 3 MB (3,000,000-byte) per-image limit.
 
 The host proxy environment, when configured, is forwarded to the container. Docker removes the container after each run.
 

@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 
 
-TAPE = Path(__file__).resolve().parents[1] / "demo.tape"
+TAPE_DIR = Path(__file__).resolve().parents[1]
+TAPES = (TAPE_DIR / "demo.tape", TAPE_DIR / "demo-split.tape")
 TYPE_COMMAND = re.compile(r'^\s*Type\s+("(?:\\.|[^"\\])*")\s*$')
 WAIT_PREFIX = re.compile(r"^\s*Wait(?:\+Screen)?@\d+s\s+(/.*)\s*$")
 
@@ -39,43 +40,44 @@ def wait_pattern(source_row: str, row_number: int) -> str:
 
 
 def main() -> int:
-    type_strings: list[tuple[int, str]] = []
-    wait_patterns: list[tuple[int, re.Pattern[str]]] = []
+    summaries: list[str] = []
+    for tape in TAPES:
+        type_strings: list[tuple[int, str]] = []
+        wait_patterns: list[tuple[int, re.Pattern[str]]] = []
 
-    for row_number, source_row in enumerate(TAPE.read_text(encoding="utf-8").splitlines(), 1):
-        stripped = source_row.lstrip()
-        if stripped.startswith("Type "):
-            match = TYPE_COMMAND.match(source_row)
-            if not match:
-                print(f"Type command at row {row_number} is not a quoted string", file=sys.stderr)
-                return 2
-            type_strings.append((row_number, json.loads(match.group(1))))
-        elif stripped.startswith("Wait"):
-            try:
-                pattern = wait_pattern(source_row, row_number)
-                wait_patterns.append((row_number, re.compile(pattern)))
-            except (ValueError, re.error) as error:
-                print(f"Invalid Wait regex at row {row_number}: {error}", file=sys.stderr)
-                return 2
+        for row_number, source_row in enumerate(tape.read_text(encoding="utf-8").splitlines(), 1):
+            stripped = source_row.lstrip()
+            if stripped.startswith("Type "):
+                match = TYPE_COMMAND.match(source_row)
+                if not match:
+                    print(f"{tape.name}: Type row {row_number} is not a quoted string", file=sys.stderr)
+                    return 2
+                type_strings.append((row_number, json.loads(match.group(1))))
+            elif stripped.startswith("Wait"):
+                try:
+                    pattern = wait_pattern(source_row, row_number)
+                    wait_patterns.append((row_number, re.compile(pattern)))
+                except (ValueError, re.error) as error:
+                    print(f"{tape.name}: invalid Wait regex at row {row_number}: {error}", file=sys.stderr)
+                    return 2
 
-    if not type_strings or not wait_patterns:
-        print("Tape must contain at least one Type string and one Wait regex", file=sys.stderr)
-        return 2
+        if not type_strings:
+            print(f"{tape.name}: no Type strings found", file=sys.stderr)
+            return 2
 
-    overlaps: list[tuple[int, int]] = []
-    for wait_row, pattern in wait_patterns:
-        for type_row, text in type_strings:
-            if pattern.search(text):
-                overlaps.append((wait_row, type_row))
+        overlaps: list[tuple[int, int]] = []
+        for wait_row, pattern in wait_patterns:
+            for type_row, text in type_strings:
+                if pattern.search(text):
+                    overlaps.append((wait_row, type_row))
 
-    if overlaps:
-        for wait_row, type_row in overlaps:
-            print(f"Wait row {wait_row} matches Type row {type_row}", file=sys.stderr)
-        return 1
+        if overlaps:
+            for wait_row, type_row in overlaps:
+                print(f"{tape.name}: Wait row {wait_row} matches Type row {type_row}", file=sys.stderr)
+            return 1
+        summaries.append(f"{tape.name}: {len(type_strings)} Type strings, {len(wait_patterns)} Wait regexes")
 
-    print(
-        f"validated {len(type_strings)} Type strings and {len(wait_patterns)} Wait regexes; no overlaps"
-    )
+    print("validated " + "; ".join(summaries) + "; no overlaps")
     return 0
 
 
