@@ -46,7 +46,7 @@ title: "Window"
 
 ## 追加する拡張機能
 
-本章のコミット（`.vscode/extensions.json`）での新規追加はありませんが、設定で使用している [Custom UI Style](https://marketplace.visualstudio.com/items?itemName=subframe7536.custom-ui-style) (`subframe7536.custom-ui-style`) を導入します。
+- [Custom UI Style](https://marketplace.visualstudio.com/items?itemName=subframe7536.custom-ui-style) (`subframe7536.custom-ui-style`): ウィンドウや UI スタイルをカスタマイズする拡張機能
 
 ## 変更コミット
 
