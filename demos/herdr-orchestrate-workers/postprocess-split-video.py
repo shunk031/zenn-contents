@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Trim after worker closure and compress only watcher-marked idle stretches."""
+"""Trim after parent idle following worker removal and compress watcher-marked waits."""
 
 from __future__ import annotations
 
@@ -19,13 +19,11 @@ FINAL = OUTPUT / "herdr-orchestration-demo-split.mp4"
 GIF = OUTPUT / "herdr-orchestration-demo-split.gif"
 REQUIRED = (
     "capture_started",
-    "root_busy",
     "worker_agent_created",
-    "worker_done",
-    "parent_report_received",
-    "worker_pane_closed",
-    "parent_summary_complete",
+    "parent_idle_after_worker_removal",
 )
+WORKER_COMPLETION_EVENTS = ("worker_done", "worker_agent_removed", "worker_pane_closed")
+WORKER_REMOVAL_EVENTS = ("worker_agent_removed", "worker_pane_closed")
 IDLE_EVENT = re.compile(r"^(idle_[0-9]{4})_(start|end)$")
 FINAL_TAIL_SECONDS = 3.0
 TARGET_SECONDS = 38.0
@@ -49,6 +47,13 @@ def read_timing() -> tuple[dict[str, datetime], list[tuple[str, datetime]]]:
     missing = [event for event in REQUIRED if event not in first_events]
     if missing:
         raise SystemExit(f"The timing log is missing required milestones: {', '.join(missing)}")
+    if not any(event in first_events for event in WORKER_COMPLETION_EVENTS):
+        raise SystemExit("The timing log has no worker completion or removal milestone.")
+    removals = [first_events[event] for event in WORKER_REMOVAL_EVENTS if event in first_events]
+    if not removals:
+        raise SystemExit("The timing log has no worker removal milestone for the final cut.")
+    if first_events["parent_idle_after_worker_removal"] <= min(removals):
+        raise SystemExit("The parent idle milestone must follow worker agent or pane removal.")
     return first_events, rows
 
 
@@ -127,13 +132,13 @@ def main() -> None:
     events, rows = read_timing()
     raw_duration = duration_of(RAW)
     origin = events["capture_started"]
-    summary_at = events["parent_summary_complete"]
-    cut_after = (summary_at - origin).total_seconds() + FINAL_TAIL_SECONDS
+    parent_idle_at = events["parent_idle_after_worker_removal"]
+    cut_after = (parent_idle_at - origin).total_seconds() + FINAL_TAIL_SECONDS
     cut_duration = min(raw_duration, cut_after)
     if cut_duration <= 0:
-        raise SystemExit("The parent summary time does not align with the raw video.")
+        raise SystemExit("The parent idle time does not align with the raw video.")
 
-    # Keep the final three seconds at normal speed so the completed summary stays readable.
+    # Keep the final three seconds at normal speed after the parent becomes idle.
     compressible_duration = max(0.0, cut_duration - FINAL_TAIL_SECONDS)
     intervals = idle_intervals(rows, origin, compressible_duration)
     waiting_duration = sum(end - start for start, end in intervals)
@@ -195,7 +200,7 @@ def main() -> None:
     if gif_bytes > 3_000_000:
         raise SystemExit("The split GIF exceeds Zenn's 3 MB (3,000,000-byte) image limit.")
     print(
-        f"Media complete: raw {raw_duration:.1f}s; cut {cut_duration:.1f}s after parent summary; "
+        f"Media complete: raw {raw_duration:.1f}s; cut {cut_duration:.1f}s after parent idle; "
         f"final {final_duration:.1f}s with no padding; {len(intervals)} spinner-only stretches at {speed:.2f}x; "
         f"GIF {gif_bytes} bytes at 2400 px, 3 fps, 32 colors, no dithering."
     )

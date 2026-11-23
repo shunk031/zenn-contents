@@ -15,8 +15,7 @@ from pathlib import Path
 ANSI = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))")
 SPINNER = re.compile(r"[\u2800-\u28ff✢✣✤✥✦✧✩✪✫✬✭✮✯✰✳✴✵✶✷✸✹✺✻✼✽✾✿]")
 ELAPSED = re.compile(r"\b\d+(?:\.\d+)?\s*(?:ms|s|min)\b", re.IGNORECASE)
-DONE_REPORT = re.compile(r"\bDONE(?:\s+([a-z][a-z0-9_-]{0,31}))?:", re.IGNORECASE)
-ROOT_FINAL_FOOTER = re.compile(r"\b(?:Cooked|Worked) for\b.*\bdone\b", re.IGNORECASE)
+DONE_REPORT = re.compile(r"\bDONE\b", re.IGNORECASE)
 POLL_SECONDS = 0.5
 WATCH_SECONDS = 9 * 60
 IDLE_SECONDS = 2.0
@@ -119,9 +118,10 @@ recorded: set[str] = set()
 worker: dict = {}
 worker_pane = ""
 worker_name = ""
-worker_was_working = False
 missing_pane_samples = 0
 missing_agent_samples = 0
+tick_number = 0
+worker_removal_tick: int | None = None
 last_screen: str | None = None
 last_spinner_frame: tuple[str, ...] = ()
 spinner_changed_since_screen: bool = False
@@ -131,6 +131,7 @@ active_wait = ""
 deadline = time.monotonic() + WATCH_SECONDS
 
 while time.monotonic() < deadline:
+    tick_number += 1
     tick_started = time.monotonic()
     agents_snapshot = json_call("agent", "list")
     agents_data = result(agents_snapshot)
@@ -184,23 +185,16 @@ while time.monotonic() < deadline:
         worker = current_worker
 
     worker_state = status(worker)
-    if worker_state == "working":
-        worker_was_working = True
-    if "worker_done" not in recorded and worker and (
-        worker_state == "done" or (worker_was_working and worker_state == "idle")
-    ):
+    if "worker_done" not in recorded and worker and worker_state == "done":
         record("worker_done")
         recorded.add("worker_done")
 
     if worker and worker_present is False:
         missing_agent_samples += 1
         if missing_agent_samples >= 1 and "worker_agent_removed" not in recorded:
-            if "worker_done" not in recorded:
-                record("worker_done")
-                recorded.add("worker_done")
-                record("worker_done_inferred_from_agent_removal")
             record("worker_agent_removed")
             recorded.add("worker_agent_removed")
+            worker_removal_tick = tick_number
     elif worker_present is not False:
         missing_agent_samples = 0
 
@@ -213,12 +207,10 @@ while time.monotonic() < deadline:
     if worker and pane_present is False:
         missing_pane_samples += 1
         if missing_pane_samples >= 1 and "worker_pane_closed" not in recorded:
-            if "worker_done" not in recorded:
-                record("worker_done")
-                recorded.add("worker_done")
-                record("worker_done_inferred_from_pane_close")
             record("worker_pane_closed")
             recorded.add("worker_pane_closed")
+            if worker_removal_tick is None:
+                worker_removal_tick = tick_number
     else:
         missing_pane_samples = 0
 
@@ -227,40 +219,9 @@ while time.monotonic() < deadline:
     worker_screen = screen_text(worker_pane) if worker_pane else ""
     root_activity = screen_text(ROOT_PANE, normalize_activity=False)
     worker_activity = screen_text(worker_pane, normalize_activity=False) if worker_pane else ""
-    if (
-        "parent_report_received" not in recorded
-        and worker
-        and worker_name
-        and "worker_done" in recorded
-        and any(
-            match.group(1) is None or match.group(1) == worker_name
-            for match in DONE_REPORT.finditer(root_visible)
-        )
-    ):
+    if "parent_report_received" not in recorded and DONE_REPORT.search(root_visible):
         record("parent_report_received")
         recorded.add("parent_report_received")
-
-    root_finished = (
-        root_state == "done"
-        or (root_state == "idle" and ROOT_FINAL_FOOTER.search(root_screen))
-    )
-    if (
-        "parent_report_received" in recorded
-        and "worker_pane_closed" in recorded
-        and root_finished
-        and "parent_summary_complete" not in recorded
-    ):
-        finish_stamp = record("parent_summary_complete")
-        recorded.add("parent_summary_complete")
-        FINISHED_PATH.write_text(f"{finish_stamp}\n", encoding="utf-8")
-
-    if (
-        "worker_done" not in recorded
-        and worker_was_working
-        and DONE_REPORT.search(worker_screen)
-    ):
-        record("worker_done")
-        recorded.add("worker_done")
     screen = "\n".join((root_screen, worker_screen)).strip()
     activity = "\n".join((root_activity, worker_activity)).strip()
     spinner_frame = tuple(SPINNER.findall(activity))
@@ -289,7 +250,18 @@ while time.monotonic() < deadline:
         active_wait = ""
     last_spinner_frame = spinner_frame
 
-    if "parent_summary_complete" in recorded:
+    if (
+        worker_removal_tick is not None
+        and tick_number > worker_removal_tick
+        and root_state == "idle"
+        and "parent_idle_after_worker_removal" not in recorded
+    ):
+        # Require a later structured-state poll than the one that observed removal.
+        finish_stamp = record("parent_idle_after_worker_removal")
+        recorded.add("parent_idle_after_worker_removal")
+        FINISHED_PATH.write_text(f"{finish_stamp}\n", encoding="utf-8")
+
+    if "parent_idle_after_worker_removal" in recorded:
         break
 
     remaining = POLL_SECONDS - (time.monotonic() - tick_started)
