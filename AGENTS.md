@@ -1,7 +1,9 @@
 ## PR Update
 
 - PR の description は日本語で書く。
-- 記事レビュー中の細かい修正は、ユーザーが `PR 出して`、`PR 更新して`、`commit`、`push` などを明示するまでローカル変更と検証に留める。各指摘ごとに commit / push / PR 更新しない。
+- 記事の直しは、内容の確認役の ACCEPT と、`textlint`・`article-style:audit` が通った区切りごとに、1 回 commit と push をして PR 本文も更新する。明示の指示は待たない。
+- 指摘 1 つごとに push しない（区切りごとにまとめる）。
+- マージと公開（`published` や `published_at` の変更を含む）は、これまでどおりユーザーの明示の承認を待つ。
 
 ## Article Editing
 
