@@ -8,6 +8,7 @@ import contextlib
 import importlib.util
 import io
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -19,14 +20,15 @@ from unittest.mock import patch
 KIT_DIR = Path(__file__).resolve().parents[1]
 POSTPROCESS_PATH = KIT_DIR / "postprocess-split-video.py"
 WATCHER_PATH = KIT_DIR / "timing-log-split.py"
+MARKER_WRITER_PATH = KIT_DIR / "mark-timing.py"
 
 
-def load_postprocessor():
-    spec = importlib.util.spec_from_file_location("postprocess_split", POSTPROCESS_PATH)
+def load_postprocessor(path: Path = POSTPROCESS_PATH, name: str = "postprocess_split"):
+    spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
         raise RuntimeError("Could not load split postprocessor")
     module = importlib.util.module_from_spec(spec)
-    with patch.object(sys, "argv", [str(POSTPROCESS_PATH), "/tmp"]):
+    with patch.object(sys, "argv", [str(path), "/tmp"]):
         spec.loader.exec_module(module)
     return module
 
@@ -45,6 +47,22 @@ def report_pattern() -> re.Pattern[str]:
 
 
 class SplitPostprocessTimingTest(unittest.TestCase):
+    def test_marker_writer_records_utc_video_start(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            timing = Path(temporary) / "timing.log"
+            for event in ("capture_started", "video_start"):
+                subprocess.run(
+                    [sys.executable, str(MARKER_WRITER_PATH), event, str(timing)],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            rows = timing.read_text(encoding="utf-8").splitlines()
+            self.assertEqual([row.partition("\t")[2] for row in rows], ["capture_started", "video_start"])
+            for row in rows:
+                stamp, _, _ = row.partition("\t")
+                self.assertEqual(datetime.fromisoformat(stamp.replace("Z", "+00:00")).utcoffset().total_seconds(), 0)
+
     def run_fixture(self, include_bare_done: bool) -> None:
         postprocessor = load_postprocessor()
         with tempfile.TemporaryDirectory() as temporary:
@@ -58,7 +76,8 @@ class SplitPostprocessTimingTest(unittest.TestCase):
             origin = datetime(2026, 1, 1, tzinfo=timezone.utc)
             events = [
                 (0, "capture_started"),
-                (1, "worker_agent_created"),
+                (1, "video_start"),
+                (2, "worker_agent_created"),
             ]
             if include_bare_done:
                 self.assertIsNotNone(report_pattern().search("DONE"))
@@ -105,6 +124,20 @@ class SplitPostprocessTimingTest(unittest.TestCase):
 
     def test_postprocess_with_bare_done_detection(self) -> None:
         self.run_fixture(include_bare_done=True)
+
+    def test_both_postprocessors_require_video_start(self) -> None:
+        root = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as temporary:
+            timing = Path(temporary) / "timing.log"
+            timing.write_text(f"{root.isoformat().replace('+00:00', 'Z')}\tcapture_started\n", encoding="utf-8")
+            for path, name in (
+                (POSTPROCESS_PATH, "postprocess_split_missing_marker"),
+                (KIT_DIR / "postprocess-video.py", "postprocess_default_missing_marker"),
+            ):
+                module = load_postprocessor(path, name)
+                with patch.object(module, "TIMING", timing):
+                    with self.assertRaisesRegex(SystemExit, "missing the video_start marker"):
+                        module.read_timing()
 
 
 if __name__ == "__main__":

@@ -25,7 +25,7 @@ TIMING = OUTPUT / "timing.log"
 FINAL = OUTPUT / "herdr-orchestration-demo.mp4"
 GIF = OUTPUT / "herdr-orchestration-demo.gif"
 REQUIRED = (
-    "capture_started",
+    "video_start",
     "root_busy",
     "worker_agent_created",
     "worker_done",
@@ -49,6 +49,10 @@ def read_timing() -> tuple[dict[str, datetime], list[tuple[str, datetime]]]:
         parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
         rows.append((event, parsed))
         first_events.setdefault(event, parsed)
+    if "video_start" not in first_events:
+        raise SystemExit(
+            "The timing log is missing the video_start marker written immediately before VHS Show."
+        )
     missing = [event for event in REQUIRED if event not in first_events]
     if missing:
         raise SystemExit("The timing log is missing one or more required lifecycle milestones.")
@@ -129,10 +133,10 @@ def main() -> None:
         raise SystemExit("The raw video or timing log is missing.")
     events, rows = read_timing()
     raw_duration = duration_of(RAW)
-    origin = events["capture_started"]
+    origin = events["video_start"]
     # Herdr's worker-tab-closed lifecycle event determines the endpoint only;
     # compression intervals come exclusively from screen-stability events.
-    cut_after = (events["worker_tab_closed"] - origin).total_seconds() + 3.0
+    cut_after = (events["worker_tab_closed"] - origin).total_seconds() + 12.0
     cut_duration = min(raw_duration, cut_after)
     if cut_duration <= 0:
         raise SystemExit("The worker-closure time does not align with the raw video.")

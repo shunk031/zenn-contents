@@ -18,7 +18,7 @@ TIMING = OUTPUT / "timing-split.log"
 FINAL = OUTPUT / "herdr-orchestration-demo-split.mp4"
 GIF = OUTPUT / "herdr-orchestration-demo-split.gif"
 REQUIRED = (
-    "capture_started",
+    "video_start",
     "worker_agent_created",
     "parent_idle_after_worker_removal",
 )
@@ -44,6 +44,10 @@ def read_timing() -> tuple[dict[str, datetime], list[tuple[str, datetime]]]:
         parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
         rows.append((event, parsed))
         first_events.setdefault(event, parsed)
+    if "video_start" not in first_events:
+        raise SystemExit(
+            "The timing log is missing the video_start marker written immediately before VHS Show."
+        )
     missing = [event for event in REQUIRED if event not in first_events]
     if missing:
         raise SystemExit(f"The timing log is missing required milestones: {', '.join(missing)}")
@@ -131,7 +135,7 @@ def main() -> None:
         raise SystemExit("The raw video or timing log is missing.")
     events, rows = read_timing()
     raw_duration = duration_of(RAW)
-    origin = events["capture_started"]
+    origin = events["video_start"]
     parent_idle_at = events["parent_idle_after_worker_removal"]
     cut_after = (parent_idle_at - origin).total_seconds() + FINAL_TAIL_SECONDS
     cut_duration = min(raw_duration, cut_after)
