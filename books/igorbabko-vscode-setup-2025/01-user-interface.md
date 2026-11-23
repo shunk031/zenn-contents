@@ -24,81 +24,29 @@ title: "User interface"
 ### カラーテーマの選択
 カラーテーマには Aura Dracula Spirit の Soft バリアント（`Aura Dracula Spirit (Soft)`）を選択します。既定値の `Default Dark Modern` から変更し、落ち着いたトーンの配色を適用します。設定の編集はコマンドパレット（macOS では `⌘⇧P`、Windows では `Ctrl+Shift+P`）から User Settings (JSON) を開いて行います。編集した設定はファイルを保存することでエディタに反映されます。
 
-変更前の初期状態の画面です。Welcome 画面が表示され、左端にアクティビティバー、下部にステータスバーが並んでいます。
-![](/images/igorbabko-vscode-setup-2025/01-01.png)
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch01-theme-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-theme-after.webp) |
 
-コマンドパレットを開き、「Preferences: Open User Settings (JSON)」を選択して設定ファイルを開きます。
-![](/images/igorbabko-vscode-setup-2025/01-02.png)
-
-初期状態の `settings.json` です。波括弧 `{}` のみが入っており、まだ独自の設定は追加されていません。
-![](/images/igorbabko-vscode-setup-2025/01-03.png)
-
-`workbench.colorTheme` に `"Aura Dracula Spirit (Soft)"` を記述した直後です。この時点ではまだテーマが反映されておらず、既定のダークテーマの外観を保っています。
-![](/images/igorbabko-vscode-setup-2025/01-04.png)
-
-Extensions（拡張機能）ビューで「aura dracula spirit」を検索し、拡張機能をインストールします。
-![](/images/igorbabko-vscode-setup-2025/01-05.png)
-
-Aura Spirit Dracula 拡張機能の詳細ページを開き、インストールを実行します。
-![](/images/igorbabko-vscode-setup-2025/01-06.png)
-
-カラーテーマ選択メニューで「Aura Dracula Spirit (Soft)」を選択した画面です。エディタ全体が紫基調の配色に切り替わります。
-![](/images/igorbabko-vscode-setup-2025/01-07.png)
+左の設定前に対し、右の設定後ではワークベンチの配色が既定のダークテーマから紫基調の Aura Dracula Spirit パレットへ変化します。
 
 ### ワークベンチ UI の最小化
-キーボードショートカットによる画面操作を前提とし、不要なナビゲーション UI を非表示にします。アクティビティバーは `workbench.activityBar.location: "hidden"`（既定値 `"default"`）で画面から取り除きます。
+キーボードショートカットによる画面操作を前提とし、不要なナビゲーション UI を非表示にします。アクティビティバーは `workbench.activityBar.location: "hidden"`（既定値 `"default"`）で画面から取り除きます。エディタタブは `workbench.editor.showTabs: "single"`（既定値 `"multiple"`）を指定し、単一タブ表示に切り替えます。画面下部のステータスバーも `workbench.statusBar.visible: false`（既定値 `true`）で非表示にします。
 
-アクティビティバーの表示状態の比較です。設定の適用によって左端のアクティビティバーアイコンが消えています。
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-after.webp) |
 
-| Before                                             | After                                              |
-| -------------------------------------------------- | -------------------------------------------------- |
-| ![](/images/igorbabko-vscode-setup-2025/01-08.png) | ![](/images/igorbabko-vscode-setup-2025/01-09.png) |
-
-エディタタブは `workbench.editor.showTabs: "single"`（既定値 `"multiple"`）を指定し、複数タブではなく単一タブ表示に切り替えます。
-
-`workbench.editor.showTabs: "single"` を設定に追加した前後の比較です。開いているタブが 1 つだけのため、単一タブ表示による外観の変化は確認できません。
-
-| Before                                             | After                                              |
-| -------------------------------------------------- | -------------------------------------------------- |
-| ![](/images/igorbabko-vscode-setup-2025/01-10.png) | ![](/images/igorbabko-vscode-setup-2025/01-11.png) |
-
-画面下部のステータスバーも `workbench.statusBar.visible: false`（既定値 `true`）で非表示にします。
-
-`workbench.statusBar.visible: false` を追加した前後の比較です。設定行は追加されていますが、このキャプチャの下端ではステータスバーの明確な消失の差分は見られません。
-
-| Before                                             | After                                              |
-| -------------------------------------------------- | -------------------------------------------------- |
-| ![](/images/igorbabko-vscode-setup-2025/01-12.png) | ![](/images/igorbabko-vscode-setup-2025/01-13.png) |
+左の設定前に対し、右の設定後ではアクティビティバーとステータスバーが消去されます（両画像とも開いているタブが 1 つのため、単一タブ化の視覚効果は画面上からは確認できません）。
 
 ### 起動画面とエディタ補助機能の整理
-ファイルを開いていないときの画面表示をシンプルにします。起動時の画面は `workbench.startupEditor: "none"`（既定値 `"welcomePage"`）に設定し、「ようこそ」画面を表示しないようにします。
+ファイルを開いていないときの画面表示をシンプルにします。起動時の画面は `workbench.startupEditor: "none"`（既定値 `"welcomePage"`）に設定し、「ようこそ」画面を表示しないようにします。また、空画面に表示されるショートカット案内などのヒントも `workbench.tips.enabled: false`（既定値 `true`）で非表示にします。さらに、エディタ右側のコード縮小表示であるミニマップ（`editor.minimap.enabled: false`、既定値 `true`）を非表示にします。上部のパンくずリスト（`breadcrumbs.enabled: false`、既定値 `true`）も非表示にして、作業領域を広く確保します。
 
-起動画面を `none` に設定し、ファイルを開いていないときの画面です。中央に VS Code のロゴのみが表示されています。
-![](/images/igorbabko-vscode-setup-2025/01-14.png)
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch01-editor-aids-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-editor-aids-after.webp) |
 
-また、空画面に表示されるショートカット案内などのヒントも `workbench.tips.enabled: false`（既定値 `true`）で非表示にします。
-
-ショートカット案内のヒント表示の比較です。設定の適用によってロゴの下に表示されていた操作案内が消えています。
-
-| Before                                             | After                                              |
-| -------------------------------------------------- | -------------------------------------------------- |
-| ![](/images/igorbabko-vscode-setup-2025/01-15.png) | ![](/images/igorbabko-vscode-setup-2025/01-16.png) |
-
-さらに、エディタ右側のコード縮小表示であるミニマップ（`editor.minimap.enabled: false`、既定値 `true`）を非表示にします。
-
-`editor.minimap.enabled: false` を設定に追加した前後の比較です。キャプチャ右端の表示領域が狭いため、ミニマップ消失の視覚的な変化は明確には確認できません。
-
-| Before                                             | After                                              |
-| -------------------------------------------------- | -------------------------------------------------- |
-| ![](/images/igorbabko-vscode-setup-2025/01-17.png) | ![](/images/igorbabko-vscode-setup-2025/01-18.png) |
-
-上部の階層ナビゲーションであるパンくずリスト（`breadcrumbs.enabled: false`、既定値 `true`）も非表示にして作業領域を広く確保します。
-
-パンくずリストの表示比較です。設定の適用により、ファイル見出し横のパス階層表示が消えています。
-
-| Before                                             | After                                              |
-| -------------------------------------------------- | -------------------------------------------------- |
-| ![](/images/igorbabko-vscode-setup-2025/01-19.png) | ![](/images/igorbabko-vscode-setup-2025/01-20.png) |
+左の設定前に対し、右の設定後ではエディタ右端のミニマップと上部のパンくずリストが非表示になります。
 
 ## 設定項目の一覧
 
@@ -126,3 +74,9 @@ settings.json の編集内容は、ファイルを保存した時点でエディ
 ## 変更コミット
 
 - [`02b14b5`](https://github.com/igorbabko/vscode-setup/commit/02b14b5421552f337e2d87110412e19050ab6904)
+
+## 本章完了時の状態
+
+本章の設定をすべて反映した完成状態の画面です。
+
+![本章完了時の状態](/images/igorbabko-vscode-setup-2025/ch01-checkpoint.webp)

@@ -28,8 +28,20 @@ title: "Cursor"
 ### マルチカーソルの修飾キー
 マウスクリックによるマルチカーソル追加の修飾キーを `editor.multiCursorModifier: "ctrlCmd"`（既定値 `"alt"`）に変更します。macOS では Command キー、Windows および Linux では Control キーを押しながらのクリックで複数カーソルを追加できます。これにより、一般的なテキスト選択操作との衝突を避けます。
 
+| Before | After |
+| --- | --- |
+| ![設定前のマルチカーソル](/images/igorbabko-vscode-setup-2025/ch05-multi-cursor-before.webp) | ![設定後のマルチカーソル](/images/igorbabko-vscode-setup-2025/ch05-multi-cursor-after.webp) |
+
+左の設定前（Alt キー）に対し、右の設定後では修飾キー（Command または Control）によって複数のカーソルが配置されています。
+
 ### グラデーションと配色の調整
-Custom UI Style のスタイルシート設定を用い、カーソル要素（`.monaco-editor .cursors-layer .cursor`）にグラデーションを適用します。具体的にはピンクから紫への線形グラデーション（`linear-gradient(135deg, #ffaffc 10%, #DA70D6 100%)`）を指定します。このカーソルのスタイル設定は、第 3 章および第 4 章で設定した `custom-ui-style.stylesheet` オブジェクトの内側に新しいキーとして追加します。グラデーションの適用に伴い、重なる文字の視認性（コントラスト）を確保する必要があります。そのため、テーマの配色を調整する `workbench.colorCustomizations` オブジェクトを新しく作成し、`editorCursor.background` を `#000000` に設定します。
+Custom UI Style のスタイルシート設定を用い、カーソル要素（`.monaco-editor .cursors-layer .cursor`）にグラデーションを適用します。具体的にはピンクから紫への線形グラデーション（`linear-gradient(135deg, #ffaffc 10%, #DA70D6 100%)`）を指定します。このカーソルのスタイル設定は、第 3 章および第 4 章で設定した `custom-ui-style.stylesheet` オブジェクトの内側に新しいキーとして追加します。グラデーションの適用に伴い、重なる文字の視認性（コントラスト）を確保する必要があります。そのため、テーマの配色を調整する `workbench.colorCustomizations` オブジェクトを新しく作成し、`editorCursor.background` を `#000000` に設定します。Custom UI Style のグラデーション設定が優先され、文字反転色単独での視覚差を画像上で確認できないため、本項の比較画像は除外しています。
+
+| Before | After |
+| --- | --- |
+| ![設定前のカーソル外観](/images/igorbabko-vscode-setup-2025/ch05-cursor-appearance-before.webp) | ![設定後のカーソル外観](/images/igorbabko-vscode-setup-2025/ch05-cursor-appearance-after.webp) |
+
+設定前の縦線カーソルに対し、設定後はピンクから紫へ変化するブロックカーソルが常時点灯します。
 
 ## 設定項目の一覧
 
@@ -44,6 +56,12 @@ Custom UI Style のスタイルシート設定を用い、カーソル要素（`
 ## 注意点
 
 Custom UI Style によるカーソルのグラデーション設定を反映するには、拡張機能の再読み込みまたは VS Code の再起動が必要です。
+
+## 本章完了時の状態
+
+本章の設定をすべて適用すると、エディタは以下の状態になります。
+
+![第 5 章完了時の状態](/images/igorbabko-vscode-setup-2025/ch05-checkpoint.webp)
 
 ## 追加する拡張機能
 

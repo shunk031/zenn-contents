@@ -28,27 +28,22 @@ title: "Window"
 ## 解説
 
 ### ウィンドウズームとタイトルバーの構成
-画面全体のズーム倍率を `window.zoomLevel: 3`（既定値 `0`）に設定します（動画では画面収録で見やすくするために倍率を上げています）。タイトルバーはカスタム表示ではなくネイティブスタイルを使用します。そのため、`window.customTitleBarVisibility: "never"`（既定値 `"auto"`）および `window.titleBarStyle: "native"`（既定値 `"custom"`）を指定します。
+画面全体のズーム倍率を `window.zoomLevel: 3`（既定値 `0`）に設定します（動画では画面収録で見やすくするために倍率を上げています）。タイトルバーにはネイティブスタイルを使用します。そのため、`window.customTitleBarVisibility: "never"`（既定値 `"auto"`）および `window.titleBarStyle: "native"`（既定値 `"custom"`）を指定します。さらに Custom UI Style を通じて Electron のタイトルバースタイルを `custom-ui-style.electron.titleBarStyle: "hiddenInset"` に設定します。macOS のウィンドウ操作ボタン位置は `custom-ui-style.electron.trafficLightPosition` で `x: 20`, `y: 16` に移動します。
 
-設定に `window.customTitleBarVisibility: "never"` と `window.titleBarStyle: "native"` を追加した画面です。ウィンドウ左上に macOS ネイティブの操作ボタン（赤・黄・緑）が表示されています（ズーム倍率 3 の効果はこの画像単体では判別できません）。
-![](/images/igorbabko-vscode-setup-2025/03-01.png)
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-after.webp) |
+
+左の設定前に対し、右の設定後ではタイトルバーがコンパクト化され、ズーム設定によってエディタ全体の文字や UI が大きく表示されます。
 
 ### Custom UI Style によるウィンドウ操作ボタンと余白の調整
-Custom UI Style 拡張機能を通じて Electron のウィンドウ設定を変更し、タイトルバースタイルを `custom-ui-style.electron.titleBarStyle: "hiddenInset"` に設定します。さらに macOS のトラフィックライト（赤・黄・緑のウィンドウ操作ボタン）の位置を `custom-ui-style.electron.trafficLightPosition` で `x: 20`, `y: 16` に移動させます。
+ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。スタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。Dank Mono は有料フォントであり、[作者の公式販売ページ](https://philpl.gumroad.com/l/dank-mono)からライセンスを購入して入手できます。
 
-Extensions ビューで「custom ui style」を検索した画面です。
-![](/images/igorbabko-vscode-setup-2025/03-02.png)
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch03-title-spacing-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch03-title-spacing-after.webp) |
 
-Custom UI Style 拡張機能の詳細ページを開いた画面です。
-![](/images/igorbabko-vscode-setup-2025/03-03.png)
-
-`settings.json` 内に、Custom UI Style の設定例や CSS セレクターのサンプルがコメントとして記載されている画面です。
-![](/images/igorbabko-vscode-setup-2025/03-04.png)
-
-ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。そこでスタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。Dank Mono は有料フォントであり、[作者の公式販売ページ](https://philpl.gumroad.com/l/dank-mono)からライセンスを購入して入手できます。
-
-Electron の設定やトラフィックライト位置（`x: 20`, `y: 16`）、タイトルラベルの余白設定（`padding-left: 60px`）などを実際に記述した画面です。
-![](/images/igorbabko-vscode-setup-2025/03-05.png)
+左の設定前に対し、右の設定後ではウィンドウ操作ボタン右側のエディタタイトルラベルに左余白が追加されます。
 
 ## 設定項目の一覧
 
@@ -78,3 +73,9 @@ Custom UI Style 拡張機能は、VS Code 本体の内部ファイル（CSS や 
 ## 変更コミット
 
 - [`e690ea7`](https://github.com/igorbabko/vscode-setup/commit/e690ea74b3ff47f9050c879e050e82d2c4f7dbb7)
+
+## 本章完了時の状態
+
+本章の設定をすべて反映した完成状態の画面です。
+
+![本章完了時の状態](/images/igorbabko-vscode-setup-2025/ch03-checkpoint.webp)

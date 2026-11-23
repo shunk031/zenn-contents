@@ -30,8 +30,14 @@ title: "Typography"
 ### フォントファミリーと行の高さ
 エディタのフォントファミリーを `editor.fontFamily: "Dank Mono"` に変更し、UI 全体とフォントを統一します。文字サイズは `editor.fontSize: 14`（ピクセル単位）に設定します。行の高さは `editor.lineHeight: 2.5`（既定値 `0`、自動計算）に広げます。行間を広く取ることで、コードの行ごとの区切りが明瞭になり、ゆったりとした読みやすいレイアウトになります。
 
+| Before | After |
+| --- | --- |
+| ![設定前のフォントと行高](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-before.webp) | ![設定後のフォントと行高](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-after.webp) |
+
+左の設定前に対し、右の設定後は Dank Mono と行高 2.5 を適用し、ゆったりとした行間に整えています。
+
 ### リガチャとコメントのイタリック体表示
-演算子などの連続する記号を合字として美しく結合表示するため、`editor.fontLigatures: true`（既定値 `false`）を有効にします。さらに、コードとコメントを視覚的に区別しやすくします。TextMate ルール `editor.tokenColorCustomizations.textMateRules` を使い、`comment` スコープのフォントスタイルを `fontStyle: "italic"`（イタリック体）に設定します。
+演算子などの連続する記号を合字として美しく結合表示するため、`editor.fontLigatures: true`（既定値 `false`）を有効にします。さらに、コードとコメントを視覚的に区別しやすくします。TextMate ルール `editor.tokenColorCustomizations.textMateRules` を使い、`comment` スコープのフォントスタイルを `fontStyle: "italic"`（イタリック体）に設定します。フォールバック環境のフォントは合字に対応せず、Aura テーマも標準でコメントを斜体表示するため、画像上の変化が見られず比較画像から除外しています。
 
 ## 設定項目の一覧
 
@@ -46,6 +52,12 @@ title: "Typography"
 ## 注意点
 
 Dank Mono フォントがシステムにインストールされていない場合、フォントの指定やリガチャ（合字）の結合表示は正しく機能しません。事前にフォントを OS にインストールしておく必要があります。
+
+## 本章完了時の状態
+
+本章の設定をすべて適用すると、エディタは以下の状態になります。
+
+![第 6 章完了時の状態](/images/igorbabko-vscode-setup-2025/ch06-checkpoint.webp)
 
 ## 追加する拡張機能
 

@@ -21,6 +21,10 @@ title: "はじめに"
 
 設定ファイル全体の完成形を確認したい場合は、最終章のコミット [`da275c0`](https://github.com/igorbabko/vscode-setup/commit/da275c09488fec3b53f2541ad8d482dca51b499b) にある [`.vscode/settings.json`](https://github.com/igorbabko/vscode-setup/blob/da275c09488fec3b53f2541ad8d482dca51b499b/.vscode/settings.json) を参照して全体を見比べられます。
 
+本書に掲載している各章の画像は、手元で同じ手順に沿って撮り直せるよう撮影用のキットを用意しています。ユーザー拡張機能が一切入っていない初期プロファイルで、サンプルプロジェクトを開いた状態の画面です。
+
+![設定適用前の初期状態](/images/igorbabko-vscode-setup-2025/00-zero.webp)
+
 各章は以下の流れで構成されています。
 
 - **設定（settings.json）**: その章で追加する設定のスニペットである。

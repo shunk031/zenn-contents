@@ -38,8 +38,14 @@ Custom UI Style のスタイル設定は、設定を変更するたびに再読�
 ### ポップアップとウィジェットの装飾整理
 通知トーストの影（`.notification-toast`）を `box-shadow: none !important` で非表示にします。クイック入力・コマンドパレットの影（`.quick-input-widget.show-file-icons`）も同様に非表示にします。コマンドパレット（`.quick-input-widget`）は画面上部から少し下げた `top: 25vh !important` の位置に移動します。パレット内のスクロールバー（`.quick-input-list .scrollbar`）や不要なアクションバー（`.monaco-action-bar.quick-input-inline-action-bar`）も非表示にします。検索ウィジェット（`.editor-widget.find-widget`）も影を消して角丸を 4px に整えます。また、`.quick-input-titlebar` の背景色を `#100B15` に設定していますが、これは VSCode Neovim 拡張機能の `/` 検索バーを開いた際の見た目を整えるための設定です。
 
+| Before | After |
+| --- | --- |
+| ![設定前のクイック入力とウィジェット](/images/igorbabko-vscode-setup-2025/ch04-overlays-before.webp) | ![設定後のクイック入力とウィジェット](/images/igorbabko-vscode-setup-2025/ch04-overlays-after.webp) |
+
+左の設定前に対し、右の設定後ではクイック入力の影が消えて表示位置が下がり、検索ウィジェットの影も除去されています。
+
 ### サイドバーとエディタ境界のフラット化
-エディタタイトル下部の境界線（`title.title-border-bottom:after`）や上部のスクロールシャドウ（`.monaco-scrollable-element > .shadow.top`）を非表示にします。エディタ内のスクロール装飾（`.monaco-editor .scroll-decoration`）も非表示にします。サイドバーの境界線（`.sidebar`）を非表示にし、パディング（`.sidebar .title-label`）をなくします。さらにリストのフォーカス枠線（`.monaco-list:not(.element-focused):focus:before`、`.monaco-list-row.focused`）も非表示にしてフラットにします。エディタ上部のタブアクションボタン（`.title-actions`）を非表示にし、タイトルラベル（`.title.show-file-icons ...`）を中央揃えにして末尾余白を詰めます。
+エディタタイトル下部の境界線（`title.title-border-bottom:after`）や上部のスクロールシャドウ（`.monaco-scrollable-element > .shadow.top`）を非表示にします。エディタ内のスクロール装飾（`.monaco-editor .scroll-decoration`）も非表示にします。サイドバーの境界線（`.sidebar`）を非表示にし、パディング（`.sidebar .title-label`）をなくします。さらにリストのフォーカス枠線（`.monaco-list:not(.element-focused):focus:before`、`.monaco-list-row.focused`）も非表示にしてフラットにします。エディタ上部のタブアクションボタン（`.title-actions`）を非表示にし、タイトルラベル（`.title.show-file-icons ...`）を中央揃えにして末尾余白を詰めます。スクロールしたエディタとフォーカスしたエクスプローラーにおいて、VS Code 1.101.1 では Custom UI Style の注入スタイルによる視覚差が画像上で確認できなかったため、本項の比較画像は除外しています。
 
 ## 設定項目の一覧
 
@@ -68,6 +74,12 @@ Custom UI Style のスタイル設定は、設定を変更するたびに再読�
 本章のスタイルは Custom UI Style 拡張機能が内部 CSS を上書きすることで実現しています。VS Code のアップデートによって内部の HTML 構造や CSS クラス名が変更された場合、スタイルが効かなくなったり崩れたりする可能性があります。
 
 `.quick-input-titlebar` の背景色指定は、VSCode Neovim 拡張機能の `/` 検索機能を利用する際の見た目を想定したものです。該当の拡張機能を使っていない場合は検索バー自体の表示に影響しません。
+
+## 本章完了時の状態
+
+本章の設定をすべて適用すると、エディタは以下の状態になります。
+
+![第 4 章完了時の状態](/images/igorbabko-vscode-setup-2025/ch04-checkpoint.webp)
 
 ## 追加する拡張機能
 
