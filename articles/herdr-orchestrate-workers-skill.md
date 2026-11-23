@@ -26,6 +26,16 @@ https://adventar.org/calendars/13106
 
 https://github.com/shunk031/skills/tree/main/skills/herdr/shunk031-herdr-orchestrate-workers
 
+実際に動かしたときの動作例です。親である Claude Code に次の指示を入力します。
+
+```text
+/shunk031-herdr-orchestrate-workers Codex worker を model_reasoning_effort=low で起動して hello.txt を作らせて
+```
+
+指示を受けた Claude Code がワーカーである Codex を起動し、Codex が `hello.txt` を作成してタブが回収されるまでの一連の流れを記録しています。録画開始からワーカーのタブ回収までの約 48 秒のうち、画面表示に変化のない待ち時間だけを早送りしています。
+
+![](/images/herdr-orchestrate-workers-skill/herdr-orchestration-demo.gif)
+
 # Herdr とは
 
 Herdr は、ターミナル上で AI コーディングエージェントの作業スペースを管理するツールです。公式リポジトリの README では「the runtime your coding agents live on」と説明されています。[^herdr-doc]
