@@ -18,6 +18,8 @@ test("inline textlint directives exclude wrapped title text through an enable or
   const plainPath = path.join(directory, "plain.md");
   const quotedFencePath = path.join(directory, "quoted-fence.md");
   const listFencePath = path.join(directory, "list-fence.md");
+  const listItemDirectivePath = path.join(directory, "list-item-directive.md");
+  const orderedContinuationFencePath = path.join(directory, "ordered-continuation-fence.md");
   fs.writeFileSync(wrappedPath, [
     "---",
     'title: "<!-- textlint-disable ja-spacing/ja-space-between-half-and-full-width -->Codexの使い方<!-- textlint-enable ja-spacing/ja-space-between-half-and-full-width -->"',
@@ -62,6 +64,19 @@ test("inline textlint directives exclude wrapped title text through an enable or
     "  <!-- textlint-disable -->",
     "",
   ].join("\n"));
+  fs.writeFileSync(listItemDirectivePath, "- <!-- textlint-disable -->\n");
+  fs.writeFileSync(orderedContinuationFencePath, [
+    "This paragraph continues with an ordered marker.",
+    "2. This marker is still paragraph text.",
+    "   ```md",
+    "   <!-- textlint-disable -->",
+    "   [Codexの使い方](https://example.com)",
+    "```",
+    "",
+    "[Codexの使い方](https://example.com)",
+    "<!-- textlint-disable -->",
+    "",
+  ].join("\n"));
 
   const wrapped = spawnSync(process.execPath, [scriptPath, wrappedPath], {
     cwd: repositoryPath,
@@ -83,6 +98,14 @@ test("inline textlint directives exclude wrapped title text through an enable or
     cwd: repositoryPath,
     encoding: "utf8",
   });
+  const listItemDirective = spawnSync(process.execPath, [scriptPath, listItemDirectivePath], {
+    cwd: repositoryPath,
+    encoding: "utf8",
+  });
+  const orderedContinuationFence = spawnSync(process.execPath, [scriptPath, orderedContinuationFencePath], {
+    cwd: repositoryPath,
+    encoding: "utf8",
+  });
 
   assert.equal(wrapped.status, 0, wrapped.stderr);
   assert.doesNotMatch(wrapped.stderr, /half-full-width-space-outside-textlint/);
@@ -98,4 +121,38 @@ test("inline textlint directives exclude wrapped title text through an enable or
   assert.doesNotMatch(listFence.stderr, /list-fence\.md:(?:4|5|9|10|15|16):/);
   assert.match(listFence.stderr, /list-fence\.md:19: half-full-width-space-outside-textlint/);
   assert.match(listFence.stderr, /list-fence\.md:20: avoid-standalone-textlint-comment/);
+  assert.equal(listItemDirective.status, 1, listItemDirective.stderr);
+  assert.match(listItemDirective.stderr, /list-item-directive\.md:1: avoid-standalone-textlint-comment/);
+  assert.equal(orderedContinuationFence.status, 1, orderedContinuationFence.stderr);
+  assert.match(orderedContinuationFence.stderr, /ordered-continuation-fence\.md:8: half-full-width-space-outside-textlint/);
+  assert.match(orderedContinuationFence.stderr, /ordered-continuation-fence\.md:9: avoid-standalone-textlint-comment/);
+  assert.doesNotMatch(orderedContinuationFence.stderr, /ordered-continuation-fence\.md:(?:4|5):/);
+});
+
+test("adjacent heading audit uses Markdown heading nodes and ignores fenced examples", (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "article-style-audit-headings-"));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const articlePath = path.join(directory, "headings.md");
+  fs.writeFileSync(articlePath, [
+    "---",
+    "title: Headings",
+    "---",
+    "# Section",
+    "## Child section",
+    "",
+    "```md",
+    "# Example parent",
+    "## Example child",
+    "```",
+    "",
+  ].join("\n"));
+
+  const result = spawnSync(process.execPath, [scriptPath, articlePath], {
+    cwd: repositoryPath,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /headings\.md:4: add-lead-before-subheading/);
+  assert.doesNotMatch(result.stderr, /headings\.md:(?:8|9): add-lead-before-subheading/);
 });

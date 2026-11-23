@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
+
+const require = createRequire(import.meta.url);
+const { parse: parseMarkdown } = require("@textlint/markdown-to-ast");
 
 const targets = process.argv.slice(2);
 const files = targets.length > 0 ? targets : fs.readdirSync("articles")
@@ -338,351 +342,211 @@ function report(file, lineNumber, name, message, line) {
   console.error(`  ${line}`);
 }
 
-function linesWithoutFrontMatter(lines) {
-  if (lines[0] !== "---") {
-    return lines;
+function collectMarkdownNodes(node, output = []) {
+  output.push(node);
+  for (const child of node.children ?? []) {
+    collectMarkdownNodes(child, output);
   }
-
-  const closingIndex = lines.findIndex((line, index) => index > 0 && line === "---");
-  if (closingIndex < 0) {
-    return lines;
-  }
-
-  return lines.map((line, index) => (index <= closingIndex ? "" : line));
+  return output;
 }
 
-function reportHeadingImmediatelyFollowedBySubheading(file, lines) {
-  const linesWithoutMetadata = linesWithoutFrontMatter(lines);
-  const visibleLines = linesOutsideFencedCodeAndHtmlComments(linesWithoutMetadata);
-
-  for (let index = 0; index < visibleLines.length; index += 1) {
-    const heading = /^ {0,3}(#{1,6})\s+/.exec(visibleLines[index]);
-    if (!heading) {
-      continue;
-    }
-
-    let nextIndex = index + 1;
-    while (nextIndex < visibleLines.length && visibleLines[nextIndex].trim() === "") {
-      nextIndex += 1;
-    }
-
-    const nextHeading = /^ {0,3}(#{1,6})\s+/.exec(visibleLines[nextIndex] ?? "");
-    if (!nextHeading || nextHeading[1].length <= heading[1].length) {
-      continue;
-    }
-
-    report(
-      file,
-      index + 1,
-      "add-lead-before-subheading",
-      "見出しの直後に子見出しを続けず、節の内容を示す短いリード文を置いてください。",
-      lines[index],
-    );
-  }
-}
-
-function reportStandaloneTextlintComments(file, lines) {
-  const linesWithoutMetadata = linesWithoutFrontMatter(lines);
-  const standaloneComment = /^\s*(?:>\s*)*<!--\s*textlint-(?:disable|enable)(?=\s|-->)[\s\S]*-->\s*$/;
-  const fenceState = createMarkdownFenceState();
-  let inHtmlComment = false;
-
-  for (let index = 0; index < linesWithoutMetadata.length; index += 1) {
-    const line = linesWithoutMetadata[index];
-    const fenceLine = scanMarkdownFenceLine(line, fenceState, !inHtmlComment);
-    if (fenceLine.inside) {
-      continue;
-    }
-
-    if (inHtmlComment) {
-      if (line.includes("-->")) {
-        inHtmlComment = false;
-      }
-      continue;
-    }
-
-    if (/<!--/.test(line) && !line.includes("-->")) {
-      inHtmlComment = true;
-      continue;
-    }
-
-    if (!standaloneComment.test(line)) {
-      continue;
-    }
-
-    report(
-      file,
-      index + 1,
-      "avoid-standalone-textlint-comment",
-      "textlint の disable/enable コメントは独立行にせず、対象段落のインラインに置いてください。",
-      lines[index],
-    );
-  }
-}
-
-function nextBacktickRun(line, startIndex) {
-  const start = line.indexOf("`", startIndex);
-  if (start < 0) {
-    return null;
+function commentsInNode(text, node) {
+  const [nodeStart, nodeEnd] = node.range ?? [];
+  if (!Number.isInteger(nodeStart) || !Number.isInteger(nodeEnd)) {
+    return [];
   }
 
-  let end = start + 1;
-  while (line[end] === "`") {
-    end += 1;
+  const raw = text.slice(nodeStart, nodeEnd);
+  const comments = [];
+  for (const match of raw.matchAll(/<!--[\s\S]*?-->/g)) {
+    const start = nodeStart + match.index;
+    const end = start + match[0].length;
+    comments.push({
+      start,
+      end,
+      value: match[0].slice(4, -3),
+      inFrontMatter: node.type === "Yaml",
+    });
   }
-
-  return { start, end, length: end - start };
+  return comments;
 }
 
-function maskInlineCodeAndHtmlComments(line, state, onHtmlComment = () => {}) {
-  let visible = "";
-  let index = 0;
-
-  while (index < line.length) {
-    if (state.inHtmlComment) {
-      const closingIndex = line.indexOf("-->", index);
-      if (closingIndex < 0) {
-        return { line: visible + " ".repeat(line.length - index), state };
-      }
-
-      visible += " ".repeat(closingIndex + 3 - index);
-      index = closingIndex + 3;
-      state.inHtmlComment = false;
-      continue;
-    }
-
-    if (state.inlineCodeLength !== null) {
-      let closingRun = nextBacktickRun(line, index);
-      while (closingRun && closingRun.length !== state.inlineCodeLength) {
-        closingRun = nextBacktickRun(line, closingRun.end);
-      }
-
-      if (!closingRun) {
-        return { line: visible + " ".repeat(line.length - index), state };
-      }
-
-      visible += " ".repeat(closingRun.end - index);
-      index = closingRun.end;
-      state.inlineCodeLength = null;
-      continue;
-    }
-
-    const backtickRun = nextBacktickRun(line, index);
-    const commentIndex = line.indexOf("<!--", index);
-
-    if (backtickRun && (commentIndex < 0 || backtickRun.start < commentIndex)) {
-      let closingRun = nextBacktickRun(line, backtickRun.end);
-      while (closingRun && closingRun.length !== backtickRun.length) {
-        closingRun = nextBacktickRun(line, closingRun.end);
-      }
-
-      if (!closingRun) {
-        visible += line.slice(index, backtickRun.start) + " ".repeat(line.length - backtickRun.start);
-        state.inlineCodeLength = backtickRun.length;
-        return { line: visible, state };
-      }
-
-      visible += line.slice(index, backtickRun.start) + " ".repeat(closingRun.end - backtickRun.start);
-      index = closingRun.end;
-      continue;
-    }
-
-    if (commentIndex >= 0) {
-      const closingIndex = line.indexOf("-->", commentIndex + 4);
-      if (closingIndex < 0) {
-        visible += line.slice(index, commentIndex) + " ".repeat(line.length - commentIndex);
-        state.inHtmlComment = true;
-        return { line: visible, state };
-      }
-
-      const commentEnd = closingIndex + 3;
-      onHtmlComment({
-        start: commentIndex,
-        end: commentEnd,
-        value: line.slice(commentIndex + 4, closingIndex),
-      });
-      visible += line.slice(index, commentIndex) + " ".repeat(commentEnd - commentIndex);
-      index = commentEnd;
-      continue;
-    }
-
-    visible += line.slice(index);
-    break;
-  }
-
-  return { line: visible, state };
-}
-
-function stripBlockquotePrefixes(line) {
-  return line.replace(/^(?: {0,3}>[ \t]?)+/, "");
-}
-
-function expandTabs(line) {
-  let column = 0;
-  let expanded = "";
-
-  for (const character of line) {
-    if (character === "\t") {
-      const spaces = 4 - (column % 4);
-      expanded += " ".repeat(spaces);
-      column += spaces;
-    } else {
-      expanded += character;
-      column += 1;
+function createMarkdownContext(text) {
+  const ast = parseMarkdown(text);
+  const nodes = collectMarkdownNodes(ast);
+  const codeBlocks = nodes.filter((node) => node.type === "CodeBlock");
+  const htmlNodes = nodes.filter((node) => node.type === "Html" || node.type === "HtmlBlock");
+  const yamlNodes = nodes.filter((node) => node.type === "Yaml");
+  const comments = [
+    ...htmlNodes.flatMap((node) => commentsInNode(text, node)),
+    // Markdown front matter is parsed as YAML, so textlint comments in a title
+    // are recovered from that AST node to preserve the existing title behavior.
+    ...yamlNodes.flatMap((node) => commentsInNode(text, node)),
+  ].filter((comment) => !codeBlocks.some((node) => (
+    comment.start >= node.range[0] && comment.end <= node.range[1]
+  ))).sort((a, b) => a.start - b.start);
+  const lineStarts = [0];
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] === "\n") {
+      lineStarts.push(index + 1);
     }
   }
-
-  return expanded;
-}
-
-function leadingSpaces(line) {
-  return /^ */.exec(line)[0].length;
-}
-
-function listMarker(line) {
-  const match = /^( *)([*+-]|[0-9]{1,9}[.)])([ ]+|$)/.exec(line);
-  if (!match) {
-    return null;
-  }
-
-  const indent = match[1].length;
-  const markerWidth = match[2].length;
-  const whitespaceWidth = match[3].length;
-  const paddingWidth = whitespaceWidth === 0
-    ? 1
-    : whitespaceWidth <= 4
-      ? whitespaceWidth
-      : 1;
-  const contentIndent = indent + markerWidth + paddingWidth;
 
   return {
-    indent,
-    contentIndent,
-    content: line.slice(contentIndent),
+    ast,
+    codeBlocks,
+    listItems: nodes.filter((node) => node.type === "ListItem"),
+    inlineCode: nodes.filter((node) => node.type === "Code"),
+    comments,
+    lineStarts,
   };
 }
 
-function createMarkdownFenceState() {
-  return { listItems: [], fence: null };
-}
-
-function popListItemsBefore(state, indent) {
-  while (state.listItems.length > 0) {
-    const current = state.listItems[state.listItems.length - 1];
-    if (indent >= current.contentIndent) {
-      break;
+function lineIndexAtOffset(lineStarts, offset) {
+  let lower = 0;
+  let upper = lineStarts.length;
+  while (lower < upper) {
+    const middle = Math.floor((lower + upper) / 2);
+    if (lineStarts[middle] <= offset) {
+      lower = middle + 1;
+    } else {
+      upper = middle;
     }
-    state.listItems.pop();
   }
+  return Math.max(0, lower - 1);
 }
 
-function scanMarkdownFenceLine(line, state, allowOpen = true) {
-  const withoutQuotes = stripBlockquotePrefixes(expandTabs(line));
+function mergedRanges(ranges) {
+  const sorted = ranges
+    .filter(([start, end]) => Number.isInteger(start) && Number.isInteger(end) && start < end)
+    .sort((a, b) => a[0] - b[0]);
+  const merged = [];
 
-  if (state.fence) {
-    const candidate = withoutQuotes.slice(state.fence.contentIndent);
-    const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(candidate);
-    const closes = Boolean(
-      match
-      && match[1][0] === state.fence.character
-      && match[1].length >= state.fence.length
-      && match[2].trim() === "",
+  for (const [start, end] of sorted) {
+    const previous = merged.at(-1);
+    if (previous && start <= previous[1]) {
+      previous[1] = Math.max(previous[1], end);
+    } else {
+      merged.push([start, end]);
+    }
+  }
+
+  return merged;
+}
+
+function maskSourceRanges(text, ranges) {
+  const merged = mergedRanges(ranges);
+  let result = "";
+  let cursor = 0;
+
+  for (const [start, end] of merged) {
+    result += text.slice(cursor, start);
+    result += text.slice(start, end).replace(/[^\r\n]/g, " ");
+    cursor = end;
+  }
+
+  return result + text.slice(cursor);
+}
+
+function isCommentOnlyHtmlNode(text, node) {
+  const raw = text.slice(node.range[0], node.range[1]);
+  return raw.replace(/<!--[\s\S]*?-->/g, "").trim() === "";
+}
+
+function listItemContainsOnlyComment(text, listItem, comment) {
+  function isOnlyComment(node) {
+    if (node.type === "Html" || node.type === "HtmlBlock") {
+      return isCommentOnlyHtmlNode(text, node)
+        && comment.start >= node.range[0]
+        && comment.end <= node.range[1];
+    }
+    return node.children?.length > 0 && node.children.every(isOnlyComment);
+  }
+
+  return listItem.children?.length === 1 && isOnlyComment(listItem.children[0]);
+}
+
+function reportHeadingImmediatelyFollowedBySubheading(file, text, lines, context) {
+  function reportAdjacentHeadings(children) {
+    for (let index = 0; index < children.length; index += 1) {
+      const heading = children[index];
+      if (heading.type === "Header") {
+        let nextIndex = index + 1;
+        while (
+          nextIndex < children.length
+          && (children[nextIndex].type === "Html" || children[nextIndex].type === "HtmlBlock")
+          && isCommentOnlyHtmlNode(text, children[nextIndex])
+        ) {
+          nextIndex += 1;
+        }
+
+        const nextHeading = children[nextIndex];
+        if (nextHeading?.type === "Header" && nextHeading.depth > heading.depth) {
+          const lineIndex = heading.loc.start.line - 1;
+          report(
+            file,
+            lineIndex + 1,
+            "add-lead-before-subheading",
+            "見出しの直後に子見出しを続けず、節の内容を示す短いリード文を置いてください。",
+            lines[lineIndex],
+          );
+        }
+      }
+
+      if (children[index].children) {
+        reportAdjacentHeadings(children[index].children);
+      }
+    }
+  }
+
+  // The AST keeps list and list-item child structure while this walk checks
+  // heading siblings at each Markdown block level.
+  reportAdjacentHeadings(context.ast.children ?? []);
+}
+
+function reportStandaloneTextlintComments(file, text, lines, context) {
+  const directive = /^\s*textlint-(?:disable|enable)(?=\s|$)[\s\S]*$/;
+  const codeRanges = context.codeBlocks.map((node) => node.range);
+
+  for (const comment of context.comments) {
+    if (comment.inFrontMatter || !directive.test(comment.value)) {
+      continue;
+    }
+
+    const lineIndex = lineIndexAtOffset(context.lineStarts, comment.start);
+    if (lineIndexAtOffset(context.lineStarts, comment.end) !== lineIndex) {
+      continue;
+    }
+    const lineStart = text.lastIndexOf("\n", comment.start - 1) + 1;
+    let lineEnd = text.indexOf("\n", comment.end);
+    if (lineEnd < 0) {
+      lineEnd = text.length;
+    }
+    const line = text.slice(lineStart, lineEnd).replace(/\r$/, "");
+    const startColumn = comment.start - lineStart;
+    const endColumn = comment.end - lineStart;
+    const prefix = line.slice(0, startColumn);
+    const suffix = line.slice(endColumn);
+    const standalone = (
+      /^(?:[ \t]*>[ \t]?)*[ \t]*$/.test(prefix)
+      && /^[ \t]*$/.test(suffix)
+    ) || context.listItems.some((listItem) => (
+      listItemContainsOnlyComment(text, listItem, comment)
+    ));
+    const inCode = codeRanges.some(([start, end]) => comment.start >= start && comment.end <= end);
+
+    if (!standalone || inCode) {
+      continue;
+    }
+
+    report(
+      file,
+      lineIndex + 1,
+      "avoid-standalone-textlint-comment",
+      "textlint の disable/enable コメントは独立行にせず、対象段落のインラインに置いてください。",
+      lines[lineIndex],
     );
-    if (closes) {
-      state.fence = null;
-    }
-    return { inside: true, opened: false, closed: closes, match };
   }
-
-  if (!allowOpen) {
-    return { inside: false, opened: false, closed: false, match: null };
-  }
-
-  if (withoutQuotes.trim() === "" && state.listItems.length > 0) {
-    return { inside: false, opened: false, closed: false, match: null };
-  }
-
-  let marker = listMarker(withoutQuotes);
-  if (marker && marker.indent > 3) {
-    let parentIndex = state.listItems.length - 1;
-    while (parentIndex >= 0 && marker.indent < state.listItems[parentIndex].contentIndent) {
-      parentIndex -= 1;
-    }
-    if (parentIndex < 0) {
-      marker = null;
-    }
-  }
-  let candidate = withoutQuotes;
-  let contentIndent = 0;
-
-  if (marker) {
-    popListItemsBefore(state, marker.indent);
-    while (
-      state.listItems.length > 0
-      && marker.indent <= state.listItems[state.listItems.length - 1].markerIndent
-    ) {
-      state.listItems.pop();
-    }
-    state.listItems.push({ markerIndent: marker.indent, contentIndent: marker.contentIndent });
-    candidate = marker.content;
-    contentIndent = marker.contentIndent;
-  } else if (state.listItems.length > 0) {
-    const indent = leadingSpaces(withoutQuotes);
-    popListItemsBefore(state, indent);
-    const current = state.listItems[state.listItems.length - 1];
-
-    if (current && indent >= current.contentIndent) {
-      contentIndent = current.contentIndent;
-      candidate = withoutQuotes.slice(contentIndent);
-    }
-  }
-
-  const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(candidate);
-  if (!match) {
-    return { inside: false, opened: false, closed: false, match: null };
-  }
-
-  if (contentIndent === 0 && state.listItems.length > 0) {
-    state.listItems = [];
-  }
-  state.fence = {
-    character: match[1][0],
-    length: match[1].length,
-    contentIndent,
-    info: match[2],
-  };
-  return { inside: true, opened: true, closed: false, match };
-}
-
-function linesOutsideFencedCodeAndHtmlComments(lines) {
-  const fenceState = createMarkdownFenceState();
-  const state = { inHtmlComment: false, inlineCodeLength: null };
-
-  return lines.map((line) => {
-    const fenceLine = scanMarkdownFenceLine(line, fenceState, !state.inHtmlComment);
-    if (fenceLine.inside) {
-      return "";
-    }
-
-    const result = maskInlineCodeAndHtmlComments(line, state);
-    return result.line;
-  });
-}
-
-function textlintDirectiveCommentsOutsideCode(lines) {
-  const fenceState = createMarkdownFenceState();
-  const state = { inHtmlComment: false, inlineCodeLength: null };
-
-  return lines.map((line) => {
-    const comments = [];
-    const fenceLine = scanMarkdownFenceLine(line, fenceState, !state.inHtmlComment);
-    if (fenceLine.inside) {
-      return comments;
-    }
-
-    maskInlineCodeAndHtmlComments(line, state, (comment) => comments.push(comment));
-    return comments;
-  });
 }
 
 function stripUrls(text) {
@@ -695,26 +559,21 @@ function stripMarkdownFormatting(text) {
     .replace(/(?<!\\)([*_])([^*_]+?)\1/gu, "$2");
 }
 
-function textlintSpacingDisabledRangesByLine(lines) {
+function textlintSpacingDisabledRanges(text, context) {
   const spacingRule = "ja-spacing/ja-space-between-half-and-full-width";
-  const commentsByLine = textlintDirectiveCommentsOutsideCode(lines);
+  const comments = context.comments;
   let allRulesDisableCount = 0;
   let spacingRuleDisableCount = 0;
+  const ranges = [];
+  let cursor = 0;
 
-  return lines.map((line, index) => {
-    const ranges = [];
-    let cursor = 0;
+  for (const comment of comments) {
+    if (allRulesDisableCount > 0 || spacingRuleDisableCount > 0) {
+      ranges.push([cursor, comment.start]);
+    }
 
-    for (const comment of commentsByLine[index]) {
-      const directive = /^\s*textlint-(disable|enable)(?=$|\s)([\s\S]*?)\s*$/.exec(comment.value);
-      if (!directive) {
-        continue;
-      }
-
-      if (allRulesDisableCount > 0 || spacingRuleDisableCount > 0) {
-        ranges.push([cursor, comment.start]);
-      }
-
+    const directive = /^\s*textlint-(disable|enable)(?=$|\s)([\s\S]*?)\s*$/.exec(comment.value);
+    if (directive) {
       const descriptionIndex = directive[2].indexOf("--");
       const ruleNames = (descriptionIndex < 0 ? directive[2] : directive[2].slice(0, descriptionIndex))
         .split(/[\s,]+/)
@@ -731,26 +590,27 @@ function textlintSpacingDisabledRangesByLine(lines) {
           ? spacingRuleDisableCount + 1
           : Math.max(0, spacingRuleDisableCount - 1);
       }
-      cursor = comment.end;
     }
+    cursor = comment.end;
+  }
 
-    if (allRulesDisableCount > 0 || spacingRuleDisableCount > 0) {
-      ranges.push([cursor, line.length]);
-    }
+  if (allRulesDisableCount > 0 || spacingRuleDisableCount > 0) {
+    ranges.push([cursor, text.length]);
+  }
 
-    return ranges;
-  });
+  return mergedRanges(ranges);
 }
 
-function reportHalfFullWidthSpaceOutsideTextlint(file, lines) {
+function reportHalfFullWidthSpaceOutsideTextlint(file, text, lines, context) {
   const japaneseCharacter = "\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Han}";
   const halfFullWidthBoundary = new RegExp(`(?:[A-Za-z0-9][${japaneseCharacter}]|[${japaneseCharacter}][A-Za-z0-9])`, "u");
-  const visibleLines = linesOutsideFencedCodeAndHtmlComments(lines);
-  const disabledRanges = textlintSpacingDisabledRangesByLine(lines);
-  const auditLines = visibleLines.map((line, index) => disabledRanges[index].reduce(
-    (masked, [start, end]) => masked.slice(0, start) + " ".repeat(end - start) + masked.slice(end),
-    line,
-  ));
+  const disabledRanges = textlintSpacingDisabledRanges(text, context);
+  const auditLines = maskSourceRanges(text, [
+    ...context.codeBlocks.map((node) => node.range),
+    ...context.comments.map(({ start, end }) => [start, end]),
+    ...context.inlineCode.map((node) => node.range),
+    ...disabledRanges,
+  ]).split(/\r?\n/);
   const reportedLines = new Set();
 
   function reportIfNeeded(lineIndex, text) {
@@ -801,34 +661,25 @@ function reportHalfFullWidthSpaceOutsideTextlint(file, lines) {
   }
 }
 
-function reportFootnoteReferencesInMermaid(file, lines) {
-  const fenceState = createMarkdownFenceState();
-  let isMermaid = false;
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const fenceLine = scanMarkdownFenceLine(lines[index], fenceState);
-    if (!fenceLine.inside) {
+function reportFootnoteReferencesInMermaid(file, lines, context) {
+  for (const codeBlock of context.codeBlocks) {
+    if (codeBlock.lang?.toLowerCase() !== "mermaid") {
       continue;
     }
 
-    if (fenceLine.opened) {
-      const language = fenceLine.match[2].trim().split(/\s+/, 1)[0]?.toLowerCase();
-      isMermaid = language === "mermaid";
-      continue;
-    }
+    const contentLines = codeBlock.value.split(/\r?\n/);
+    for (let contentIndex = 0; contentIndex < contentLines.length; contentIndex += 1) {
+      if (!/\[\^[^\]]+\](?!:)/.test(contentLines[contentIndex])) {
+        continue;
+      }
 
-    if (fenceLine.closed) {
-      isMermaid = false;
-      continue;
-    }
-
-    if (isMermaid && /\[\^[^\]]+\](?!:)/.test(lines[index])) {
+      const lineNumber = codeBlock.loc.start.line + contentIndex + 1;
       report(
         file,
-        index + 1,
+        lineNumber,
         "avoid-footnote-reference-in-mermaid",
         "Mermaid ブロック内の脚注参照は本文上の引用として読めないため、図の前後の本文へ移してください。",
-        lines[index],
+        lines[lineNumber - 1],
       );
     }
   }
@@ -1037,17 +888,18 @@ function reportPeerMethodHeadingMismatch(file, lines) {
 for (const file of files) {
   const text = fs.readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
+  const markdown = createMarkdownContext(text);
 
-  reportHeadingImmediatelyFollowedBySubheading(file, lines);
-  reportStandaloneTextlintComments(file, lines);
+  reportHeadingImmediatelyFollowedBySubheading(file, text, lines, markdown);
+  reportStandaloneTextlintComments(file, text, lines, markdown);
   reportLooseTopicShiftAfterExternalMaterial(file, lines);
   reportPrematureWinnerLoserTerms(file, lines);
   reportRepeatedScopeDeclarations(file, lines);
   reportFloatingQuestionParagraph(file, lines);
   reportMarkdownSensitiveMathLines(file, lines);
   reportMarkdownSensitiveInlineMath(file, text);
-  reportHalfFullWidthSpaceOutsideTextlint(file, lines);
-  reportFootnoteReferencesInMermaid(file, lines);
+  reportHalfFullWidthSpaceOutsideTextlint(file, text, lines, markdown);
+  reportFootnoteReferencesInMermaid(file, lines, markdown);
   reportPeerMethodHeadingMismatch(file, lines);
 
   for (const check of checks) {
