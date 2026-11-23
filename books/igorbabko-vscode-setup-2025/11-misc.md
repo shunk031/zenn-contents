@@ -2,7 +2,7 @@
 title: "Misc"
 ---
 
-エディタタブのアイコン余白やサイドバー背景色を調整し、ファイルの自動保存や自動更新の抑制などを設定してセットアップを仕上げます。対応する動画のチャプターは [Final changes (36:54)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s) です。
+エディタタブのアイコン余白やサイドバー背景色を調整し、ファイルの遅延自動保存や自動更新の停止、拡張機能おすすめ通知の抑制を設定します。UI の微小な崩れを解消し、予期しない動作を防いで環境全体を仕上げます。対応する動画のチャプターは [Final changes (36:54)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s) です。
 
 ## 設定（settings.json）
 
@@ -22,15 +22,32 @@ title: "Misc"
 }
 ```
 
-## 設定項目の説明
+## 解説
 
-| 設定 | 説明 |
-| --- | --- |
-| `custom-ui-style.stylesheet[".title .monaco-icon-label.file-icon"]` | エディタタブ内のファイルアイコンラベルの左右マージンを設定します。 |
-| `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].sideBar.background` | 対象テーマ適用時のサイドバーの背景色を設定します。 |
-| `files.autoSave` | ファイルの自動保存を制御します。`afterDelay` で指定時間の経過後に自動保存します。 |
-| `update.mode` | VS Code の自動更新モードを設定します（コミットでは `none` を指定。※現在の公式ドキュメントでは説明未確認）。 |
-| `extensions.ignoreRecommendations` | 拡張機能のおすすめ通知の表示を制御します。`true` で通知を抑制します。 |
+### UI 余白とサイドバー背景色の調整
+サイドバーを開いた際に、左上のウィンドウ操作ボタンとタブのファイル名表示が重なる問題を防ぎます。Custom UI Style のスタイルシート設定で `.title .monaco-icon-label.file-icon` に左右マージン `margin: 0 60px` を追加します。また、サイドバーの背景色をエディタ背景色と統一します。`workbench.colorCustomizations` 内の `[Aura Dracula Spirit (Soft)]` スコープで `sideBar.background` を `#191521` に設定します。
+
+### 自動保存と拡張機能通知の抑制
+ファイル編集後の保存忘れを防ぐため、`files.autoSave: "afterDelay"`（既定値 `"off"`）を設定します。入力後一定時間（既定の待機時間）が経過すると自動で保存されます。また、作業中のポップアップ通知を減らすため、`extensions.ignoreRecommendations: true`（既定値 `false`）を設定して拡張機能のおすすめ通知を非表示にします。
+
+### VS Code 本体の自動更新停止
+VS Code の自動更新モードを `update.mode: "none"`（既定値 `"default"`）に設定し、自動アップデートを無効化します。動画では、VS Code の自動更新によって Custom UI Style などの拡張機能との互換性が崩れるリスクを避けるため、手動でタイミングを選んで更新する方針をとっています。
+
+## 設定項目の一覧
+
+| 設定 | 既定値 | 説明 |
+| --- | --- | --- |
+| `custom-ui-style.stylesheet[".title .monaco-icon-label.file-icon"]` | 親オブジェクト `{}` | エディタタブ内のファイルアイコンラベルの左右マージンを設定し、ウィンドウボタンとの重なりを防ぎます。 |
+| `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].sideBar.background` | テーマ依存 | 対象テーマ適用時のサイドバーの背景色を設定します。 |
+| `files.autoSave` | `"off"` | ファイルの自動保存を制御します。`afterDelay` で指定時間の経過後に自動保存します。 |
+| `update.mode` | `"default"` | VS Code の組み込み自動更新モードを制御します。`none` で自動更新を停止します。 |
+| `extensions.ignoreRecommendations` | `false` | 拡張機能のおすすめ通知の表示を制御します。`true` で通知を抑制します。 |
+
+## 注意点
+
+Custom UI Style によるマージン設定を正しく反映するには、VS Code の再起動が必要です。
+
+`update.mode: "none"` を設定すると、VS Code の新機能やセキュリティ更新も自動適用されなくなります。定期的に手動で更新を確認・適用する必要があります（Linux のパッケージマネージャー経由の更新は別系統です）。
 
 ## 追加する拡張機能
 

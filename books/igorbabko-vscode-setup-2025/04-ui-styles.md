@@ -2,7 +2,7 @@
 title: "UI Styles"
 ---
 
-Custom UI Style 拡張機能のスタイルシート設定を用いて、通知やクイックオープン、検索ウィジェットなどの各種 UI 要素の枠線や影を非表示にします。対応する動画のチャプターは [Styling with Custom UI Style extension (12:19)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=739s) です。
+Custom UI Style 拡張機能のスタイルシート設定を活用し、影や境界線、余分なパディングなどの装飾をまとめて削除します。エディタ全体の余計な境界をなくしてフラットでシームレスな外観に整えます。対応する動画のチャプターは [Styling with Custom UI Style extension (12:19)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=739s) です。
 
 ## 設定（settings.json）
 
@@ -30,27 +30,44 @@ Custom UI Style 拡張機能のスタイルシート設定を用いて、通知�
 }
 ```
 
-## 設定項目の説明
+## 解説
 
-| セレクター | 説明 |
-| --- | --- |
-| `.notification-toast` | 通知トーストの影を削除します。 |
-| `.quick-input-widget.show-file-icons` | ファイルアイコン付きクイック入力ポップアップの影を削除します。 |
-| `.quick-input-widget` | クイック入力ポップアップをビューポート上部から 25vh の位置に配置します。 |
-| `.quick-input-list .scrollbar` | クイック入力リストのスクロールバーを非表示にします。 |
-| `.monaco-action-bar.quick-input-inline-action-bar` | クイック入力リスト内のインラインアクションボタンを非表示にします。 |
-| `.editor-widget.find-widget` | 検索ウィジェットの影を削除し、角丸を 4px に設定します。 |
-| `.quick-input-titlebar` | クイック入力のタイトルバーの背景色を `#100B15` に設定します。 |
-| `.monaco-workbench ... .title.title-border-bottom:after` | エディタグループ下部のタイトルボーダー装飾を非表示にします。 |
-| `.monaco-scrollable-element > .shadow.top` | 上部エッジのスクロールシャドウを非表示にします。 |
-| `.sidebar .title-label` | サイドバーのタイトルラベルのパディングを削除します。 |
-| `.sidebar` | サイドバーの境界線を削除します。 |
-| `.monaco-workbench .monaco-list:not(.element-focused):focus:before` | フォーカスされたリストの前に描画されるフォーカスアウトラインを削除します。 |
-| `.monaco-list-row.focused` | フォーカスされたリスト行のアウトラインを削除します。 |
-| `.monaco-editor .scroll-decoration` | エディタのスクロール装飾シャドウを非表示にします。 |
-| `.title-actions` | タイトルアクションボタンを非表示にします。 |
-| `.title.show-file-icons .label-container .monaco-icon-label.file-icon` | ファイルアイコンラベルを中央揃えにし、パディングを削除します。 |
-| `.title .monaco-icon-label:after` | アイコンラベル後の末尾マージンを削除します。 |
+### スタイル適用の一括反映
+Custom UI Style のスタイル設定は、設定を変更するたびに再読み込みが必要になります。設定を個別に変更すると何度も再起動が必要になります。そのため、CSS のオーバーライド設定を `custom-ui-style.stylesheet`（既定値 `{}`）へ一括して記述し、一度の再起動でまとめて反映させています。
+
+### ポップアップとウィジェットの装飾削除
+通知トーストの影（`.notification-toast`）を `box-shadow: none !important` で削除します。クイック入力・コマンドパレットの影（`.quick-input-widget.show-file-icons`）も同様に削除します。コマンドパレット（`.quick-input-widget`）は画面上部から少し下げた `top: 25vh !important` の位置に移動します。パレット内のスクロールバー（`.quick-input-list .scrollbar`）や不要なアクションバー（`.monaco-action-bar.quick-input-inline-action-bar`）も非表示にします。検索ウィジェット（`.editor-widget.find-widget`）も影を消して角丸を 4px に整えます。また、`.quick-input-titlebar` の背景色を `#100B15` に設定していますが、これは VSCode Neovim 拡張機能の `/` 検索バーを開いた際の見た目を整えるための設定です。
+
+### サイドバーとエディタ境界のフラット化
+エディタタイトル下部の境界線（`title.title-border-bottom:after`）や上部のスクロールシャドウ（`.monaco-scrollable-element > .shadow.top`）を非表示にします。エディタ内のスクロール装飾（`.monaco-editor .scroll-decoration`）も非表示にします。サイドバーの境界線（`.sidebar`）やパディング（`.sidebar .title-label`）を削除します。さらにリストのフォーカス枠線（`.monaco-list:not(.element-focused):focus:before`、`.monaco-list-row.focused`）も削除してフラットにします。エディタ上部のタブアクションボタン（`.title-actions`）を非表示にし、タイトルラベル（`.title.show-file-icons ...`）を中央揃えにして末尾余白を詰めます。
+
+## 設定項目の一覧
+
+| セレクター | 既定値 | 説明 |
+| --- | --- | --- |
+| `.notification-toast` | なし（親 `{}`） | 通知トーストの影を削除します。 |
+| `.quick-input-widget.show-file-icons` | なし（親 `{}`） | ファイルアイコン付きクイック入力ポップアップの影を削除します。 |
+| `.quick-input-widget` | なし（親 `{}`） | クイック入力ポップアップをビューポート上部から 25vh の位置に配置します。 |
+| `.quick-input-list .scrollbar` | なし（親 `{}`） | クイック入力リストのスクロールバーを非表示にします。 |
+| `.monaco-action-bar.quick-input-inline-action-bar` | なし（親 `{}`） | クイック入力リスト内のインラインアクションボタンを非表示にします。 |
+| `.editor-widget.find-widget` | なし（親 `{}`） | 検索ウィジェットの影を削除し、角丸を 4px に設定します。 |
+| `.quick-input-titlebar` | なし（親 `{}`） | クイック入力のタイトルバーの背景色を `#100B15` に設定します。 |
+| `.monaco-workbench ... .title.title-border-bottom:after` | なし（親 `{}`） | エディタグループ下部のタイトルボーダー装飾を非表示にします。 |
+| `.monaco-scrollable-element > .shadow.top` | なし（親 `{}`） | 上部エッジのスクロールシャドウを非表示にします。 |
+| `.sidebar .title-label` | なし（親 `{}`） | サイドバーのタイトルラベルのパディングを削除します。 |
+| `.sidebar` | なし（親 `{}`） | サイドバーの境界線を削除します。 |
+| `.monaco-workbench .monaco-list:not(.element-focused):focus:before` | なし（親 `{}`） | フォーカスされたリストの前に描画されるフォーカスアウトラインを削除します。 |
+| `.monaco-list-row.focused` | なし（親 `{}`） | フォーカスされたリスト行のアウトラインを削除します。 |
+| `.monaco-editor .scroll-decoration` | なし（親 `{}`） | エディタのスクロール装飾シャドウを非表示にします。 |
+| `.title-actions` | なし（親 `{}`） | タイトルアクションボタンを非表示にします。 |
+| `.title.show-file-icons .label-container .monaco-icon-label.file-icon` | なし（親 `{}`） | ファイルアイコンラベルを中央揃えにし、パディングを削除します。 |
+| `.title .monaco-icon-label:after` | なし（親 `{}`） | アイコンラベル後の末尾マージンを削除します。 |
+
+## 注意点
+
+本章のスタイルは Custom UI Style 拡張機能が内部 CSS を上書きすることで実現しています。VS Code のアップデートによって内部の HTML 構造や CSS クラス名が変更された場合、スタイルが効かなくなったり崩れたりする可能性があります。
+
+`.quick-input-titlebar` の背景色指定は、VSCode Neovim 拡張機能の `/` 検索機能を利用する際の見た目を想定したものです。該当の拡張機能を使っていない場合は検索バー自体の表示に影響しません。
 
 ## 追加する拡張機能
 
