@@ -17,6 +17,7 @@ test("inline textlint directives exclude wrapped title text through an enable or
   const unclosedPath = path.join(directory, "unclosed.md");
   const plainPath = path.join(directory, "plain.md");
   const quotedFencePath = path.join(directory, "quoted-fence.md");
+  const listFencePath = path.join(directory, "list-fence.md");
   fs.writeFileSync(wrappedPath, [
     "---",
     'title: "<!-- textlint-disable ja-spacing/ja-space-between-half-and-full-width -->Codexの使い方<!-- textlint-enable ja-spacing/ja-space-between-half-and-full-width -->"',
@@ -38,6 +39,29 @@ test("inline textlint directives exclude wrapped title text through an enable or
     "> <!-- textlint-disable -->",
     "",
   ].join("\n"));
+  fs.writeFileSync(listFencePath, [
+    "-   item with four-column content indentation",
+    "",
+    "    ```md",
+    "    <!-- textlint-disable -->",
+    "    [Codexの使い方](https://example.com)",
+    "    ```",
+    "123456789. item with eleven-column content indentation",
+    "           ```md",
+    "           <!-- textlint-disable -->",
+    "           [Codexの使い方](https://example.com)",
+    "           ```",
+    "- parent list item",
+    "    - nested list item",
+    "      ```md",
+    "      <!-- textlint-disable -->",
+    "      [Codexの使い方](https://example.com)",
+    "      ```",
+    "- outside the fenced blocks",
+    "  [Codexの使い方](https://example.com)",
+    "  <!-- textlint-disable -->",
+    "",
+  ].join("\n"));
 
   const wrapped = spawnSync(process.execPath, [scriptPath, wrappedPath], {
     cwd: repositoryPath,
@@ -55,6 +79,10 @@ test("inline textlint directives exclude wrapped title text through an enable or
     cwd: repositoryPath,
     encoding: "utf8",
   });
+  const listFence = spawnSync(process.execPath, [scriptPath, listFencePath], {
+    cwd: repositoryPath,
+    encoding: "utf8",
+  });
 
   assert.equal(wrapped.status, 0, wrapped.stderr);
   assert.doesNotMatch(wrapped.stderr, /half-full-width-space-outside-textlint/);
@@ -66,4 +94,8 @@ test("inline textlint directives exclude wrapped title text through an enable or
   assert.doesNotMatch(quotedFence.stderr, /half-full-width-space-outside-textlint/);
   assert.doesNotMatch(quotedFence.stderr, /quoted-fence\.md:3: avoid-standalone-textlint-comment/);
   assert.match(quotedFence.stderr, /quoted-fence\.md:5: avoid-standalone-textlint-comment/);
+  assert.equal(listFence.status, 1, listFence.stderr);
+  assert.doesNotMatch(listFence.stderr, /list-fence\.md:(?:4|5|9|10|15|16):/);
+  assert.match(listFence.stderr, /list-fence\.md:19: half-full-width-space-outside-textlint/);
+  assert.match(listFence.stderr, /list-fence\.md:20: avoid-standalone-textlint-comment/);
 });

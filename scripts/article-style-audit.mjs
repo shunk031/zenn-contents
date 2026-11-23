@@ -384,22 +384,13 @@ function reportHeadingImmediatelyFollowedBySubheading(file, lines) {
 function reportStandaloneTextlintComments(file, lines) {
   const linesWithoutMetadata = linesWithoutFrontMatter(lines);
   const standaloneComment = /^\s*(?:>\s*)*<!--\s*textlint-(?:disable|enable)(?=\s|-->)[\s\S]*-->\s*$/;
-  let fence = null;
+  const fenceState = createMarkdownFenceState();
   let inHtmlComment = false;
 
   for (let index = 0; index < linesWithoutMetadata.length; index += 1) {
     const line = linesWithoutMetadata[index];
-    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(stripBlockquotePrefixes(line));
-
-    if (fence !== null) {
-      if (
-        fenceMatch
-        && fenceMatch[1][0] === fence.character
-        && fenceMatch[1].length >= fence.length
-        && fenceMatch[2].trim() === ""
-      ) {
-        fence = null;
-      }
+    const fenceLine = scanMarkdownFenceLine(line, fenceState, !inHtmlComment);
+    if (fenceLine.inside) {
       continue;
     }
 
@@ -407,11 +398,6 @@ function reportStandaloneTextlintComments(file, lines) {
       if (line.includes("-->")) {
         inHtmlComment = false;
       }
-      continue;
-    }
-
-    if (fenceMatch) {
-      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
       continue;
     }
 
@@ -531,28 +517,150 @@ function stripBlockquotePrefixes(line) {
   return line.replace(/^(?: {0,3}>[ \t]?)+/, "");
 }
 
+function expandTabs(line) {
+  let column = 0;
+  let expanded = "";
+
+  for (const character of line) {
+    if (character === "\t") {
+      const spaces = 4 - (column % 4);
+      expanded += " ".repeat(spaces);
+      column += spaces;
+    } else {
+      expanded += character;
+      column += 1;
+    }
+  }
+
+  return expanded;
+}
+
+function leadingSpaces(line) {
+  return /^ */.exec(line)[0].length;
+}
+
+function listMarker(line) {
+  const match = /^( *)([*+-]|[0-9]{1,9}[.)])([ ]+|$)/.exec(line);
+  if (!match) {
+    return null;
+  }
+
+  const indent = match[1].length;
+  const markerWidth = match[2].length;
+  const whitespaceWidth = match[3].length;
+  const paddingWidth = whitespaceWidth === 0
+    ? 1
+    : whitespaceWidth <= 4
+      ? whitespaceWidth
+      : 1;
+  const contentIndent = indent + markerWidth + paddingWidth;
+
+  return {
+    indent,
+    contentIndent,
+    content: line.slice(contentIndent),
+  };
+}
+
+function createMarkdownFenceState() {
+  return { listItems: [], fence: null };
+}
+
+function popListItemsBefore(state, indent) {
+  while (state.listItems.length > 0) {
+    const current = state.listItems[state.listItems.length - 1];
+    if (indent >= current.contentIndent) {
+      break;
+    }
+    state.listItems.pop();
+  }
+}
+
+function scanMarkdownFenceLine(line, state, allowOpen = true) {
+  const withoutQuotes = stripBlockquotePrefixes(expandTabs(line));
+
+  if (state.fence) {
+    const candidate = withoutQuotes.slice(state.fence.contentIndent);
+    const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(candidate);
+    const closes = Boolean(
+      match
+      && match[1][0] === state.fence.character
+      && match[1].length >= state.fence.length
+      && match[2].trim() === "",
+    );
+    if (closes) {
+      state.fence = null;
+    }
+    return { inside: true, opened: false, closed: closes, match };
+  }
+
+  if (!allowOpen) {
+    return { inside: false, opened: false, closed: false, match: null };
+  }
+
+  if (withoutQuotes.trim() === "" && state.listItems.length > 0) {
+    return { inside: false, opened: false, closed: false, match: null };
+  }
+
+  let marker = listMarker(withoutQuotes);
+  if (marker && marker.indent > 3) {
+    let parentIndex = state.listItems.length - 1;
+    while (parentIndex >= 0 && marker.indent < state.listItems[parentIndex].contentIndent) {
+      parentIndex -= 1;
+    }
+    if (parentIndex < 0) {
+      marker = null;
+    }
+  }
+  let candidate = withoutQuotes;
+  let contentIndent = 0;
+
+  if (marker) {
+    popListItemsBefore(state, marker.indent);
+    while (
+      state.listItems.length > 0
+      && marker.indent <= state.listItems[state.listItems.length - 1].markerIndent
+    ) {
+      state.listItems.pop();
+    }
+    state.listItems.push({ markerIndent: marker.indent, contentIndent: marker.contentIndent });
+    candidate = marker.content;
+    contentIndent = marker.contentIndent;
+  } else if (state.listItems.length > 0) {
+    const indent = leadingSpaces(withoutQuotes);
+    popListItemsBefore(state, indent);
+    const current = state.listItems[state.listItems.length - 1];
+
+    if (current && indent >= current.contentIndent) {
+      contentIndent = current.contentIndent;
+      candidate = withoutQuotes.slice(contentIndent);
+    }
+  }
+
+  const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(candidate);
+  if (!match) {
+    return { inside: false, opened: false, closed: false, match: null };
+  }
+
+  if (contentIndent === 0 && state.listItems.length > 0) {
+    state.listItems = [];
+  }
+  state.fence = {
+    character: match[1][0],
+    length: match[1].length,
+    contentIndent,
+    info: match[2],
+  };
+  return { inside: true, opened: true, closed: false, match };
+}
+
 function linesOutsideFencedCodeAndHtmlComments(lines) {
-  let fence = null;
+  const fenceState = createMarkdownFenceState();
   const state = { inHtmlComment: false, inlineCodeLength: null };
 
   return lines.map((line) => {
-    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(stripBlockquotePrefixes(line));
-
-    if (fence !== null) {
-      if (
-        fenceMatch
-        && fenceMatch[1][0] === fence.character
-        && fenceMatch[1].length >= fence.length
-        && fenceMatch[2].trim() === ""
-      ) {
-        fence = null;
-      }
-      return "";
-    }
-
-    if (!state.inHtmlComment && fenceMatch) {
-      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
-      state.inlineCodeLength = null;
+    const fenceLine = scanMarkdownFenceLine(line, fenceState, !state.inHtmlComment);
+    if (fenceLine.inside) {
       return "";
     }
 
@@ -562,28 +670,13 @@ function linesOutsideFencedCodeAndHtmlComments(lines) {
 }
 
 function textlintDirectiveCommentsOutsideCode(lines) {
-  let fence = null;
+  const fenceState = createMarkdownFenceState();
   const state = { inHtmlComment: false, inlineCodeLength: null };
 
   return lines.map((line) => {
     const comments = [];
-    const fenceMatch = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(stripBlockquotePrefixes(line));
-
-    if (fence !== null) {
-      if (
-        fenceMatch
-        && fenceMatch[1][0] === fence.character
-        && fenceMatch[1].length >= fence.length
-        && fenceMatch[2].trim() === ""
-      ) {
-        fence = null;
-      }
-      return comments;
-    }
-
-    if (!state.inHtmlComment && fenceMatch) {
-      fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
-      state.inlineCodeLength = null;
+    const fenceLine = scanMarkdownFenceLine(line, fenceState, !state.inHtmlComment);
+    if (fenceLine.inside) {
       return comments;
     }
 
@@ -709,34 +802,27 @@ function reportHalfFullWidthSpaceOutsideTextlint(file, lines) {
 }
 
 function reportFootnoteReferencesInMermaid(file, lines) {
-  let fence = null;
+  const fenceState = createMarkdownFenceState();
+  let isMermaid = false;
 
   for (let index = 0; index < lines.length; index += 1) {
-    const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(lines[index]);
-
-    if (fence === null) {
-      if (match) {
-        const language = match[2].trim().split(/\s+/, 1)[0]?.toLowerCase();
-        fence = {
-          character: match[1][0],
-          length: match[1].length,
-          isMermaid: language === "mermaid",
-        };
-      }
+    const fenceLine = scanMarkdownFenceLine(lines[index], fenceState);
+    if (!fenceLine.inside) {
       continue;
     }
 
-    if (
-      match
-      && match[1][0] === fence.character
-      && match[1].length >= fence.length
-      && match[2].trim() === ""
-    ) {
-      fence = null;
+    if (fenceLine.opened) {
+      const language = fenceLine.match[2].trim().split(/\s+/, 1)[0]?.toLowerCase();
+      isMermaid = language === "mermaid";
       continue;
     }
 
-    if (fence.isMermaid && /\[\^[^\]]+\](?!:)/.test(lines[index])) {
+    if (fenceLine.closed) {
+      isMermaid = false;
+      continue;
+    }
+
+    if (isMermaid && /\[\^[^\]]+\](?!:)/.test(lines[index])) {
       report(
         file,
         index + 1,
