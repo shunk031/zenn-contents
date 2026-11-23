@@ -3,7 +3,8 @@ title: "世界のレイアウト生成デザイン生成のモデルを全て実
 emoji: "📐"
 type: "tech"
 topics: ["ai", "agents", "python", "machinelearning", "adventcalendar"]
-published: false
+published: true
+published_at: "2026-12-07 09:00"
 ---
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。本記事は [法政大学理工学部 Advent Calendar 2026](https://adventar.org/calendars/13106) の 7 日目の記事です。
