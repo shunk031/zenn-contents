@@ -3,7 +3,8 @@ title: "Herdr で複数のエージェントを対話させるシンプルなス
 emoji: "🐑"
 type: "tech"
 topics: ["herdr", "ai", "codex", "claudecode", "adventcalendar2026"]
-published: false
+published: true
+published_at: "2026-12-01 09:00"
 ---
 
 こんにちは [@shunk031](https://twitter.com/shunk031) です。本記事は [法政大学理工学部 Advent Calendar 2026](https://adventar.org/calendars/13106) の 1 日目の記事です。
@@ -84,6 +85,8 @@ flowchart TD
 4. ワーカーの作業と報告: ワーカーは割り当てられた worktree 内で作業する。進捗や結果はオーケストレーター宛てにプレーンテキストで報告する。
 5. 成果物の検証: ワーカーの報告だけで済ませず、実際のライフサイクル状態やファイル差分、テスト結果、トランスクリプト（= 画面に残ったワーカーの作業記録）を直接確認する。
 6. ペインの回収とワークスペース削除: 検証完了後にワーカーのペイン（= Herdr の画面を分割した 1 つのターミナル）やタブを回収する。PR マージ後、未コミットの変更がなくローカルブランチの先頭が PR の最終コミットと同じかその祖先である worktree のみ削除する。
+
+なお、作業中のワーカーのタブ名はスキルやエージェント自身ではなく、別に用意したスクリプト [herdr-tab-title](https://github.com/shunk031/dotfiles/blob/b9f3370ba10003000e53aeed55b7c9886709c1e6/home/private_dot_local/private_bin/exact_common/executable_herdr-tab-title) が自動で付け替えています。Claude Code や Codex のフックと Herdr のプラグインからこのスクリプトが呼ばれ、作業状態に応じてタブ名を更新します。
 
 # エージェント同士の対話の仕組み
 
