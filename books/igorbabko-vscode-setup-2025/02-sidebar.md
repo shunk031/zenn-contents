@@ -90,7 +90,7 @@ Material Icon Theme 拡張機能の詳細ページを開いた画面です。
 ![](/images/igorbabko-vscode-setup-2025/02-17.png)
 
 ### 操作確認ダイアログと装飾の抑制
-エクスプローラー内でのドラッグ＆ドロップ移動時の確認ダイアログ（`explorer.confirmDragAndDrop: false`、既定値 `true`）を無効化します。あわせて、アイテム削除時の確認ダイアログ（`explorer.confirmDelete: false`、既定値 `true`）も無効化します。確認の手間をなくし、素早いファイル操作を可能にします。
+エクスプローラー内でのドラッグ＆ドロップ移動時の確認ダイアログ（`explorer.confirmDragAndDrop: false`、既定値 `true`）を非表示にします。あわせて、アイテム削除時の確認ダイアログ（`explorer.confirmDelete: false`、既定値 `true`）も非表示にします。確認の手間をなくし、素早いファイル操作を可能にします。
 
 ファイル移動に伴う import パス更新の確認ダイアログが表示されている画面です（エクスプローラー自体の移動確認ダイアログではありません）。
 ![](/images/igorbabko-vscode-setup-2025/02-18.png)
@@ -100,7 +100,7 @@ Material Icon Theme 拡張機能の詳細ページを開いた画面です。
 設定前のエクスプローラーの表示です。`poyo.ts` のエラーに伴い、フォルダーやファイルに赤色ラベルやバッジ「1」が表示されています。
 ![](/images/igorbabko-vscode-setup-2025/02-19.png)
 
-確認ダイアログおよび装飾を無効化する 4 項目（`confirmDragAndDrop`, `confirmDelete`, `badges`, `git.decorations.enabled`）を設定に記述した画面です。
+確認ダイアログおよび装飾を非表示にする 4 項目（`confirmDragAndDrop`, `confirmDelete`, `badges`, `git.decorations.enabled`）を設定に記述した画面です。
 ![](/images/igorbabko-vscode-setup-2025/02-20.png)
 
 `explorer.decorations.badges: false` を選択中の画面です。エクスプローラーにはまだ赤色のラベルやバッジが残って見えています。
@@ -122,12 +122,12 @@ Git 装飾無効化の設定後の画面です。いくつかのラベルに色�
 | `workbench.sideBar.location` | `"left"` | プライマリサイドバーの配置位置を制御します。`right` で右側に配置します。 |
 | `workbench.iconTheme` | `"vs-seti"` | ファイルやフォルダーに使用するアイコンテーマを選択します。 |
 | `material-icon-theme.hidesExplorerArrows` | `false` | エクスプローラーのフォルダー横にある展開矢印を非表示にします。 |
-| `workbench.tree.enableStickyScroll` | `true` | ツリービューでのスティッキースクロール（スクロール時の親階層の固定表示）の有効・無効を切り替えます。 |
+| `workbench.tree.enableStickyScroll` | `true` | ツリービューでのスティッキースクロール（スクロール時の親階層の固定表示）の有効・無効を切り替えます。`false` で無効化します。 |
 | `workbench.tree.renderIndentGuides` | `"onHover"` | ツリービュー内のインデントガイドの表示を制御します。`none` で非表示にします。 |
 | `workbench.tree.indent` | `8` | ツリービューの階層間のインデント幅をピクセル単位で設定します。 |
 | `explorer.compactFolders` | `true` | 単一の子フォルダーを持つフォルダーのコンパクト表示を制御します。`false` で各フォルダーを個別の行に展開します。 |
-| `explorer.confirmDragAndDrop` | `true` | エクスプローラー内でドラッグ＆ドロップ移動する際の確認ダイアログを制御します。`false` で無効化します。 |
-| `explorer.confirmDelete` | `true` | エクスプローラー内でアイテムを削除する際の確認ダイアログを制御します。`false` で無効化します。 |
+| `explorer.confirmDragAndDrop` | `true` | エクスプローラー内でドラッグ＆ドロップ移動する際の確認ダイアログを制御します。`false` で確認ダイアログを非表示にします。 |
+| `explorer.confirmDelete` | `true` | エクスプローラー内でアイテムを削除する際の確認ダイアログを制御します。`false` で確認ダイアログを非表示にします。 |
 | `explorer.decorations.badges` | `true` | エクスプローラー内のアイテムに表示されるエラー数などのバッジ表示を制御します。`false` で非表示にします。 |
 | `git.decorations.enabled` | `true` | エクスプローラー内のファイルに対する Git ステータス（変更・追跡状態）の色装飾を制御します。`false` で非表示にします。 |
 

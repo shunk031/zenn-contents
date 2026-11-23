@@ -33,12 +33,12 @@ title: "Scrollbars"
 ## 解説
 
 ### スクロールバーと概要ルーラー枠線の非表示
-エディタの水平スクロールバー（`editor.scrollbar.horizontal: "hidden"`、既定値 `"auto"`）を非表示にします。あわせて垂直スクロールバー（`editor.scrollbar.vertical: "hidden"`、既定値 `"auto"`）も非表示にします。さらに、概要ルーラー（Overview Ruler）周囲の境界線（`editor.overviewRulerBorder: false`、既定値 `true`）を無効化します。概要ルーラー内のカーソル位置マーカー（`editor.hideCursorInOverviewRuler: true`、既定値 `false`）も無効化し、エディタ右端の境界線をなくします。
+エディタの水平スクロールバー（`editor.scrollbar.horizontal: "hidden"`、既定値 `"auto"`）を非表示にします。あわせて垂直スクロールバー（`editor.scrollbar.vertical: "hidden"`、既定値 `"auto"`）も非表示にします。さらに、概要ルーラー（Overview Ruler）周囲の境界線（`editor.overviewRulerBorder: false`、既定値 `true`）を非表示にします。概要ルーラー内のカーソル位置マーカー（`editor.hideCursorInOverviewRuler: true`、既定値 `false`）も非表示にし、エディタ右端の境界線をなくします。
 
 ### 概要ルーラーマーカー色の透明化
 概要ルーラーには、エラーや警告、検索一致、単語ハイライト、Git の変更行などの位置を示すマーカーが描画されます。マーカーが消えるとエラー位置を俯瞰できなくなります。動画ではエラーへのジャンプをショートカットで行い、エラー総数はタイトル横で確認できるため、この非表示化を受け入れています。
 
-これらのマーカーを非表示にするため、テーマカラーカスタマイズ `workbench.colorCustomizations` を使います。概要ルーラーに関連する 13 種類のカラー設定（`editorOverviewRuler.*`）すべてに透明色 `#0000` を指定し、マーカーを完全に消去しています。
+これらのマーカーを非表示にするため、テーマカラーカスタマイズ `workbench.colorCustomizations` を使います。概要ルーラーに関連する 13 種類のカラー設定（`editorOverviewRuler.*`）すべてに透明色 `#0000` を指定し、マーカーを透明化して非表示にしています。
 
 ## 設定項目の一覧
 
