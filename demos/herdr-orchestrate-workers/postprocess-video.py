@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Trim after worker closure and compress only watcher-marked idle stretches."""
+"""Cut after Herdr reports tab closure and compress watcher-marked idle time.
+
+The watcher marks a stretch idle when nonempty normalized pane text has no
+visible content changes for two seconds. Spinner-only and elapsed-timer-only changes
+are intentionally normalized away, so agent thinking/waiting is compressed.
+Visible content changes remain at normal speed. Herdr lifecycle state does not
+classify idle time; worker-tab closure is used only to choose the final cut.
+"""
 
 from __future__ import annotations
 
@@ -123,6 +130,8 @@ def main() -> None:
     events, rows = read_timing()
     raw_duration = duration_of(RAW)
     origin = events["capture_started"]
+    # Herdr's worker-tab-closed lifecycle event determines the endpoint only;
+    # compression intervals come exclusively from screen-stability events.
     cut_after = (events["worker_tab_closed"] - origin).total_seconds() + 3.0
     cut_duration = min(raw_duration, cut_after)
     if cut_duration <= 0:

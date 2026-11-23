@@ -30,19 +30,38 @@ if [[ ! -s "$CODEX_HOME/config.toml" ]]; then
     return 1
 fi
 
+if ! provider_id_toml="$(python3 - /run/secrets/codex-provider.toml 2>/dev/null <<'PY'
+import json
+import sys
+import tomllib
+
+with open(sys.argv[1], 'rb') as stream:
+    config = tomllib.load(stream)
+providers = config.get('model_providers')
+if not isinstance(providers, dict) or len(providers) != 1:
+    raise SystemExit(1)
+provider_id, provider = next(iter(providers.items()))
+if not isinstance(provider_id, str) or not isinstance(provider, dict):
+    raise SystemExit(1)
+print(json.dumps(provider_id, ensure_ascii=True))
+PY
+)"; then
+    printf '%s\n' 'The private provider configuration must define exactly one valid provider table.' >&2
+    return 1
+fi
+
 codex_config_tmp="$CODEX_HOME/config.toml.tmp"
 {
     printf '%s\n' \
         'model = "gpt-6-luna"' \
-        'model_provider = "model-service"' \
         'model_reasoning_effort = "low"' \
         'approval_policy = "never"' \
         'sandbox_mode = "danger-full-access"' \
         ''
+    printf 'model_provider = %s\n' "$provider_id_toml"
     cat /run/secrets/codex-provider.toml
+    printf '\n[model_providers.%s.auth]\n' "$provider_id_toml"
     printf '%s\n' \
-        '' \
-        '[model_providers.model-service.auth]' \
         'command = "/usr/local/bin/demo-credential"' \
         'refresh_interval_ms = 0' \
         '' \
@@ -61,8 +80,14 @@ import tomllib
 
 with open(sys.argv[1], 'rb') as stream:
     config = tomllib.load(stream)
-provider = config['model_providers']['model-service']
-assert config['model_provider'] == 'model-service'
+providers = config['model_providers']
+assert len(providers) == 1
+provider = providers[config['model_provider']]
+with open('/run/secrets/codex-provider.toml', 'rb') as stream:
+    private = tomllib.load(stream)
+private_providers = private['model_providers']
+assert len(private_providers) == 1
+assert config['model_provider'] == next(iter(private_providers))
 assert config['approval_policy'] == 'never'
 assert config['sandbox_mode'] == 'danger-full-access'
 assert isinstance(provider.get('base_url'), str)
@@ -86,10 +111,18 @@ import tomllib
 
 with open(sys.argv[1], 'rb') as stream:
     config = tomllib.load(stream)
+with open('/run/secrets/codex-provider.toml', 'rb') as stream:
+    private = tomllib.load(stream)
+private_providers = private['model_providers']
+assert len(private_providers) == 1
+assert config['model_provider'] == next(iter(private_providers))
 assert config['approval_policy'] == 'never'
 assert config['sandbox_mode'] == 'danger-full-access'
+assert len(config['model_providers']) == 1
+assert config['model_provider'] in config['model_providers']
 print('approval_policy=never')
 print('sandbox_mode=danger-full-access')
+print('provider_configuration=valid')
 PY
     return 0
 fi

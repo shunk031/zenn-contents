@@ -38,7 +38,7 @@ Record GIF and MP4 outputs into `./out`:
 ./run.sh
 ```
 
-The tape hides setup, starts a detached Herdr server, prepares the synthetic repository, and launches the real orchestration task. A hidden watcher polls structured Herdr state every second and writes UTC lifecycle timestamps to `out/timing.log`; it creates `out/finished` when the worker tab closes. The raw video is kept. Post-processing cuts three seconds after tab closure and speeds up only stretches where the terminal display did not change. Real actions remain at normal speed. The result aims for 60–90 seconds; if the recording has too little idle footage to compress, it may finish slightly below 60 seconds.
+The tape hides setup, starts a detached Herdr server, prepares the synthetic repository, and launches the orchestration task. A hidden watcher samples the combined root and worker panes once per second. It removes ANSI escapes and normalizes spinner glyphs and elapsed-time values before comparing samples. A nonempty normalized screen with no other visible content change for at least two seconds counts as idle. Spinner-only and timer-only changes therefore count as idle. A nonempty screen with no visible change also counts as idle. These intervals intentionally compress agent thinking and waiting. Stretches with other visible content changes remain at normal speed. The watcher separately polls structured Herdr state and logs UTC lifecycle milestones to `out/timing.log`. Herdr state does not classify idle intervals. The worker-tab-closed event sets the end cut, and post-processing keeps the following three seconds. After observing closure, the watcher writes `out/finished`. The raw video is kept. The result aims for 60–90 seconds; if the recording has too little idle footage to compress, it may finish slightly below 60 seconds.
 
 `run.sh` post-processes automatically. To regenerate the final MP4 and GIF from an existing raw capture and timing log, run:
 
@@ -54,7 +54,7 @@ The host proxy environment, when configured, is forwarded to the container. Dock
 
 ## Safety and privacy
 
-- Runtime credentials and host-specific provider settings never enter the image. The private provider file is merged into the container's Codex configuration at startup.
+- Runtime credentials and host-specific provider settings never enter the image. At startup, the private file's single provider table selects the Codex provider ID. Setup fails if it contains zero or multiple provider tables.
 - Codex uses `approval_policy = "never"` and `sandbox_mode = "danger-full-access"`. The disposable container is the isolation boundary; Docker privileges and security profiles are unchanged. Credential files are read-only mounts, the output directory is the only writable host mount, and the container is removed after the run.
 - The Codex status line is empty. The Claude status line uses neutral model and context widgets. Claude Code hides the current directory.
 - The root uses the Sonnet model with low effort. The Codex worker uses low reasoning effort.

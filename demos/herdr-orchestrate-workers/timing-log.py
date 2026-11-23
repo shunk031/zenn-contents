@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Watch structured Herdr lifecycle state and log hidden recording timings."""
+"""Log lifecycle timings and screen-stable intervals for video compression.
+
+The hidden watcher intentionally treats agent thinking/waiting as idle when the
+nonempty combined root and worker panes show no content change for two seconds after
+ANSI escapes, spinner glyphs, and elapsed-time values are normalized. Thus a
+screen that changes only by those indicators is compressed; visible content
+changes keep the interval at normal speed. Structured Herdr state is separate:
+it supplies lifecycle timestamps and the worker-tab-closed end-cut marker.
+"""
 
 from __future__ import annotations
 
@@ -104,6 +112,8 @@ def screen_text(pane_id: str) -> str:
     if output is None:
         return ""
     value = ANSI.sub("", output)
+    # Ignore only decorative progress and elapsed-time changes. Any other
+    # visible change in either pane resets the idle timer below.
     value = SPINNER.sub("*", value)
     return ELAPSED.sub("<elapsed>", value)
 
@@ -185,6 +195,9 @@ while time.monotonic() < deadline:
             active_wait = ""
         last_screen = screen
         screen_stable_since = now
+    # A nonempty normalized screen stable for two seconds is intentionally idle. This
+    # includes thinking/waiting screens whose only changes were a spinner or
+    # elapsed timer; the separate Herdr tab state controls only the final cut.
     elif screen and not active_wait and now - screen_stable_since >= IDLE_SECONDS:
         wait_number += 1
         active_wait = f"idle_{wait_number:04d}"

@@ -27,13 +27,18 @@ import tomllib
 import urllib.error
 import urllib.request
 
-with open("/home/demo/.codex/config.toml", "rb") as stream:
-    config = tomllib.load(stream)
 with open("/run/secrets/codex-provider.toml", "rb") as stream:
     private = tomllib.load(stream)
-provider = config["model_providers"][config["model_provider"]]
-provider.update(private["model_providers"]["model-service"])
-request = urllib.request.Request(provider["base_url"], method="HEAD", headers={})
+providers = private.get("model_providers")
+if not isinstance(providers, dict) or len(providers) != 1:
+    print("000")
+    raise SystemExit(1)
+provider = next(iter(providers.values()))
+base_url = provider.get("base_url") if isinstance(provider, dict) else None
+if not isinstance(base_url, str) or not base_url:
+    print("000")
+    raise SystemExit(1)
+request = urllib.request.Request(base_url, method="HEAD", headers={})
 try:
     with urllib.request.urlopen(request, timeout=15) as response:
         print(response.status)
