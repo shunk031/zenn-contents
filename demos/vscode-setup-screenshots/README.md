@@ -1,12 +1,25 @@
 # VS Code setup screenshot kit
 
-This kit recreates the visual changes in the 11 chapters of `books/igorbabko-vscode-setup-2025` from a clean VS Code profile. It captures a zero state, one checkpoint after each chapter, and before/after images for 30 visual groups (72 PNGs total).
+This kit recreates the visual changes in the 11 chapters of `books/igorbabko-vscode-setup-2025` from a clean VS Code profile. The `2025` suffix is part of the selected book path, not a runtime date. It captures a zero state, one checkpoint after each chapter, and before/after images for 30 visual groups (72 PNGs total).
 
 ## Supported route
 
-The canonical route is the macOS desktop build of VS Code. The runner downloads VS Code **1.101.1**, commit `18e3a1ec544e6907be1e944a94c496e302073435`, for Apple Silicon from Microsoft's update service. It keeps the app copy under ignored `output/runtime/`. The runner fixes the window at **1200 × 800** points. It opens the same sample project files throughout. It uses a new user-data directory and an empty extension directory. macOS VS Code needs a short user-data path for its IPC socket, so the profile uses a temporary PID-scoped folder and is removed after the run. It captures the VS Code window by its Core Graphics window ID and drives interactive groups through a loopback-only Chromium DevTools connection. The zero state uses VS Code's default macOS editor font stack, which starts with Menlo.
+The canonical route is the macOS desktop build of VS Code. The runner downloads VS Code **1.101.1**, commit `18e3a1ec544e6907be1e944a94c496e302073435`, for Apple Silicon from Microsoft's update service. It keeps the app copy under ignored `output/runtime/`. The runner fixes the window at **1200 × 800** points so every capture shares a viewport. That makes each before/after pair pixel-comparable. Any fixed size works if every capture uses it. It opens the same sample project files throughout. It uses a new user-data directory and an empty extension directory. macOS VS Code needs a short user-data path for its IPC socket, so the profile uses a temporary PID-scoped folder and is removed after the run. It captures the VS Code window by its Core Graphics window ID and drives interactive groups through a loopback-only Chromium DevTools connection. The zero state uses VS Code's default macOS editor font stack, which starts with Menlo.
 
 The DevTools endpoint uses an ephemeral port recorded in the isolated profile's `DevToolsActivePort` file. The runner attaches only to the matching app-copy URL and signals only its spawned PID on shutdown.
+
+## Numeric choices
+
+- The manifest has **11** source chapters and **30** visual groups. The `chapter` values in `scripts/groups.mjs` mirror the manifest. The **72** images are one zero state, 11 checkpoints, and two images per group.
+- VS Code **1.101.1** and its commit are fixed app pins. The extension versions in the table are fixed Marketplace pins. Pinning keeps screenshot inputs stable as releases move forward.
+- The runner has no image-scale setting. I measured `output/images/00-zero.png` and `output/smoke/images/00-zero.png` with `sips`. Both were **2624 × 1824** pixels on this Mac. The runner checks that `sips` reports dimensions, not that every display produces these pixel dimensions.
+- `--remote-debugging-port=0` asks Chromium to choose an available port and record it in the isolated profile. The runner accepts only nonzero ports from **1** through **65535**. RFC 6335 defines the port namespace and reserves port 0.
+- DevTools discovery uses a **30,000 ms** deadline. Connection and request timeouts are **10,000 ms**. Shutdown waits **3,000 ms** after each signal. Port and process polling intervals are **250 ms** and **100 ms**. These are fixed operational bounds, not measured performance limits. Their exact durations only need to stay consistent across captures.
+- The `delay()` values are **150**, **200**, **250**, **350**, **400**, **450**, **500**, **600**, **700**, **800**, **1,100**, **1,200**, **1,600**, and **1,800 ms**. They were not individually measured. They are UI-settling pauses kept fixed for repeatable before/after actions. Node timers use milliseconds ([Node.js timers](https://nodejs.org/api/timers.html)).
+- `goto()` positions target examples in the fixed fixture files. Editor coordinates start at line **1**, column **1**. The multi-cursor example uses the first **3** `color` matches because the fixture has three occurrences. Mouse hit points use visible rectangle centers. The **6 × 3** coordinate nudge moves away from the drag start. It was not measured and only needs to stay fixed for the same attempted gesture.
+- Input constants follow the documented protocol. Modifier masks are **0** for none, **1** for Alt, **2** for Ctrl, **4** for Meta/Command, **8** for Shift, and **12** for Meta plus Shift. Mouse button masks are **0** for released and **1** for left. `clickCount: 1` means one click. The key-code map uses Microsoft's virtual-key values.
+- Request IDs initialize at **0**. Each send increments first, so the first ID is **1** and pending IDs stay distinct. JavaScript arrays and strings use zero-based offsets. JSON uses **2**-space formatting for readability. Chapter names use two-digit padding (`ch01`) for sorting. Fetched JSON has mode `0o600`, so only the runner's user can read it.
+- Other integer literals are structural checks or indexes. The `-1` index selects the last settings-path segment; exact-one checks reject ambiguous DevTools targets, and positive checks require visible content or dimensions. `process.argv[2]` selects the first argument after Node and the script. `process.exit(0)` reports success for `--help`.
 
 The kit requires an Apple Silicon Mac, Node.js from `mise.toml`, Swift, Swift Compiler, Git, and network access to Microsoft's update service, the pinned source repository, and the Marketplace. The terminal app that runs the kit needs **Screen & System Audio Recording** permission. Enable it in System Settings > Privacy & Security; see [Apple's guide](https://support.apple.com/guide/mac-help/mchl592e5686/mac). The runner uses `screencapture` to capture the VS Code window. Window lookup uses AppKit and Core Graphics window metadata, not Accessibility APIs, so no Accessibility permission is needed. Docker and Linux are **not yet supported**.
 
@@ -63,4 +76,10 @@ The fixture includes focused examples for color decorations, diagnostics, whites
 - [VS Code workbench UI](https://code.visualstudio.com/docs/editing/getting-started/userinterface)
 - [VS Code extension testing](https://code.visualstudio.com/api/working-with-extensions/testing-extension)
 - [Microsoft VS Code 1.101.1 download](https://update.code.visualstudio.com/1.101.1/darwin-arm64/stable)
+- [Chromium DevTools HTTP handler source](https://chromium.googlesource.com/chromium/src/+/HEAD/content/browser/devtools/devtools_http_handler.cc)
+- [Chrome DevTools Protocol Input domain](https://chromedevtools.github.io/devtools-protocol/tot/Input/)
+- [Microsoft virtual-key codes](https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes)
+- [RFC 6335: Port Number Procedures](https://www.rfc-editor.org/rfc/rfc6335.html)
+- [Node.js timers](https://nodejs.org/api/timers.html)
+- [Node.js process arguments and exit status](https://nodejs.org/api/process.html#processargv)
 - [Custom UI Style](https://github.com/subframe7536/vscode-custom-ui-style#readme)
