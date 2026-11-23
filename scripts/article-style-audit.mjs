@@ -455,54 +455,55 @@ function isCommentOnlyHtmlNode(text, node) {
 }
 
 function reportHtmlCommentsBetweenListItems(file, text, lines, context) {
-  const commentNodes = context.htmlNodes
-    .filter((node) => isCommentOnlyHtmlNode(text, node))
-    .sort((left, right) => left.range[0] - right.range[0]);
-  const reportedComments = new Set();
+  const isListNode = (node) => node.type === "List" || node.type === "ListItem";
 
-  for (const commentNode of commentNodes) {
-    if (reportedComments.has(commentNode.range[0])) {
-      continue;
-    }
+  function reportBetweenListSiblings(children) {
+    for (let index = 0; index < children.length; index += 1) {
+      const previous = children[index];
+      if (!isListNode(previous)) {
+        continue;
+      }
 
-    const previousItem = context.listItems
-      .filter((item) => item.range[1] <= commentNode.range[0])
-      .sort((left, right) => right.range[1] - left.range[1])[0];
-    const nextItem = context.listItems
-      .filter((item) => item.range[0] >= commentNode.range[1])
-      .sort((left, right) => left.range[0] - right.range[0])[0];
-    if (!previousItem || !nextItem) {
-      continue;
-    }
+      const comments = [];
+      let nextIndex = index + 1;
+      while (
+        nextIndex < children.length
+        && (children[nextIndex].type === "Html" || children[nextIndex].type === "HtmlBlock")
+        && isCommentOnlyHtmlNode(text, children[nextIndex])
+      ) {
+        comments.push(children[nextIndex]);
+        nextIndex += 1;
+      }
 
-    const commentsBetween = commentNodes.filter((node) => (
-      node.range[0] >= previousItem.range[1] && node.range[1] <= nextItem.range[0]
-    ));
-    let cursor = previousItem.range[1];
-    let nonCommentText = "";
-    for (const node of commentsBetween) {
-      nonCommentText += text.slice(cursor, node.range[0]);
-      cursor = node.range[1];
-    }
-    nonCommentText += text.slice(cursor, nextItem.range[0]);
-    const lastComment = commentsBetween.at(-1);
-    const trailingText = text.slice(lastComment.range[1], nextItem.range[0]);
-    if (!/^\s*$/u.test(nonCommentText) || !/^[ \t]*\r?\n[ \t]*$/u.test(trailingText)) {
-      continue;
-    }
+      const next = children[nextIndex];
+      if (comments.length > 0 && next?.type === previous.type) {
+        const commentLinesAreAdjacent = comments.every((comment, commentIndex) => {
+          const following = comments[commentIndex + 1] ?? next;
+          const gap = text.slice(comment.range[1], following.range[0]);
+          return /^[ \t]*\r?\n[ \t]*$/u.test(gap)
+            && comment.loc.start.line === comment.loc.end.line;
+        });
+        const lineIndex = comments[0].loc.start.line - 1;
+        const lineStart = context.lineStarts[lineIndex];
+        const standalone = text.slice(lineStart, comments[0].range[0]).trim() === "";
+        if (commentLinesAreAdjacent && standalone) {
+          report(
+            file,
+            lineIndex + 1,
+            "avoid-html-comment-between-list-items",
+            "箇条書きの項目の間に HTML コメントがあります。コメントは箇条書き全体の前後に置いてください。",
+            lines[lineIndex],
+          );
+        }
+      }
 
-    for (const node of commentsBetween) {
-      reportedComments.add(node.range[0]);
+      if (previous.children) {
+        reportBetweenListSiblings(previous.children);
+      }
     }
-    const lineIndex = commentNode.loc.start.line - 1;
-    report(
-      file,
-      lineIndex + 1,
-      "avoid-html-comment-between-list-items",
-      "箇条書きの項目の間に HTML コメントがあります。コメントは箇条書き全体の前後に置いてください。",
-      lines[lineIndex],
-    );
   }
+
+  reportBetweenListSiblings(context.ast.children ?? []);
 }
 
 function listItemContainsOnlyComment(text, listItem, comment) {
