@@ -86,7 +86,7 @@ export const groupSpecs = {
     chapter: 5,
     settings: [setting('editor.multiCursorModifier')],
     interaction: 'multi-cursor',
-    description: 'The fixed Option-click gesture leaves one cursor after the setting changes the multi-cursor modifier to Command-click.',
+    inconclusiveReason: 'Inconclusive: editor.multiCursorModifier changes the key, not the look.',
   },
   'cursor-colors': {
     chapter: 5,

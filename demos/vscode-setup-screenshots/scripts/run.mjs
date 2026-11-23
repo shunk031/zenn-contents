@@ -12,6 +12,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const kitDir = path.resolve(here, '..');
 const outputDir = path.join(kitDir, 'output');
 const smokeMode = process.argv.includes('--smoke');
+const autosaveOnlyMode = process.argv.includes('--autosave-only');
+if (smokeMode && autosaveOnlyMode) throw new Error('--smoke and --autosave-only cannot be combined.');
 const captureOutputDir = smokeMode ? path.join(outputDir, 'smoke') : outputDir;
 const runtimeDir = path.join(outputDir, 'runtime');
 const vscodeArchive = path.join(outputDir, 'vscode-1.101.1-darwin-arm64.zip');
@@ -33,16 +35,20 @@ const fixtureDir = path.join(kitDir, 'fixture');
 const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
 if (process.argv.includes('--help')) {
-  console.log('Usage: node ./scripts/run.mjs [--smoke]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/.');
+  console.log('Usage: node ./scripts/run.mjs [--smoke | --autosave-only]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/. --autosave-only preserves output/images and replaces the chapter 11 autosave pair and image index entries.');
   process.exit(0);
 }
 
 if (process.platform !== 'darwin') throw new Error('This screenshot route requires macOS.');
 await mkdir(outputDir, { recursive: true });
+if (autosaveOnlyMode) {
+  const existingLines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
+  if (existingLines.length !== 73) throw new Error(`Expected an existing 72-image index before targeted capture; found ${existingLines.length - 1} rows.`);
+}
 await rm(runtimeDir, { recursive: true, force: true });
 await mkdir(runtimeDir, { recursive: true });
 await rm(profileDir, { recursive: true, force: true });
-await rm(imageDir, { recursive: true, force: true });
+if (!autosaveOnlyMode) await rm(imageDir, { recursive: true, force: true });
 await mkdir(imageDir, { recursive: true });
 await mkdir(extensionsDir, { recursive: true });
 await cp(fixtureDir, workspaceDir, { recursive: true });
@@ -385,7 +391,18 @@ async function runInteraction(name, phase, chapterSettings) {
       await windowControl.key('ArrowDown', 'ArrowDown', 4);
       await windowControl.key('End', 'End');
       await windowControl.type(' // edit');
-      if (phase === 'after') await delay(1800);
+      if (phase === 'after') {
+        const editedFile = path.join(workspaceDir, 'src', 'autosave.ts');
+        const deadline = Date.now() + 10_000;
+        while (Date.now() < deadline) {
+          if ((await readFile(editedFile, 'utf8')).includes('// edit')) {
+            await delay(250);
+            return true;
+          }
+          await delay(250);
+        }
+        return false;
+      }
       break;
     case 'operation-confirmations': {
       const file = path.join(workspaceDir, 'src', 'delete-me.txt');
@@ -555,8 +572,17 @@ async function capturePair(chapter, groupKey, currentSettings) {
   await writeSettings(nextSettings);
   if (spec.restart) await restartApp();
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
-  await runInteraction(spec.interaction, 'after', currentSettings);
-  const afterText = operationInconclusiveReason || spec.inconclusiveReason || `After ${groupKey} is applied, ${spec.description}`;
+  const interactionResult = await runInteraction(spec.interaction, 'after', currentSettings);
+  const autosaveInconclusiveReason = groupKey === 'autosave' && interactionResult === false
+    ? 'Inconclusive: with files.autoSave set to afterDelay and files.autoSaveDelay unset, VS Code kept the edited fixture dirty through the 10-second wait.'
+    : '';
+  if (autosaveInconclusiveReason) {
+    const beforeRow = indexRows.find((row) => row.chapter === chapter.chapter
+      && row.group === groupKey
+      && row.file === path.relative(outputDir, path.join(imageDir, beforeName)));
+    if (beforeRow) beforeRow.description = autosaveInconclusiveReason;
+  }
+  const afterText = operationInconclusiveReason || spec.inconclusiveReason || autosaveInconclusiveReason || `After ${groupKey} is applied, ${spec.description}`;
   await capture(afterName, chapter.chapter, groupKey, afterText);
   await resetInteraction(spec.interaction, 'after');
   if (spec.previewSettings) await writeSettings(appliedSettings);
@@ -597,40 +623,96 @@ for (const chapter of chapters) {
 
 try {
   await startApp();
-  await capture('00-zero.png', 0, 'zero', 'A fresh profile opens the fixed sample project with no user-installed extensions.');
+  if (autosaveOnlyMode) {
+    for (const chapter of chapters) {
+      await installRecommendations(chapter);
+      await restartApp();
+      await windowControl.clearNotifications();
+      const currentSettings = sourceSettingsFor(chapter);
+      if (chapter.chapter < 11) {
+        await writeSettings(currentSettings);
+        await restartApp();
+        continue;
+      }
 
-  const selectedChapters = smokeMode ? chapters.slice(0, 1) : chapters;
-  for (const chapter of selectedChapters) {
-    await installRecommendations(chapter);
-    await restartApp();
-    await windowControl.clearNotifications();
-
-    const currentSettings = sourceSettingsFor(chapter);
-    const selectedGroups = smokeMode ? chapter.groups.slice(0, 1) : chapter.groups;
-    for (const groupKey of selectedGroups) {
-      await capturePair(chapter, groupKey, currentSettings);
+      const priorGroup = groupSpecs['sidebar-and-title'];
+      const nextSettings = deepMerge(structuredClone(appliedSettings), copyGroupSettings(currentSettings, priorGroup.settings));
+      await writeSettings(nextSettings);
+      if (priorGroup.restart) await restartApp();
+      await capturePair(chapter, 'autosave', currentSettings);
+      break;
     }
+  } else {
+    await capture('00-zero.png', 0, 'zero', 'A fresh profile opens the fixed sample project with no user-installed extensions.');
 
-    if (smokeMode) continue;
-    await writeSettings(currentSettings);
-    await restartApp();
-    await windowControl.key('Escape', 'Escape');
-    await open('src/main.ts');
-    await delay(600);
-    const checkpointName = `ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`;
-    await capture(checkpointName, chapter.chapter, 'checkpoint', `After chapter ${chapter.chapter}, its cumulative settings are shown in the fixed sample project.`);
+    const selectedChapters = smokeMode ? chapters.slice(0, 1) : chapters;
+    for (const chapter of selectedChapters) {
+      await installRecommendations(chapter);
+      await restartApp();
+      await windowControl.clearNotifications();
+
+      const currentSettings = sourceSettingsFor(chapter);
+      const selectedGroups = smokeMode ? chapter.groups.slice(0, 1) : chapter.groups;
+      for (const groupKey of selectedGroups) {
+        await capturePair(chapter, groupKey, currentSettings);
+      }
+
+      if (smokeMode) continue;
+      await writeSettings(currentSettings);
+      await restartApp();
+      await windowControl.key('Escape', 'Escape');
+      await open('src/main.ts');
+      await delay(600);
+      const checkpointName = `ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`;
+      await capture(checkpointName, chapter.chapter, 'checkpoint', `After chapter ${chapter.chapter}, its cumulative settings are shown in the fixed sample project.`);
+    }
   }
 } finally {
   await stopApp();
   await rm(profileDir, { recursive: true, force: true });
 }
 
-const expectedImageCount = smokeMode ? 3 : 72;
+const expectedImageCount = smokeMode ? 3 : autosaveOnlyMode ? 2 : 72;
 if (indexRows.length !== expectedImageCount || imageNames.size !== expectedImageCount) {
   throw new Error(`Expected ${expectedImageCount} screenshots; captured ${imageNames.size}`);
 }
-await writeFile(indexPath, [
-  ['chapter', 'group', 'file', 'description'].map(csv).join(','),
-  ...indexRows.map((row) => [row.chapter, row.group, row.file, row.description].map(csv).join(',')),
-].join('\n') + '\n');
+const rowLine = (row) => [row.chapter, row.group, row.file, row.description].map(csv).join(',');
+if (autosaveOnlyMode) {
+  const existingLines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
+  if (existingLines.length !== 73) throw new Error(`Expected an existing 72-image index before targeted capture; found ${existingLines.length - 1} rows.`);
+  let autosaveInserted = false;
+  let multiCursorInserted = false;
+  const mergedLines = [existingLines[0]];
+  for (const line of existingLines.slice(1)) {
+    if (line.startsWith('"11","autosave",')) {
+      if (!autosaveInserted) mergedLines.push(...indexRows.map(rowLine));
+      autosaveInserted = true;
+      continue;
+    }
+    if (line.startsWith('"5","multi-cursor",')) {
+      if (!multiCursorInserted) {
+        for (const side of ['before', 'after']) {
+          mergedLines.push(rowLine({
+            chapter: 5,
+            group: 'multi-cursor',
+            file: `images/ch05-multi-cursor-${side}.png`,
+            description: groupSpecs['multi-cursor'].inconclusiveReason,
+          }));
+        }
+        multiCursorInserted = true;
+      }
+      continue;
+    }
+    mergedLines.push(line);
+  }
+  if (!autosaveInserted || !multiCursorInserted || mergedLines.length !== 73) {
+    throw new Error('Could not merge the targeted autosave and multi-cursor index rows into the existing 72-image index.');
+  }
+  await writeFile(indexPath, mergedLines.join('\n') + '\n');
+} else {
+  await writeFile(indexPath, [
+    ['chapter', 'group', 'file', 'description'].map(csv).join(','),
+    ...indexRows.map(rowLine),
+  ].join('\n') + '\n');
+}
 console.log(`Captured ${imageNames.size} PNGs. Image index: ${indexPath}`);

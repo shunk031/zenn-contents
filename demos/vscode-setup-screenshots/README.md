@@ -49,13 +49,15 @@ Or run `node ./scripts/run.mjs` from this directory. The runner builds a fresh i
 
 For a launch, attach, and capture smoke check without replacing the full image set, run `node ./scripts/run.mjs --smoke`. It captures `00-zero` and the chapter 1 theme pair under ignored `output/smoke/`.
 
+To reshoot only the chapter 11 autosave pair while preserving the other PNGs, run `node ./scripts/run.mjs --autosave-only`. This mode requires the existing 72-image index. It applies chapters cumulatively through the chapter 11 `sidebar-and-title` group, then replaces the autosave images and the two multi-cursor index descriptions. Chapter 11 sets `files.autoSave` to `afterDelay` and leaves `files.autoSaveDelay` unset, so VS Code uses its default delay. The after capture waits for the edited fixture file to appear on disk; if that does not happen before the existing 10-second timeout, both autosave rows are marked inconclusive.
+
 The run needs a visible, logged-in macOS desktop for VS Code window capture. The terminal app that launches the kit also needs the Screen & System Audio Recording permission described above. The app is started with workspace-trust prompts, telemetry, and update checks disabled. Unexpected dialogs and toasts stop capture. The fixture uses neutral names and a synthetic Git identity. App copies, fetched sources, extensions, and screenshots remain under ignored `output/`.
 
 ## Visual limits
 
-The runner captures the expected recommendation toast only in the before image for that pair. It creates a runtime-only recommendation for `ms-python.python`, opens the Python fixture, then removes the recommendation. The operation-confirmation pair attempts to move a fixture file into `components`. In VS Code 1.101.1, the CDP drag does not trigger the confirmation or move the file, so the pair is indexed as inconclusive. `editor.multiCursorModifier` changes which click modifier creates extra cursors; the kit uses the same Option-click gesture before and after. The chapter's `Dank Mono` family is not bundled; font rendering falls back to macOS's available fonts.
+The runner captures the expected recommendation toast only in the before image for that pair. It creates a runtime-only recommendation for `ms-python.python`, opens the Python fixture, then removes the recommendation. The operation-confirmation pair attempts to move a fixture file into `components`. In VS Code 1.101.1, the CDP drag does not trigger the confirmation or move the file, so the pair is indexed as inconclusive. `editor.multiCursorModifier` changes which key creates extra cursors, not how cursors look, so both images are indexed as inconclusive. The kit uses the same Option-click gesture in both captures. The chapter's `Dank Mono` family is not bundled; font rendering falls back to macOS's available fonts.
 
-The fixture includes focused examples for color decorations, diagnostics, whitespace trimming, surface scrolling, and ligature operators. `surface-boundaries`, `cursor-colors`, `code-style`, `marker-colors`, and `selected-suggestion-color` also remain inconclusive in this VS Code build. Each reason is recorded in `output/image-index.csv`.
+The fixture includes focused examples for color decorations, diagnostics, whitespace trimming, surface scrolling, and ligature operators. `autosave`, `surface-boundaries`, `multi-cursor`, `cursor-colors`, `code-style`, `marker-colors`, and `selected-suggestion-color` also remain inconclusive in this VS Code build. Each reason is recorded in `output/image-index.csv`.
 
 ## Kit layout
 
