@@ -1,0 +1,72 @@
+{
+  "version": 4,
+  "lines": [
+    [
+      {
+        "type": "model",
+        "id": "1"
+      },
+      {
+        "id": "9",
+        "type": "separator"
+      },
+      {
+        "type": "tokens-input",
+        "id": "2"
+      },
+      {
+        "id": "10",
+        "type": "separator"
+      },
+      {
+        "type": "tokens-output",
+        "id": "3"
+      },
+      {
+        "id": "11",
+        "type": "separator"
+      },
+      {
+        "type": "tokens-cached",
+        "id": "4"
+      },
+      {
+        "id": "12",
+        "type": "separator"
+      },
+      {
+        "type": "tokens-total",
+        "id": "5"
+      },
+      {
+        "id": "13",
+        "type": "separator"
+      },
+      {
+        "type": "context-length",
+        "id": "6"
+      },
+      {
+        "id": "14",
+        "type": "separator"
+      },
+      {
+        "type": "context-percentage",
+        "id": "7"
+      },
+      {
+        "id": "15",
+        "type": "separator"
+      },
+      {
+        "type": "context-percentage-usable",
+        "id": "8"
+      }
+    ]
+  ],
+  "colorLevel": 2,
+  "defaultPaddingSide": "both",
+  "inheritSeparatorColors": false,
+  "globalBold": false,
+  "minimalistMode": false
+}

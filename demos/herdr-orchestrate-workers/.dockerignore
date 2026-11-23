@@ -1,0 +1,10 @@
+out/
+*.gif
+*.mp4
+*.webm
+.env
+.env.*
+claude-token
+codex-token
+codex-provider.toml
+secrets/
