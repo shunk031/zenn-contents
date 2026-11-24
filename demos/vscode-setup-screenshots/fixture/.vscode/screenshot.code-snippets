@@ -1,6 +1,6 @@
 {
   "Sample loop": {
-    "prefix": "sam",
+    "prefix": ["sam", "shotloop"],
     "body": [
       "for (const item of ${1:items}) {",
       "  $0",

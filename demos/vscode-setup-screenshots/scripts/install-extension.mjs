@@ -1,13 +1,12 @@
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { gunzipSync } from 'node:zlib';
 import os from 'node:os';
 import path from 'node:path';
 
-export async function installMarketplaceExtension(extensionId, version, extensionsDir, cacheDir) {
+export async function installMarketplaceExtension(extensionId, version, cacheDir) {
   const [publisher, name] = extensionId.split('.');
   if (!publisher || !name || !version) throw new Error(`Invalid pinned extension: ${extensionId}@${version}`);
-  const installDir = path.join(extensionsDir, `${extensionId}-${version}`);
   await mkdir(cacheDir, { recursive: true });
   const vsixPath = path.join(cacheDir, `${extensionId}-${version}.vsix`);
   const packageUrl = `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(version)}/vspackage`;
@@ -16,6 +15,7 @@ export async function installMarketplaceExtension(extensionId, version, extensio
   const downloaded = await readFile(vsixPath);
   // The tested Marketplace response was gzip-wrapped; RFC 1952 defines the 1f 8b signature.
   const archive = downloaded[0] === 0x1f && downloaded[1] === 0x8b ? gunzipSync(downloaded) : downloaded;
+  if (archive !== downloaded) await writeFile(vsixPath, archive);
   const stagingDir = await mkdtemp(path.join(os.tmpdir(), 'vss-vsix-'));
   try {
     const archivePath = path.join(stagingDir, 'package.zip');
@@ -27,9 +27,8 @@ export async function installMarketplaceExtension(extensionId, version, extensio
     if (manifestId !== extensionId.toLowerCase() || manifest.version !== version) {
       throw new Error(`Marketplace package identity mismatch: ${manifestId}@${manifest.version}`);
     }
-    await cp(path.join(stagingDir, 'extension'), installDir, { recursive: true, errorOnExist: true, force: false });
   } finally {
     await rm(stagingDir, { recursive: true, force: true });
   }
-  return installDir;
+  return vsixPath;
 }

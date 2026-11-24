@@ -40,6 +40,7 @@ const sampleLines = [
   "surface line 38",
   "surface line 39",
   "surface line 40",
+  "surface line 41 with a long sequence for horizontal scrolling: abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz",
 ];
 
 export { sampleLines };

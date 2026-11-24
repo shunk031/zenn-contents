@@ -43,7 +43,7 @@ const fixtureDir = path.join(kitDir, 'fixture');
 const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
 if (process.argv.includes('--help')) {
-  console.log('Usage: node ./scripts/run.mjs [--smoke | --autosave-only | --resume-chapter-11]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/. --autosave-only reshoots the chapter 11 autosave pair for an existing full set. --resume-chapter-11 captures the remaining chapter 11 images after an interrupted full run. Run only while nobody is using the Mac.');
+  console.log('Usage: node ./scripts/run.mjs [--smoke | --autosave-only | --resume-chapter-11]\nRebuilds the isolated VS Code profile and captures the 78-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/. --autosave-only reshoots the chapter 11 autosave pair for an existing full set. --resume-chapter-11 captures the remaining chapter 11 images after an interrupted full run. Run only while nobody is using the Mac.');
   process.exit(0);
 }
 
@@ -52,7 +52,7 @@ assertOwnerAway('run start');
 await mkdir(outputDir, { recursive: true });
 if (autosaveOnlyMode) {
   const existingLines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
-  if (existingLines.length !== 73) throw new Error(`Expected an existing 72-image index before targeted capture; found ${existingLines.length - 1} rows.`);
+  if (existingLines.length !== 79) throw new Error(`Expected an existing 78-image index before targeted capture; found ${existingLines.length - 1} rows.`);
 }
 if (resumeChapter11Mode) {
   const existingNames = new Set(await readdir(imageDir));
@@ -68,20 +68,23 @@ if (resumeChapter11Mode) {
       ...chapter.groups.flatMap((group) => ['before', 'after'].map((side) => `ch${String(chapter.chapter).padStart(2, '0')}-${group}-${side}.png`)),
       `ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`,
     ]),
+    ...['tab', 'emmet'].flatMap((state) => ['before', 'after'].map((side) => `ch10-tab-completion-${state}-${side}.png`)),
+    ...['before', 'after'].map((side) => `ch04-overlays-find-${side}.png`),
   ]);
   const missing = new Set([...requiredNames].filter((name) => !existingNames.has(name)));
   const unexpected = [...existingNames].filter((name) => !requiredNames.has(name));
-  const interruptedSet = existingNames.size === 68 && missing.size === expectedMissing.size
+  const interruptedSet = existingNames.size === 74 && missing.size === expectedMissing.size
     && [...missing].every((name) => expectedMissing.has(name));
-  const completeSet = existingNames.size === 72 && missing.size === 0;
+  const completeSet = existingNames.size === 78 && missing.size === 0;
   if ((!interruptedSet && !completeSet) || unexpected.length) {
-    throw new Error(`Resume mode requires the 68-image interrupted set or a complete 72-image set; found ${existingNames.size} entries, missing ${[...missing].join(', ')}.`);
+    throw new Error(`Resume mode requires the 74-image interrupted set or a complete 78-image set; found ${existingNames.size} entries, missing ${[...missing].join(', ')}.`);
   }
 }
 await rm(runtimeDir, { recursive: true, force: true });
 await mkdir(runtimeDir, { recursive: true });
 await rm(profileDir, { recursive: true, force: true });
 if (!autosaveOnlyMode && !resumeChapter11Mode) await rm(imageDir, { recursive: true, force: true });
+if (!autosaveOnlyMode && !resumeChapter11Mode) await rm(indexPath, { force: true });
 await mkdir(imageDir, { recursive: true });
 await mkdir(extensionsDir, { recursive: true });
 await cp(fixtureDir, workspaceDir, { recursive: true });
@@ -116,6 +119,7 @@ let appliedSettings = {};
 let windowControl;
 let appChild;
 let activeFile;
+let autosaveSentinel;
 const installedExtensions = new Set();
 const indexRows = [];
 const imageNames = new Set();
@@ -212,6 +216,15 @@ async function writeTransientSettings(settings) {
   await delay(600);
 }
 
+async function assertThemeReady() {
+  if (!/Aura Dracula Spirit/i.test(appliedSettings['workbench.colorTheme'] || '')) return;
+  const overrides = appliedSettings.workbench?.colorCustomizations || {};
+  const value = overrides['[Aura Dracula Spirit (Soft)]']?.['sideBar.background'] || '#14111B';
+  const expected = value.replace(/^#(..)(..)(..)$/, (_, r, g, b) => `rgb(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)})`);
+  const actual = await windowControl.waitFor("getComputedStyle(document.querySelector('.sidebar')).backgroundColor", (color) => color === expected);
+  if (actual !== expected) throw new Error(`Aura theme did not become ready: expected sidebar ${expected}, found ${actual}`);
+}
+
 function sourceFile(chapterNumber, filename) {
   return path.join(sourceDir, `ch${String(chapterNumber).padStart(2, '0')}`, filename);
 }
@@ -222,16 +235,24 @@ function readChapterSettings(chapter) {
 
 async function installRecommendations(chapter) {
   const recommendationFile = JSON.parse(await readFile(sourceFile(chapter.chapter, 'extensions.json'), 'utf8'));
+  const packages = [];
   for (const extension of recommendationFile.recommendations) {
     const id = extension.toLowerCase();
     const version = extensionPins.get(id);
     if (!version) throw new Error(`No pinned Marketplace version is configured for recommendation ${extension}`);
     if (installedExtensions.has(id)) continue;
     console.log(`Installing ${id}@${version} from Marketplace for chapter ${chapter.chapter}.`);
-    await installMarketplaceExtension(id, version, extensionsDir, marketplaceCacheDir);
-    await rm(path.join(extensionsDir, 'extensions.json'), { force: true });
-    await rm(path.join(profileDir, 'CachedProfilesData', '__default__profile__', 'extensions.user.cache'), { force: true });
+    packages.push([id, await installMarketplaceExtension(id, version, marketplaceCacheDir)]);
     installedExtensions.add(id);
+  }
+  if (packages.length) {
+    await quitApp();
+    for (const [id, vsix] of packages) {
+      execFileSync(cliPath, ['--user-data-dir', profileDir, '--extensions-dir', extensionsDir, '--install-extension', vsix, '--force'], { stdio: 'inherit', env: { ...process.env, VSCODE_IPC_HOOK_CLI: '' } });
+      if (appCopyRunning()) throw new Error('Extension CLI unexpectedly left a VS Code process using the kit profile running.');
+      const installed = JSON.parse(await readFile(path.join(extensionsDir, `${id}-${extensionPins.get(id)}`, 'package.json'), 'utf8'));
+      if (`${installed.publisher}.${installed.name}`.toLowerCase() !== id || installed.version !== extensionPins.get(id)) throw new Error(`Isolated extension install identity mismatch for ${id}.`);
+    }
   }
   if (installedExtensions.has(customUIStyleId)) await writeSettings(appliedSettings);
 }
@@ -278,6 +299,10 @@ function childIsRunning(child) {
   }
 }
 
+function appCopyRunning() {
+  return execFileSync('/bin/ps', ['-axo', 'command='], { encoding: 'utf8' }).split('\n').some((line) => line.includes(appExecutable) && line.includes(`--user-data-dir ${profileDir}`));
+}
+
 async function waitForDevToolsPort(child) {
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
@@ -312,6 +337,7 @@ async function startApp({ clearNotifications = true } = {}) {
   windowControl = new VSCodeControl(devtoolsPort, appPath);
   await windowControl.connect();
   await openFixedFiles();
+  await assertThemeReady();
   if (installedExtensions.has(customUIStyleId)) {
     await windowControl.clickNotificationAction('first time use', 'No', 250);
   }
@@ -382,6 +408,7 @@ async function restartApp({ clearNotifications = true } = {}) {
       windowControl = new VSCodeControl(devtoolsPort, appPath);
       await windowControl.connect();
       await openFixedFiles();
+      await assertThemeReady();
       if (clearNotifications) await windowControl.clearNotifications();
       return;
     }
@@ -421,16 +448,67 @@ async function goto(line, column = 1) {
   await open(activeFile, line, column);
 }
 
-function fixtureLine(relativePath, text) {
+function fixtureLine(relativePath, text, exactTrimmed = false) {
   const contents = readFileSync(path.join(workspaceDir, relativePath), 'utf8').split(/\r?\n/);
-  const index = contents.findIndex((line) => line.includes(text));
+  const index = contents.findIndex((line) => exactTrimmed ? line.trim() === text : line.includes(text));
   if (index < 0) throw new Error(`Fixture text not found in ${relativePath}: ${text}`);
   return { line: index + 1, column: contents[index].indexOf(text) + 1, text: contents[index] };
+}
+
+const evidenceTargets = {
+  'explorer-decorations': '.explorer-folders-view', 'title-spacing': '.editor-group-container>.title .title-label',
+  'surface-boundaries': '.sidebar', 'multi-cursor': '.cursors-layer', 'cursor-colors': '.cursors-layer .cursor',
+  'code-style': '.monaco-editor .view-lines', 'code-decorations': '.monaco-editor', 'editor-hints': '.monaco-editor',
+  'line-numbers-and-indent': '.monaco-editor', 'folding-and-guides': '.monaco-editor', 'scrollbars-and-ruler': '.monaco-editor',
+  'marker-colors': '.monaco-editor .decorationsOverviewRuler', 'tab-completion': '.suggest-widget',
+  'selected-suggestion-color': '.suggest-widget .monaco-list-row.focused', 'sidebar-and-title': '.sidebar', 'find-widget': '.editor-widget.find-widget',
+};
+
+async function measureGroup(key) {
+  const selector = evidenceTargets[key] || key;
+  if (!selector) return null;
+  const metric = await windowControl.evaluate(`(() => { const s=${JSON.stringify(selector)}, e=[...document.querySelectorAll(s)].find(n=>{const r=n.getBoundingClientRect();return r.width&&r.height}); if(!e) return null; const c=getComputedStyle(e),r=e.getBoundingClientRect(),sc=document.querySelector('.monaco-editor .monaco-scrollable-element'),row=[...document.querySelectorAll('.explorer-folders-view .monaco-list-row')].find(n=>n.innerText.includes('changed.ts')),focus=document.querySelector('.explorer-folders-view .monaco-list-row.focused'),fileTitle=document.querySelector('.title .monaco-icon-label.file-icon'),rows=[...document.querySelectorAll('.suggest-widget .monaco-list-row')],comment=[...document.querySelectorAll('.monaco-editor .view-line')].find(n=>n.innerText.includes('Sample comment')),range=document.createRange(); if(e.firstChild){range.selectNodeContents(e)} return {text:e.innerText?.slice(0,180),x:r.x,y:r.y,textX:range.getBoundingClientRect().x,w:r.width,h:r.height,color:c.color,bg:c.backgroundColor,image:c.backgroundImage,pad:c.paddingLeft,margin:c.marginLeft,outline:c.outlineColor,shadow:c.boxShadow,display:c.display,opacity:c.opacity,tab:getComputedStyle(document.querySelector('.monaco-editor .view-lines')||e).tabSize,cursors:document.querySelectorAll('.cursors-layer .cursor').length,sliders:[...document.querySelectorAll('.monaco-editor .scrollbar .slider')].filter(n=>{const s=getComputedStyle(n);return s.display!=='none'&&s.opacity!=='0'}).length,scroll:[sc?.scrollTop,sc?.scrollHeight,sc?.clientHeight,sc?.scrollLeft,sc?.scrollWidth,sc?.clientWidth],squiggles:document.querySelectorAll('.monaco-editor .squiggly-error').length,badges:document.querySelectorAll('.explorer-folders-view .monaco-list-row .badge,.explorer-folders-view .monaco-list-row .monaco-count-badge').length,gitColor:row?getComputedStyle(row.querySelector('.label-name')||row).color:'',focus:focus?getComputedStyle(focus).outlineColor:'',justify:getComputedStyle(document.querySelector('.editor-group-container>.title')||e).justifyContent,decoration:getComputedStyle(document.querySelector('.monaco-editor .scroll-decoration')||e).display,sticky:document.querySelectorAll('.monaco-editor .sticky-widget').length,swatches:document.querySelectorAll('.monaco-editor .colorpicker-color').length,lightbulb:document.querySelectorAll('.monaco-editor .lightbulb-glyph,.monaco-editor .lightBulbWidget,.monaco-editor .codicon-lightbulb,.monaco-editor .codicon-lightbulb-autofix').length,signature:document.querySelectorAll('.parameter-hints-widget').length,folding:document.querySelectorAll('.monaco-editor .codicon-folding-expanded,.monaco-editor .codicon-folding-collapsed').length,comment:comment?['fontStyle','fontFeatureSettings','color'].map(k=>getComputedStyle(comment.querySelector('span')||comment)[k]):[],sidebar:getComputedStyle(document.querySelector('.sidebar')||e).backgroundColor,title:getComputedStyle(fileTitle||e).marginLeft,rows:rows.map(n=>n.innerText.trim()),snippets:rows.filter(n=>n.querySelector('.codicon-symbol-snippet')).map(n=>n.innerText.trim())}; })()`);
+  if (!metric) throw new Error(`No visible DOM target for ${key}: ${selector}`);
+  return { metric, pixels: await windowControl.capturePixels(selector, key === 'find-widget' ? 16 : 2) };
+}
+
+function setPairDescription(group, before, after, rows) {
+  const pixelsChanged = before && after && before.pixels !== after.pixels;
+  const domChanged = before && after && JSON.stringify(before.metric) !== JSON.stringify(after.metric);
+  const knownInconclusive = ['multi-cursor', 'cursor-colors', 'code-style', 'selected-suggestion-color'];
+  if ((!pixelsChanged || !domChanged) && !knownInconclusive.includes(group)) throw new Error(`${group} showed no measured DOM and pixel change in its target UI crop.`);
+  if (group === 'explorer-decorations' && (before.metric.badges <= after.metric.badges || before.metric.gitColor === after.metric.gitColor)) throw new Error('Explorer badges or Git status color did not change.');
+  if (group === 'title-spacing' && (before.metric.pad !== '20px' || after.metric.pad !== '60px' || after.metric.textX <= before.metric.textX)) throw new Error(`Title spacing evidence failed: ${JSON.stringify([before.metric, after.metric])}`);
+  if (group === 'sidebar-and-title' && (before.metric.sidebar !== 'rgb(20, 17, 27)' || after.metric.sidebar !== 'rgb(25, 21, 33)' || before.metric.title === after.metric.title)) throw new Error(`Sidebar/title evidence failed: ${JSON.stringify([before.metric, after.metric])}`);
+  if (group === 'surface-boundaries' && before.metric.focus === after.metric.focus && before.metric.justify === after.metric.justify && before.metric.decoration === after.metric.decoration) throw new Error('Focused Explorer outline, title geometry, and editor surface decoration were unchanged.');
+  if (group === 'scrollbars-and-ruler' && (before.metric.sliders < 2 || after.metric.sliders || before.metric.scroll[0] <= 0 || before.metric.scroll[3] <= 0 || before.metric.scroll[0] !== after.metric.scroll[0] || before.metric.scroll[3] !== after.metric.scroll[3] || before.metric.scroll[1] <= before.metric.scroll[2] || before.metric.scroll[4] <= before.metric.scroll[5])) throw new Error(`Editor scrollbar evidence failed: ${JSON.stringify([before.metric, after.metric])}`);
+  if (group === 'marker-colors' && (!before.metric.squiggles || !after.metric.squiggles || !pixelsChanged)) throw new Error('Diagnostic underline or overview-ruler pixel evidence is missing.');
+  if (group === 'tab-completion') {
+    const rank = (state) => [state.metric.rows.findIndex((row) => state.metric.snippets.includes(row)), state.metric.rows.findIndex((row) => !state.metric.snippets.includes(row))];
+    const a = rank(before), b = rank(after);
+    if (before.metric.snippets.length < 2 || after.metric.snippets.length < 2 || a[0] < a[1] || b[0] > b[1]) throw new Error(`Snippet ranking did not move above word completions: ${JSON.stringify([a, b])}`);
+  }
+  if (group === 'code-decorations' && (!before.metric.sticky || after.metric.sticky || !before.metric.text.includes('#9b87f5'))) throw new Error('Nested sticky header or color literal was not staged.');
+  if (group === 'editor-hints' && (!before.metric.signature || !before.metric.lightbulb || after.metric.signature || after.metric.lightbulb)) throw new Error('Signature help and code-action lightbulb did not change with their settings.');
+  if (group === 'code-decorations' && (!before.metric.swatches || after.metric.swatches)) throw new Error('The nested-block color decorator did not change with its setting.');
+  if (group === 'line-numbers-and-indent' && (before.metric.tab !== '4' || after.metric.tab !== '2')) throw new Error(`Tab-width evidence failed: ${before.metric.tab} -> ${after.metric.tab}`);
+  if (group === 'folding-and-guides' && !before.metric.folding) throw new Error('Folding controls were not visible in the gutter state.');
+  const special = group === 'multi-cursor' ? `Inconclusive: measured ${before.metric.cursors}/${after.metric.cursors} cursors; the modifier key itself is not drawn in the editor.` : group === 'cursor-colors' && before.metric.image === after.metric.image && before.metric.bg === after.metric.bg ? `Inconclusive: measured cursor background and image stayed ${before.metric.bg} ${before.metric.image}.` : group === 'code-style' && JSON.stringify(before.metric.comment) === JSON.stringify(after.metric.comment) ? `Inconclusive: measured comment font and color stayed ${before.metric.comment.join(', ')}.` : group === 'selected-suggestion-color' && before.metric.bg === after.metric.bg ? `Inconclusive: measured selected-row background stayed ${before.metric.bg}.` : '';
+  const reason = special || (pixelsChanged && domChanged ? `After ${group} is applied, ${groupSpecs[group].description}` : `Inconclusive: measured ${group} DOM and target-crop pixels did not both change.`);
+  for (const row of rows) row.description = reason.startsWith('Inconclusive:') ? reason : `${row.chapter === 0 ? 'The zero state' : row.file.endsWith('before.png') ? 'Before' : 'After'} ${group} is applied, ${groupSpecs[group].description}`;
 }
 
 async function runInteraction(name, phase, chapterSettings) {
   if (!name) return;
   switch (name) {
+    case 'title-spacing':
+    case 'sidebar-title':
+      await open('src/main.ts');
+      break;
+    case 'explorer-decorations':
+      await open('src/changed.ts');
+      await windowControl.command('File: Reveal Active File in Explorer');
+      break;
     case 'cursor-focus':
       await open('src/main.ts');
       await goto(8, 12);
@@ -499,22 +577,27 @@ async function runInteraction(name, phase, chapterSettings) {
     case 'tab-completion':
       await open('src/snippet-suggestions.ts');
       {
-        const prefix = fixtureLine('src/snippet-suggestions.ts', 'sam');
+        const prefix = fixtureLine('src/snippet-suggestions.ts', 'sam', true);
         await goto(prefix.line, prefix.column + 'sam'.length);
       }
       await windowControl.key('Space', 'Space', 2);
       await delay(500);
       {
-        const suggestionState = await windowControl.evaluate(`(() => {
-          const widget = document.querySelector('.suggest-widget');
-          const rows = [...document.querySelectorAll('.suggest-widget .monaco-list-row')].map((row) => row.innerText);
-          return { visible: !!widget?.getBoundingClientRect().height, rows };
-        })()`);
-        if (!suggestionState.visible || !suggestionState.rows.some((row) => /sample/i.test(row))) {
+        const suggestionState = await windowControl.evaluate(`(() => { const widget=document.querySelector('.suggest-widget'),rows=[...document.querySelectorAll('.suggest-widget .monaco-list-row')].map(row=>({text:row.innerText,snippet:!!row.querySelector('.codicon-symbol-snippet')})); return {visible:!!widget?.getBoundingClientRect().height,rows}; })()`);
+        if (!suggestionState.visible || !['Sample loop', 'Sample card'].every((label) => suggestionState.rows.some((row) => row.snippet && row.text.includes(label))) || !suggestionState.rows.some((row) => !row.snippet)) {
           throw new Error(`The snippet suggestion example did not open with the fixture snippets: ${JSON.stringify(suggestionState)}`);
         }
       }
       break;
+    case 'tab-expansion':
+      await open('src/snippet-suggestions.ts');
+      { const line=fixtureLine('src/snippet-suggestions.ts','sam',true); await goto(line.line,1); await windowControl.key('Home','Home'); await windowControl.key('End','End',8); await windowControl.type('shotloop'); await windowControl.key('Escape','Escape'); if(phase==='after'){ await windowControl.key('Tab','Tab'); if(!await windowControl.evaluate("document.querySelector('.monaco-editor').innerText.includes('for (const item of items)')")) throw new Error('Tab did not expand the unique fixture snippet.'); } }
+      break;
+    case 'emmet-expansion': {
+      await open('src/emmet.html'); const line=fixtureLine('src/emmet.html','ul>li.item*3',true); await goto(line.line,line.text.length+1); await windowControl.key('Escape','Escape');
+      if(phase==='after'){ await windowControl.key('Tab','Tab'); if(await windowControl.evaluate("document.querySelector('.monaco-editor').innerText.match(/<li class=\"item\">/g)?.length")!==3) throw new Error('Emmet did not expand three fixture list items.'); }
+      break;
+    }
     case 'selected-suggestion':
       await open('src/suggestions.ts');
       await goto(7, 7);
@@ -533,41 +616,39 @@ async function runInteraction(name, phase, chapterSettings) {
       if (!selectedSuggestion) throw new Error('The completion widget has no visibly selected item.');
       break;
     case 'autosave':
-      await open('src/autosave.ts');
-      await windowControl.key('ArrowDown', 'ArrowDown', 4);
-      await windowControl.key('End', 'End');
-      await windowControl.type(' // edit');
+      if (phase === 'before') {
+        await open('src/autosave.ts');
+        const target = fixtureLine('src/autosave.ts', 'const trim = "base";', true);
+        autosaveSentinel = `vss-autosave-${Date.now()}`;
+        if ((await readFile(path.join(workspaceDir, 'src', 'autosave.ts'), 'utf8')).includes(autosaveSentinel)) throw new Error('Autosave sentinel already exists on disk.');
+        await goto(target.line, target.text.length + 1);
+        await windowControl.type(` // ${autosaveSentinel}`);
+        if (!await windowControl.evaluate("!!document.querySelector('.tab.dirty, .title .dirty')")) throw new Error('Autosave before state is not dirty.');
+      }
       if (phase === 'after') {
         const editedFile = path.join(workspaceDir, 'src', 'autosave.ts');
         const deadline = Date.now() + 10_000;
         while (Date.now() < deadline) {
-          if ((await readFile(editedFile, 'utf8')).includes('// edit')) {
-            await delay(250);
-            return true;
-          }
+          const state = await windowControl.notificationState();
+          if (state.toasts.length) throw new Error(`Autosave surfaced a notification: ${JSON.stringify(state)}`);
+          if ((await readFile(editedFile, 'utf8')).includes(autosaveSentinel) && !await windowControl.evaluate("!!document.querySelector('.tab.dirty, .title .dirty')")) return true;
           await delay(250);
         }
-        return false;
+        throw new Error(`Autosave did not persist ${autosaveSentinel} and clear the dirty state within 10 seconds.`);
       }
       break;
     case 'operation-confirmations': {
       const file = path.join(workspaceDir, 'src', 'delete-me.txt');
-      await writeFile(file, await readFile(path.join(fixtureDir, 'src', 'delete-me.txt')));
+      const original = await readFile(path.join(fixtureDir, 'src', 'delete-me.txt'));
+      if (phase === 'before' && (await readFile(file)).compare(original) !== 0) throw new Error('Operation source bytes changed before the confirmation capture.');
+      await writeFile(file, original);
+      if (phase === 'before' && await access(path.join(workspaceDir, 'src', 'components', 'delete-me.txt')).then(() => true, () => false)) throw new Error('Operation destination was not empty before the drag.');
       await open('src/delete-me.txt');
       await windowControl.command('File: Reveal Active File in Explorer');
       await windowControl.dragExplorerFileToFolder('delete-me.txt', 'components');
-      await delay(700);
-      if (phase === 'after') {
-        const movedFile = path.join(workspaceDir, 'src', 'components', 'delete-me.txt');
-        try {
-          await access(movedFile);
-          await rename(movedFile, file);
-        } catch (error) {
-          if (error.code !== 'ENOENT') throw error;
-        }
-        await delay(500);
-        await open('src/delete-me.txt');
-      }
+      const movedFile = path.join(workspaceDir, 'src', 'components', 'delete-me.txt');
+      if (phase === 'before') await windowControl.assertExpectedOperationConfirmation();
+      else if ((await readFile(movedFile)).compare(await readFile(path.join(fixtureDir, 'src', 'delete-me.txt'))) !== 0 || await access(file).then(() => true, () => false)) throw new Error('Explorer drop did not move the exact fixture file.');
       break;
     }
     case 'recommendations': {
@@ -619,8 +700,9 @@ async function runInteraction(name, phase, chapterSettings) {
     }
     case 'scrollbars-and-ruler': {
       await open('src/surface-scroll.ts');
-      const target = fixtureLine('src/surface-scroll.ts', 'surface line 40');
-      await goto(target.line, target.column);
+      const target = fixtureLine('src/surface-scroll.ts', 'surface line 41');
+      await goto(target.line, target.text.length + 1);
+      await windowControl.moveToSelector('.monaco-editor .scrollbar.vertical');
       break;
     }
     case 'marker-colors': {
@@ -689,8 +771,7 @@ async function resetInteraction(name, phase) {
       await writeFile(path.join(workspaceDir, 'src', 'save-state.ts'), await readFile(path.join(fixtureDir, 'src', 'save-state.ts')));
       break;
     case 'autosave':
-      await windowControl.key('Escape', 'Escape');
-      await windowControl.key('Z', 'KeyZ', 4);
+      break;
       break;
     default:
       break;
@@ -737,7 +818,33 @@ async function capture(name, chapter, group, description, captureState = 'none')
   const [afterWindowId] = run(finderBinary, finderArgs).split(/\s+/);
   if (afterWindowId !== windowId) throw new Error(`Capture ${name} changed the VS Code window identity.`);
   console.log(`Captured ${name}; frontmost is ${afterCapture.name} (PID ${afterCapture.pid}).`);
-  indexRows.push({ chapter, group, file: path.relative(outputDir, destination), description });
+  const row = { chapter, group, file: path.relative(outputDir, destination), description };
+  indexRows.push(row);
+  await persistIndex();
+  return row;
+}
+
+async function captureExtra(chapter, group, kind, phase) {
+  const interaction = kind === 'find' ? 'find-widget' : `${kind}-expansion`, selector = kind === 'find' ? 'find-widget' : '.monaco-editor .view-lines';
+  await runInteraction(interaction, phase, appliedSettings);
+  const state = await measureGroup(selector), name = `ch${String(chapter.chapter).padStart(2, '0')}-${group}-${kind}-${phase}.png`;
+  const row = await capture(name, chapter.chapter, group, `${phase} ${kind} state measured in the same fixture editor.`);
+  const text = await windowControl.evaluate("document.querySelector('.monaco-editor .view-lines')?.innerText || ''");
+  if (phase === 'before' && kind === 'tab') {
+    await windowControl.key('Tab', 'Tab');
+    const after = await windowControl.evaluate("document.querySelector('.monaco-editor .view-lines')?.innerText || ''");
+    if (!after.includes('shotloop') || after.includes('for (const item of items)')) throw new Error('Tab completion expanded while its setting was disabled.');
+    if (after !== text) await windowControl.key('Z', 'KeyZ', 4);
+    await windowControl.key('Z', 'KeyZ', 4);
+  } else if (phase === 'before' && kind === 'emmet') {
+    await windowControl.key('Tab', 'Tab');
+    const after = await windowControl.evaluate("document.querySelector('.monaco-editor .view-lines')?.innerText || ''");
+    if (!after.includes('ul>li.item*3') || after.includes('<li')) throw new Error('Emmet expanded while its setting was disabled.');
+    if (after !== text) await windowControl.key('Z', 'KeyZ', 4);
+  } else if (phase === 'after' && kind === 'tab') { await windowControl.key('Z', 'KeyZ', 4); await windowControl.key('Z', 'KeyZ', 4); }
+  else if (phase === 'after' && kind === 'emmet') await windowControl.key('Z', 'KeyZ', 4);
+  await resetInteraction(interaction, phase);
+  return { state, row };
 }
 
 async function capturePair(chapter, groupKey, currentSettings) {
@@ -746,33 +853,10 @@ async function capturePair(chapter, groupKey, currentSettings) {
   const afterName = `ch${String(chapter.chapter).padStart(2, '0')}-${groupKey}-after.png`;
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'before', appliedSettings);
-  let operationInconclusiveReason = '';
-  if (groupKey === 'operation-confirmations') {
-    const state = await windowControl.notificationState();
-    if (!/move|drag/i.test(state.dialogs.join('\n'))) {
-      operationInconclusiveReason = 'Inconclusive: the CDP Explorer drag did not trigger a move confirmation in VS Code 1.101.1.';
-    }
-  }
-  const beforeText = groupKey === 'operation-confirmations'
-    ? operationInconclusiveReason || 'Before operation-confirmations, dragging the fixture file into components opens a confirmation dialog.'
-    : groupKey === 'recommendation-notifications'
-      ? 'Before recommendation-notifications, opening the Python fixture shows an extension recommendation toast.'
-      : spec.inconclusiveReason || `The sample project editor and Explorer show the cumulative state before ${groupKey} is applied.`;
-  const beforeCaptureState = groupKey === 'operation-confirmations'
-    ? operationInconclusiveReason ? 'none' : 'operation-confirmation'
-    : groupKey === 'recommendation-notifications'
-      ? 'recommendation-toast'
-      : 'none';
-  if (groupKey === 'autosave') {
-    const state = await windowControl.notificationState();
-    const expectedToasts = state.toasts.every((toast) => /failed to save.*autosave\.ts|recommended.*python/i.test(toast));
-    if (state.toasts.length && expectedToasts && !state.dialogs.length && !state.restartPrompt) {
-      await windowControl.clearNotifications();
-      await delay(400);
-    }
-  }
-  await capture(beforeName, chapter.chapter, groupKey, beforeText, beforeCaptureState);
-  await resetInteraction(spec.interaction, 'before');
+  const before = await measureGroup(groupKey), beforeText = groupKey === 'operation-confirmations' ? 'Before the fixture move, VS Code shows its confirmation dialog.' : `Before ${groupKey}, the staged fixture state is visible.`;
+  const beforeRow = await capture(beforeName, chapter.chapter, groupKey, beforeText, groupKey === 'operation-confirmations' ? 'operation-confirmation' : groupKey === 'recommendation-notifications' ? 'recommendation-toast' : 'none');
+  const extrasBefore = groupKey === 'overlays' ? [await captureExtra(chapter, groupKey, 'find', 'before')] : groupKey === 'tab-completion' ? [await captureExtra(chapter, groupKey, 'tab', 'before'), await captureExtra(chapter, groupKey, 'emmet', 'before')] : [];
+  if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'before');
   if (spec.previewSettings) await writeSettings(appliedSettings);
 
   const groupSettings = copyGroupSettings(currentSettings, spec.settings);
@@ -782,24 +866,25 @@ async function capturePair(chapter, groupKey, currentSettings) {
     await applyCustomUIStyleAndRestart();
   } else if (spec.restart) await restartApp();
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
-  const interactionResult = await runInteraction(spec.interaction, 'after', currentSettings);
-  const autosaveInconclusiveReason = groupKey === 'autosave' && interactionResult === false
-    ? 'Inconclusive: with files.autoSave set to afterDelay and files.autoSaveDelay unset, VS Code kept the edited fixture dirty through the 10-second wait.'
-    : '';
-  if (autosaveInconclusiveReason) {
-    const beforeRow = indexRows.find((row) => row.chapter === chapter.chapter
-      && row.group === groupKey
-      && row.file === path.relative(outputDir, path.join(imageDir, beforeName)));
-    if (beforeRow) beforeRow.description = autosaveInconclusiveReason;
+  await runInteraction(spec.interaction, 'after', currentSettings);
+  const after = await measureGroup(groupKey), afterText = groupKey === 'operation-confirmations' ? 'After the setting is applied, the exact fixture file moves without a confirmation.' : `After ${groupKey} is applied, ${spec.description}`;
+  const afterRow = await capture(afterName, chapter.chapter, groupKey, afterText);
+  const extrasAfter = groupKey === 'overlays' ? [await captureExtra(chapter, groupKey, 'find', 'after')] : groupKey === 'tab-completion' ? [await captureExtra(chapter, groupKey, 'tab', 'after'), await captureExtra(chapter, groupKey, 'emmet', 'after')] : [];
+  if (before && after) setPairDescription(groupKey, before, after, [beforeRow, afterRow]);
+  for (let i = 0; i < extrasBefore.length; i++) {
+    const kind = groupKey === 'overlays' ? 'find' : i ? 'emmet' : 'tab', a = extrasBefore[i], b = extrasAfter[i];
+    if (kind === 'find') {
+      if (a.state.metric.shadow === 'none' || b.state.metric.shadow !== 'none' || a.state.metric.x !== b.state.metric.x || a.state.metric.y !== b.state.metric.y || a.state.metric.text !== b.state.metric.text || a.state.pixels === b.state.pixels) throw new Error('Find widget shadow or same-state evidence failed.');
+      a.row.description = 'Before chapter 4 overlay styles, the open Find widget has its default shadow.'; b.row.description = 'After chapter 4 overlay styles, the same Find widget has no shadow.';
+    } else {
+      setPairDescription(groupKey, a.state, b.state, [a.row, b.row]);
+      a.row.description = kind === 'tab' ? 'Before Tab completion is enabled, the editor shows the literal shotloop snippet prefix.' : 'Before Emmet Tab expansion is enabled, the editor shows ul>li.item*3.';
+      b.row.description = kind === 'tab' ? 'After Tab completion is enabled, the editor shows the expanded Sample loop snippet.' : 'After Emmet Tab expansion is enabled, the editor shows three li.item elements.';
+    }
   }
-  const afterText = operationInconclusiveReason || spec.inconclusiveReason || autosaveInconclusiveReason || `After ${groupKey} is applied, ${spec.description}`;
-  if (groupKey === 'autosave' && interactionResult === false) {
-    const state = await windowControl.notificationState();
-    const saveConflict = state.toasts.length === 1 && /failed to save.*autosave\.ts/i.test(state.toasts[0]);
-    if (saveConflict && !state.dialogs.length && !state.restartPrompt) await windowControl.clearNotifications();
-  }
-  await capture(afterName, chapter.chapter, groupKey, afterText);
-  await resetInteraction(spec.interaction, 'after');
+  if (groupKey === 'autosave') { beforeRow.description = `Before auto save, ${autosaveSentinel} is in the dirty buffer and absent from disk.`; afterRow.description = `After auto save, ${autosaveSentinel} is on disk and the dirty indicator cleared.`; }
+  await persistIndex();
+  if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'after');
   if (spec.previewSettings) await writeSettings(appliedSettings);
 
   if (groupKey === 'recommendation-notifications') {
@@ -811,6 +896,15 @@ async function capturePair(chapter, groupKey, currentSettings) {
 
 function csv(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
+}
+
+function rowLine(row) { return [row.chapter, row.group, row.file, row.description].map(csv).join(','); }
+
+async function persistIndex() {
+  const header = ['chapter', 'group', 'file', 'description'].map(csv).join(','), updates = new Map(indexRows.map((row) => [row.file, rowLine(row)]));
+  const prior = autosaveOnlyMode || resumeChapter11Mode ? (await readFile(indexPath, 'utf8')).trimEnd().split('\n') : [header];
+  const lines = [header, ...prior.slice(1).filter((line) => ![...updates.keys()].some((file) => line.includes(csv(file)))), ...updates.values()];
+  await writeFile(indexPath, lines.join('\n') + '\n');
 }
 
 const groupCount = chapters.reduce((count, chapter) => count + chapter.groups.length, 0);
@@ -895,78 +989,17 @@ try {
   await rm(profileDir, { recursive: true, force: true });
 }
 
-const expectedImageCount = smokeMode ? 3 : autosaveOnlyMode ? 2 : resumeChapter11Mode ? 5 : 72;
+const expectedImageCount = smokeMode ? 3 : autosaveOnlyMode ? 2 : resumeChapter11Mode ? 5 : 78;
 if (indexRows.length !== expectedImageCount || imageNames.size !== expectedImageCount) {
   throw new Error(`Expected ${expectedImageCount} screenshots; captured ${imageNames.size}`);
 }
-const rowLine = (row) => [row.chapter, row.group, row.file, row.description].map(csv).join(',');
 if (autosaveOnlyMode) {
   const existingLines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
-  if (existingLines.length !== 73) throw new Error(`Expected an existing 72-image index before targeted capture; found ${existingLines.length - 1} rows.`);
-  let autosaveInserted = false;
-  let multiCursorInserted = false;
-  const mergedLines = [existingLines[0]];
-  for (const line of existingLines.slice(1)) {
-    if (line.startsWith('"11","autosave",')) {
-      if (!autosaveInserted) mergedLines.push(...indexRows.map(rowLine));
-      autosaveInserted = true;
-      continue;
-    }
-    if (line.startsWith('"5","multi-cursor",')) {
-      if (!multiCursorInserted) {
-        for (const side of ['before', 'after']) {
-          mergedLines.push(rowLine({
-            chapter: 5,
-            group: 'multi-cursor',
-            file: `images/ch05-multi-cursor-${side}.png`,
-            description: groupSpecs['multi-cursor'].inconclusiveReason,
-          }));
-        }
-        multiCursorInserted = true;
-      }
-      continue;
-    }
-    mergedLines.push(line);
-  }
-  if (!autosaveInserted || !multiCursorInserted || mergedLines.length !== 73) {
-    throw new Error('Could not merge the targeted autosave and multi-cursor index rows into the existing 72-image index.');
-  }
-  await writeFile(indexPath, mergedLines.join('\n') + '\n');
+  if (existingLines.length !== 79) throw new Error(`Expected an existing 78-image index before targeted capture; found ${existingLines.length - 1} rows.`);
+  await persistIndex();
 } else if (resumeChapter11Mode) {
-  const expected = [
-    { chapter: 0, group: 'zero', file: 'images/00-zero.png', description: 'A fresh profile opens the fixed sample project with no user-installed extensions.' },
-    ...chapters.flatMap((chapter) => [
-      ...chapter.groups.flatMap((group) => {
-        const spec = groupSpecs[group];
-        return ['before', 'after'].map((side) => ({
-          chapter: chapter.chapter,
-          group,
-          file: `images/ch${String(chapter.chapter).padStart(2, '0')}-${group}-${side}.png`,
-          description: group === 'recommendation-notifications' && side === 'before'
-            ? 'Before recommendation-notifications, opening the Python fixture shows an extension recommendation toast.'
-            : group === 'operation-confirmations'
-              ? 'Inconclusive: the CDP Explorer drag did not trigger a move confirmation in VS Code 1.101.1.'
-            : spec.inconclusiveReason || (group === 'autosave'
-              ? 'Inconclusive: with files.autoSave set to afterDelay and files.autoSaveDelay unset, VS Code kept the edited fixture dirty through the 10-second wait.'
-              : side === 'before'
-                ? `The sample project editor and Explorer show the cumulative state before ${group} is applied.`
-                : `After ${group} is applied, ${spec.description}`),
-        }));
-      }),
-      { chapter: chapter.chapter, group: 'checkpoint', file: `images/ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`, description: `After chapter ${chapter.chapter}, its cumulative settings are shown in the fixed sample project.` },
-    ]),
-  ];
-  for (const row of expected) {
-    try {
-      await access(path.join(imageDir, path.basename(row.file)));
-    } catch {
-      throw new Error(`Cannot index missing screenshot ${row.file}`);
-    }
-  }
-  await writeFile(indexPath, [
-    ['chapter', 'group', 'file', 'description'].map(csv).join(','),
-    ...expected.map(rowLine),
-  ].join('\n') + '\n');
+  const lines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
+  if (lines.length !== 79) throw new Error(`Resume index contains ${lines.length - 1} rows, expected 78.`);
 } else {
   await writeFile(indexPath, [
     ['chapter', 'group', 'file', 'description'].map(csv).join(','),

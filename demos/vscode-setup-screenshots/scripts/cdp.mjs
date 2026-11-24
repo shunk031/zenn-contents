@@ -7,6 +7,7 @@ export class VSCodeControl {
     this.socket = null;
     this.nextId = 0;
     this.pending = new Map();
+    this.events = new Map();
   }
 
   async connect() {
@@ -52,7 +53,11 @@ export class VSCodeControl {
     });
     this.socket.addEventListener('message', (event) => {
       const message = JSON.parse(event.data);
-      if (!message.id) return;
+      if (!message.id) {
+        const listeners = this.events.get(message.method);
+        if (listeners) for (const listener of [...listeners]) listener(message.params);
+        return;
+      }
       const pending = this.pending.get(message.id);
       if (!pending) return;
       this.pending.delete(message.id);
@@ -103,9 +108,43 @@ export class VSCodeControl {
     return result.result.value;
   }
 
+  async waitFor(expression, ready = Boolean, timeout = 10_000) {
+    const deadline = Date.now() + timeout;
+    let value;
+    while (Date.now() < deadline) {
+      value = await this.evaluate(expression);
+      if (ready(value)) return value;
+      await delay(100);
+    }
+    throw new Error(`Timed out waiting for UI state: ${JSON.stringify(value)}`);
+  }
+
+  waitForEvent(method, timeout = 10_000) {
+    return new Promise((resolve, reject) => {
+      const listeners = this.events.get(method) || new Set();
+      const finish = (callback, value) => {
+        listeners.delete(listener);
+        if (!listeners.size) this.events.delete(method);
+        clearTimeout(timer);
+        callback(value);
+      };
+      const listener = (value) => finish(resolve, value);
+      const timer = setTimeout(() => finish(reject, new Error(`Timed out waiting for CDP ${method}`)), timeout);
+      listeners.add(listener);
+      this.events.set(method, listeners);
+    });
+  }
+
   async waitForPaint() {
     const timestamp = await this.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(performance.now()))))');
     if (!Number.isFinite(timestamp)) throw new Error('The VS Code renderer did not produce two fresh animation frames.');
+  }
+
+  async capturePixels(selector, padding = 2) {
+    const clip = await this.evaluate(`(() => { const e = [...document.querySelectorAll(${JSON.stringify(selector)})].find((n) => n.getBoundingClientRect().width && n.getBoundingClientRect().height); if (!e) return null; const r = e.getBoundingClientRect(); return { x: Math.max(0, r.x - ${padding}), y: Math.max(0, r.y - ${padding}), width: r.width + ${padding * 2}, height: r.height + ${padding * 2}, scale: 1 }; })()`);
+    if (!clip) throw new Error(`No visible pixel target matched ${selector}`);
+    const image = await this.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: false });
+    return image.data;
   }
 
   async key(key, code, modifiers = 0) {
@@ -249,13 +288,21 @@ export class VSCodeControl {
       };
     })()`);
     if (!points) throw new Error(`Explorer drag rows not found: ${filename} -> ${folderName}`);
-    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.source.x, y: points.source.y });
-    await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: points.source.x, y: points.source.y, button: 'left', buttons: 1, clickCount: 1 });
-    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.source.x + 6, y: points.source.y + 3, button: 'left', buttons: 1 });
-    await delay(150);
-    await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.target.x, y: points.target.y, button: 'left', buttons: 1 });
-    await delay(500);
-    await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: points.target.x, y: points.target.y, button: 'left', buttons: 0, clickCount: 1 });
+    await this.send('Input.setInterceptDrags', { enabled: true });
+    try {
+      const intercepted = this.waitForEvent('Input.dragIntercepted');
+      await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.source.x, y: points.source.y });
+      await this.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: points.source.x, y: points.source.y, button: 'left', buttons: 1, clickCount: 1 });
+      await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: points.source.x + 6, y: points.source.y + 3, button: 'left', buttons: 1 });
+      const { data } = await intercepted;
+      if (!data?.items?.length) throw new Error('CDP intercepted the Explorer drag without drag data.');
+      for (const type of ['dragEnter', 'dragOver', 'drop']) {
+        await this.send('Input.dispatchDragEvent', { type, x: points.target.x, y: points.target.y, data });
+      }
+    } finally {
+      await this.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: points.target.x, y: points.target.y, button: 'left', buttons: 0, clickCount: 1 });
+      await this.send('Input.setInterceptDrags', { enabled: false });
+    }
   }
 
   async clearNotifications() {

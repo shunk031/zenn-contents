@@ -47,8 +47,8 @@ export const groupSpecs = {
   'explorer-decorations': {
     chapter: 2,
     settings: [setting('explorer.decorations.badges'), setting('git.decorations.enabled')],
-    description: 'Explorer error badges and Git status colors disappear from the file list.',
-    inconclusiveReason: 'Inconclusive: disabling Explorer badges and Git decoration colors showed no clear difference in this fixture.',
+    interaction: 'explorer-decorations',
+    description: 'Git status colors and Explorer badges respond to the chapter settings.',
   },
   'window-chrome': {
     chapter: 3,
@@ -60,8 +60,8 @@ export const groupSpecs = {
     chapter: 3,
     settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title > .label-container > .title-label'), setting('custom-ui-style.font.sansSerif')],
     restart: true,
+    interaction: 'title-spacing',
     description: 'Extra spacing clears the editor title area around the window controls.',
-    inconclusiveReason: 'Inconclusive: the configured title spacing showed no visible change in the editor title.',
   },
   overlays: {
     chapter: 4,
@@ -75,7 +75,6 @@ export const groupSpecs = {
     settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after'), setting('custom-ui-style.stylesheet', '.monaco-scrollable-element > .shadow.top'), setting('custom-ui-style.stylesheet', '.sidebar .title-label'), setting('custom-ui-style.stylesheet', '.sidebar'), setting('custom-ui-style.stylesheet', '.monaco-workbench .monaco-list:not(.element-focused):focus:before'), setting('custom-ui-style.stylesheet', '.monaco-list-row.focused'), setting('custom-ui-style.stylesheet', '.monaco-editor .scroll-decoration'), setting('custom-ui-style.stylesheet', '.title-actions'), setting('custom-ui-style.stylesheet', '.title.show-file-icons .label-container .monaco-icon-label.file-icon'), setting('custom-ui-style.stylesheet', '.title .monaco-icon-label:after')],
     restart: true,
     interaction: 'surface-boundaries',
-    inconclusiveReason: 'Inconclusive: the scrolled editor and focused Explorer show no visible change from these injected surface styles in VS Code 1.101.1.',
   },
   'cursor-appearance': {
     chapter: 5,
@@ -88,13 +87,13 @@ export const groupSpecs = {
     chapter: 5,
     settings: [setting('editor.multiCursorModifier')],
     interaction: 'multi-cursor',
-    inconclusiveReason: 'Inconclusive: editor.multiCursorModifier changes the key, not the look.',
+    description: 'The same Option-click state is measured before and after the modifier preference changes.',
   },
   'cursor-colors': {
     chapter: 5,
     settings: [setting('workbench.colorCustomizations', 'editorCursor.background')],
     interaction: 'cursor-focus',
-    inconclusiveReason: 'Inconclusive: the earlier cursor gradient style takes precedence over this background color.',
+    description: 'The focused cursor style is measured after the chapter background color is applied.',
   },
   'font-metrics': {
     chapter: 6,
@@ -106,7 +105,7 @@ export const groupSpecs = {
     chapter: 6,
     settings: [setting('editor.fontLigatures'), setting('editor.tokenColorCustomizations')],
     interaction: 'code-style',
-    inconclusiveReason: 'Inconclusive: Menlo fallback shows no ligatures, and Aura already italicizes comments.',
+    description: 'The fixture code shows the configured ligatures and token colors.',
   },
   'code-decorations': {
     chapter: 7,
@@ -144,13 +143,12 @@ export const groupSpecs = {
     settings: [setting('editor.scrollbar.horizontal'), setting('editor.scrollbar.vertical'), setting('editor.overviewRulerBorder')],
     interaction: 'scrollbars-and-ruler',
     description: 'Editor scrollbars and the overview ruler use the chapter layout.',
-    inconclusiveReason: 'Inconclusive: the chapter scrollbar and overview-ruler settings showed no visible difference at this scroll position.',
   },
   'marker-colors': {
     chapter: 9,
     settings: [setting('editor.hideCursorInOverviewRuler'), setting('workbench.colorCustomizations', 'editorOverviewRuler.wordHighlightStrongForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.selectionHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.rangeHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.wordHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.bracketMatchForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.findMatchForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.modifiedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.deletedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.warningForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.addedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.errorForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.infoForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.border')],
     interaction: 'marker-colors',
-    inconclusiveReason: 'Inconclusive: the diagnostic underline and overview ruler show no clear color change in VS Code 1.101.1.',
+    description: 'The diagnostic underline and overview-ruler marker are measured separately.',
   },
   'automatic-suggestions': {
     chapter: 10,
@@ -162,21 +160,20 @@ export const groupSpecs = {
     chapter: 10,
     settings: [setting('editor.tabCompletion'), setting('editor.snippetSuggestions'), setting('emmet.triggerExpansionOnTab')],
     interaction: 'tab-completion',
-    description: 'The open TypeScript suggestion list shows built-in snippet items in the configured order.',
-    inconclusiveReason: 'Inconclusive: the suggestion list shows word completions, not snippet items, in VS Code 1.101.1.',
+    description: 'Snippet ranking, Tab expansion, and Emmet expansion are captured in separate states.',
   },
   'selected-suggestion-color': {
     chapter: 10,
     settings: [setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'editorSuggestWidget.selectedBackground')],
     interaction: 'selected-suggestion',
-    inconclusiveReason: 'Inconclusive: the chapter selection color matches the Aura theme color for a selected completion item.',
+    description: "A selected completion item's computed background is measured after the chapter color is applied.",
   },
   'sidebar-and-title': {
     chapter: 11,
-    settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title > .label-container > .title-label'), setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'sideBar.background')],
+    settings: [setting('custom-ui-style.stylesheet', '.title .monaco-icon-label.file-icon'), setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'sideBar.background')],
     restart: true,
+    interaction: 'sidebar-title',
     description: 'The sidebar background and file title spacing receive their final styling.',
-    inconclusiveReason: 'Inconclusive: the final sidebar background and title spacing showed no visible change in this screenshot.',
   },
   autosave: {
     chapter: 11,
