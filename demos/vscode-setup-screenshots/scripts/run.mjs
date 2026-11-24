@@ -39,6 +39,7 @@ let devtoolsPort;
 let frontmostBaseline;
 let lastFrontmost;
 let focusChangeCount = 0;
+let ownerIdleSample;
 const fixtureDir = path.join(kitDir, 'fixture');
 const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
@@ -48,6 +49,7 @@ if (process.argv.includes('--help')) {
 }
 
 if (process.platform !== 'darwin') throw new Error('This screenshot route requires macOS.');
+assertOwnerAway('run start');
 await mkdir(outputDir, { recursive: true });
 if (autosaveOnlyMode) {
   const existingLines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
@@ -103,6 +105,22 @@ function frontmostApplication() {
   const pid = Number(pidText);
   if (!Number.isInteger(pid) || pid < 1 || !bundleId || !name) throw new Error('Could not identify the macOS frontmost application.');
   return { pid, bundleId, name };
+}
+
+function assertOwnerAway(stage) {
+  const started = process.hrtime.bigint();
+  const output = execFileSync('ioreg', ['-c', 'IOHIDSystem'], { encoding: 'utf8' });
+  const finished = process.hrtime.bigint();
+  const match = output.match(/"HIDIdleTime"\s*=\s*(\d+)/);
+  if (!match) throw new Error('Could not read HIDIdleTime from ioreg -c IOHIDSystem.');
+  const sample = { idle: BigInt(match[1]), started, finished };
+  if (ownerIdleSample && sample.idle < ownerIdleSample.idle + started - ownerIdleSample.finished) {
+    const time = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Tokyo', hourCycle: 'h23' });
+    const error = new Error(`OWNER_RETURNED at ${time} JST before ${stage}.`);
+    error.code = 'OWNER_RETURNED';
+    throw error;
+  }
+  ownerIdleSample = sample;
 }
 
 function assertFrontmostUnchanged(stage) {
@@ -271,6 +289,7 @@ async function waitForChildExit(child, timeout) {
 
 async function startApp({ clearNotifications = true } = {}) {
   if (appChild) return;
+  assertOwnerAway('VS Code launch');
   const beforeLaunch = assertFrontmostUnchanged('before VS Code launch');
   console.log(`Frontmost before VS Code launch: ${beforeLaunch.name} (PID ${beforeLaunch.pid}).`);
   await rm(activePortFile, { force: true });
@@ -332,6 +351,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 }
 
 async function restartApp({ clearNotifications = true } = {}) {
+  assertOwnerAway('VS Code restart');
   if (windowControl) {
     const restartPrompt = await windowControl.evaluate("document.body.innerText.includes('requires a restart to take effect')");
     if (restartPrompt) {
@@ -363,6 +383,7 @@ async function restartApp({ clearNotifications = true } = {}) {
 }
 
 async function applyCustomUIStyleAndRestart() {
+  assertOwnerAway('Custom UI Style restart');
   await windowControl.command('Custom UI Style: Reload');
   const canceledExtensionRestart = await windowControl.clickNotificationAction('UI Style changed.', 'Cancel');
   if (!canceledExtensionRestart) {
@@ -671,6 +692,7 @@ function imageFilename(name) {
 }
 
 async function capture(name, chapter, group, description, captureState = 'none') {
+  assertOwnerAway(`capture ${name}`);
   assertFrontmostUnchanged(`before capture ${name}`);
   if (captureState === 'operation-confirmation') await windowControl.assertExpectedOperationConfirmation();
   else if (captureState === 'recommendation-toast') await windowControl.assertExpectedRecommendationToast();

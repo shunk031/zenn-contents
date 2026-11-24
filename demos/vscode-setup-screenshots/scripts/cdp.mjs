@@ -136,7 +136,7 @@ export class VSCodeControl {
     while (Date.now() < deadline) {
       inputReady = await this.evaluate(`(() => {
         const widget = document.querySelector('.quick-input-widget');
-        const input = widget?.querySelector('input');
+        const input = widget?.querySelector('input, textarea');
         return !!widget?.getBoundingClientRect().height && input === document.activeElement;
       })()`);
       if (inputReady) break;
@@ -144,7 +144,7 @@ export class VSCodeControl {
     }
     if (!inputReady) throw new Error(`Quick Open did not become ready before opening ${relativePath}.`);
     await this.type(relativePath);
-    const enteredPath = await this.evaluate("document.querySelector('.quick-input-widget input')?.value");
+    const enteredPath = await this.evaluate("document.querySelector('.quick-input-widget input, .quick-input-widget textarea')?.value");
     if (enteredPath !== relativePath) throw new Error(`Quick Open received ${JSON.stringify(enteredPath)} instead of ${relativePath}.`);
     await this.key('Enter', 'Enter');
     await delay(450);

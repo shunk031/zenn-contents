@@ -11,6 +11,8 @@ The runner launches only its copied app with macOS `open -g -n`. The `-g` flag r
 The runner does not send open requests to a running VS Code instance. The pinned launch handler [focuses the app on a second-instance request](https://github.com/microsoft/vscode/blob/1.101.1/src/vs/platform/launch/electron-main/launchMainService.ts#L710-L735).
 Chromium starts with `--disable-backgrounding-occluded-windows`, `--disable-renderer-backgrounding`, and `--disable-background-timer-throttling` so covered windows keep rendering. Before capture, it waits for two renderer frames, saves a new PNG, checks its signature and modification time, then moves it into the output set. Keep the window on the logged-in desktop and do not minimize it. The zero state uses the macOS font stack starting with Menlo.
 
+At run start and before each VS Code launch, restart, or capture, the runner reads `HIDIdleTime` with `ioreg -c IOHIDSystem`. It compares the counter with the previous value plus elapsed monotonic time. A decrease means keyboard or mouse input occurred, so the run aborts and quits only its own VS Code PID. This uses no idle-time threshold.
+
 The DevTools endpoint uses an ephemeral port recorded in the isolated profile's `DevToolsActivePort` file. The runner attaches only to the matching app-copy URL and signals only its spawned PID on shutdown.
 
 ## Numeric choices
