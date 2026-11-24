@@ -120,6 +120,7 @@ let windowControl;
 let appChild;
 let activeFile;
 let autosaveSentinel;
+let indentationSource;
 const installedExtensions = new Set();
 const indexRows = [];
 const imageNames = new Set();
@@ -462,13 +463,15 @@ const evidenceTargets = {
   'line-numbers-and-indent': '.monaco-editor', 'folding-and-guides': '.monaco-editor', 'scrollbars-and-ruler': '.monaco-editor',
   'marker-colors': '.monaco-editor .decorationsOverviewRuler', 'tab-completion': '.suggest-widget',
   'selected-suggestion-color': '.suggest-widget .monaco-list-row.focused', 'sidebar-and-title': '.sidebar', 'find-widget': '.editor-widget.find-widget',
+  autosave: '.editor-group-container>.title',
 };
 
 async function measureGroup(key) {
   const selector = evidenceTargets[key] || key;
   if (!selector) return null;
-  const metric = await windowControl.evaluate(`(() => { const s=${JSON.stringify(selector)}, e=[...document.querySelectorAll(s)].find(n=>{const r=n.getBoundingClientRect();return r.width&&r.height}); if(!e) return null; const c=getComputedStyle(e),r=e.getBoundingClientRect(),sc=document.querySelector('.monaco-editor .monaco-scrollable-element'),row=[...document.querySelectorAll('.explorer-folders-view .monaco-list-row')].find(n=>n.innerText.includes('changed.ts')),focus=document.querySelector('.explorer-folders-view .monaco-list-row.focused'),fileTitle=document.querySelector('.title .monaco-icon-label.file-icon'),rows=[...document.querySelectorAll('.suggest-widget .monaco-list-row')],comment=[...document.querySelectorAll('.monaco-editor .view-line')].find(n=>n.innerText.includes('Sample comment')),range=document.createRange(); if(e.firstChild){range.selectNodeContents(e)} return {text:e.innerText?.slice(0,180),x:r.x,y:r.y,textX:range.getBoundingClientRect().x,w:r.width,h:r.height,color:c.color,bg:c.backgroundColor,image:c.backgroundImage,pad:c.paddingLeft,margin:c.marginLeft,outline:c.outlineColor,shadow:c.boxShadow,display:c.display,opacity:c.opacity,tab:getComputedStyle(document.querySelector('.monaco-editor .view-lines')||e).tabSize,cursors:document.querySelectorAll('.cursors-layer .cursor').length,sliders:[...document.querySelectorAll('.monaco-editor .scrollbar .slider')].filter(n=>{const s=getComputedStyle(n);return s.display!=='none'&&s.opacity!=='0'}).length,scroll:[sc?.scrollTop,sc?.scrollHeight,sc?.clientHeight,sc?.scrollLeft,sc?.scrollWidth,sc?.clientWidth],squiggles:document.querySelectorAll('.monaco-editor .squiggly-error').length,badges:document.querySelectorAll('.explorer-folders-view .monaco-list-row .badge,.explorer-folders-view .monaco-list-row .monaco-count-badge').length,gitColor:row?getComputedStyle(row.querySelector('.label-name')||row).color:'',focus:focus?getComputedStyle(focus).outlineColor:'',justify:getComputedStyle(document.querySelector('.editor-group-container>.title')||e).justifyContent,decoration:getComputedStyle(document.querySelector('.monaco-editor .scroll-decoration')||e).display,sticky:document.querySelectorAll('.monaco-editor .sticky-widget').length,swatches:document.querySelectorAll('.monaco-editor .colorpicker-color').length,lightbulb:document.querySelectorAll('.monaco-editor .lightbulb-glyph,.monaco-editor .lightBulbWidget,.monaco-editor .codicon-lightbulb,.monaco-editor .codicon-lightbulb-autofix').length,signature:document.querySelectorAll('.parameter-hints-widget').length,folding:document.querySelectorAll('.monaco-editor .codicon-folding-expanded,.monaco-editor .codicon-folding-collapsed').length,comment:comment?['fontStyle','fontFeatureSettings','color'].map(k=>getComputedStyle(comment.querySelector('span')||comment)[k]):[],sidebar:getComputedStyle(document.querySelector('.sidebar')||e).backgroundColor,title:getComputedStyle(fileTitle||e).marginLeft,rows:rows.map(n=>n.innerText.trim()),snippets:rows.filter(n=>n.querySelector('.codicon-symbol-snippet')).map(n=>n.innerText.trim())}; })()`);
+  const metric = await windowControl.evaluate(`(() => { const s=${JSON.stringify(selector)}, e=[...document.querySelectorAll(s)].find(n=>{const r=n.getBoundingClientRect();return r.width&&r.height}); if(!e) return null; const c=getComputedStyle(e),r=e.getBoundingClientRect(),sc=document.querySelector('.monaco-editor .monaco-scrollable-element'),row=[...document.querySelectorAll('.explorer-folders-view .monaco-list-row')].find(n=>n.innerText.includes('changed.ts')),focus=document.querySelector('.explorer-folders-view .monaco-list-row.focused'),fileTitle=document.querySelector('.title .monaco-icon-label.file-icon'),rows=[...document.querySelectorAll('.suggest-widget .monaco-list-row')],comment=[...document.querySelectorAll('.monaco-editor .view-line')].find(n=>n.innerText.includes('Sample comment')),range=document.createRange(); if(e.firstChild){range.selectNodeContents(e)} return {text:e.innerText?.slice(0,180),x:r.x,y:r.y,textX:range.getBoundingClientRect().x,w:r.width,h:r.height,color:c.color,bg:c.backgroundColor,image:c.backgroundImage,pad:c.paddingLeft,margin:c.marginLeft,outline:c.outlineColor,shadow:c.boxShadow,display:c.display,opacity:c.opacity,tab:getComputedStyle(document.querySelector('.monaco-editor .view-lines')||e).tabSize,dirty:document.querySelectorAll('.tab.dirty,.title .dirty').length,cursors:document.querySelectorAll('.cursors-layer .cursor').length,sliders:[...document.querySelectorAll('.monaco-editor .scrollbar .slider')].filter(n=>{const s=getComputedStyle(n);return s.display!=='none'&&s.opacity!=='0'}).length,scroll:[sc?.scrollTop,sc?.scrollHeight,sc?.clientHeight,sc?.scrollLeft,sc?.scrollWidth,sc?.clientWidth],squiggles:document.querySelectorAll('.monaco-editor .squiggly-error').length,badges:document.querySelectorAll('.explorer-folders-view .monaco-list-row .badge,.explorer-folders-view .monaco-list-row .monaco-count-badge').length,gitColor:row?getComputedStyle(row.querySelector('.label-name')||row).color:'',focus:focus?getComputedStyle(focus).outlineColor:'',justify:getComputedStyle(document.querySelector('.editor-group-container>.title')||e).justifyContent,decoration:getComputedStyle(document.querySelector('.monaco-editor .scroll-decoration')||e).display,sticky:document.querySelectorAll('.monaco-editor .sticky-widget').length,swatches:document.querySelectorAll('.monaco-editor .colorpicker-color').length,lightbulb:document.querySelectorAll('.monaco-editor .lightbulb-glyph,.monaco-editor .lightBulbWidget,.monaco-editor .codicon-lightbulb,.monaco-editor .codicon-lightbulb-autofix').length,signature:document.querySelectorAll('.parameter-hints-widget').length,folding:document.querySelectorAll('.monaco-editor .codicon-folding-expanded,.monaco-editor .codicon-folding-collapsed').length,comment:comment?['fontStyle','fontFeatureSettings','color'].map(k=>getComputedStyle(comment.querySelector('span')||comment)[k]):[],sidebar:getComputedStyle(document.querySelector('.sidebar')||e).backgroundColor,title:getComputedStyle(fileTitle||e).marginLeft,rows:rows.map(n=>n.innerText.trim()),snippets:rows.filter(n=>n.querySelector('.codicon-symbol-snippet')).map(n=>n.innerText.trim())}; })()`);
   if (!metric) throw new Error(`No visible DOM target for ${key}: ${selector}`);
+  if (key === 'line-numbers-and-indent') metric.indent = await windowControl.evaluate(`(() => { const line=(s)=>[...document.querySelectorAll('.monaco-editor .view-line')].find(n=>n.innerText.includes(s)), nested=[...document.querySelectorAll('.monaco-editor .view-line')].find(n=>n.innerText.includes('return')&&n.innerText.includes('heading')), ink=(n)=>{if(!n)return null;const w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT);while(w.nextNode()){const i=w.currentNode.textContent.search(/\S/);if(i>=0){const r=document.createRange();r.setStart(w.currentNode,i);r.setEnd(w.currentNode,i+1);const b=r.getBoundingClientRect();return {x:b.x,width:b.width};}}return null;},base=ink(line('export function')),one=ink(line('const heading')),three=ink(nested); return [one,three].map(p=>base&&p?Math.round((p.x-base.x)/base.width):null); })()`);
   return { metric, pixels: await windowControl.capturePixels(selector, key === 'find-widget' ? 16 : 2) };
 }
 
@@ -491,7 +494,8 @@ function setPairDescription(group, before, after, rows) {
   if (group === 'code-decorations' && (!before.metric.sticky || after.metric.sticky || !before.metric.text.includes('#9b87f5'))) throw new Error('Nested sticky header or color literal was not staged.');
   if (group === 'editor-hints' && (!before.metric.signature || !before.metric.lightbulb || after.metric.signature || after.metric.lightbulb)) throw new Error('Signature help and code-action lightbulb did not change with their settings.');
   if (group === 'code-decorations' && (!before.metric.swatches || after.metric.swatches)) throw new Error('The nested-block color decorator did not change with its setting.');
-  if (group === 'line-numbers-and-indent' && (before.metric.tab !== '4' || after.metric.tab !== '2')) throw new Error(`Tab-width evidence failed: ${before.metric.tab} -> ${after.metric.tab}`);
+  if (group === 'line-numbers-and-indent' && (before.metric.tab !== '4' || after.metric.tab !== '2' || before.metric.indent.join(',') !== '4,12' || after.metric.indent.join(',') !== '2,6')) throw new Error(`Tab-width geometry failed: ${JSON.stringify([before.metric.tab, before.metric.indent, after.metric.tab, after.metric.indent])}`);
+  if (group === 'autosave' && (before.metric.dirty < 1 || after.metric.dirty !== 0)) throw new Error(`Autosave dirty indicator did not clear: ${before.metric.dirty} -> ${after.metric.dirty}`);
   if (group === 'folding-and-guides' && !before.metric.folding) throw new Error('Folding controls were not visible in the gutter state.');
   const special = group === 'multi-cursor' ? `Inconclusive: measured ${before.metric.cursors}/${after.metric.cursors} cursors; the modifier key itself is not drawn in the editor.` : group === 'cursor-colors' && before.metric.image === after.metric.image && before.metric.bg === after.metric.bg ? `Inconclusive: measured cursor background and image stayed ${before.metric.bg} ${before.metric.image}.` : group === 'code-style' && JSON.stringify(before.metric.comment) === JSON.stringify(after.metric.comment) ? `Inconclusive: measured comment font and color stayed ${before.metric.comment.join(', ')}.` : group === 'selected-suggestion-color' && before.metric.bg === after.metric.bg ? `Inconclusive: measured selected-row background stayed ${before.metric.bg}.` : '';
   const reason = special || (pixelsChanged && domChanged ? `After ${group} is applied, ${groupSpecs[group].description}` : `Inconclusive: measured ${group} DOM and target-crop pixels did not both change.`);
@@ -685,6 +689,10 @@ async function runInteraction(name, phase, chapterSettings) {
     }
     case 'indentation-tabs': {
       await open('src/indentation.ts');
+      const source = readFileSync(path.join(workspaceDir, 'src', 'indentation.ts'));
+      if (!/^\tconst heading/m.test(source.toString()) || !/^\t\t\treturn/m.test(source.toString())) throw new Error('Indentation fixture no longer has literal one- and three-tab lines.');
+      if (phase === 'before') indentationSource = source;
+      else if (!indentationSource?.equals(source)) throw new Error('Indentation fixture bytes changed between pair sides.');
       const target = fixtureLine('src/indentation.ts', 'return `${heading}:');
       await goto(target.line, 1);
       break;
@@ -787,7 +795,7 @@ function imageFilename(name) {
   return path.join(imageDir, name);
 }
 
-async function capture(name, chapter, group, description, captureState = 'none') {
+async function capture(name, chapter, group, description, captureState = 'none', deferAcceptance = false) {
   assertOwnerAway(`capture ${name}`);
   logFrontmost(`before capture ${name}`);
   if (captureState === 'operation-confirmation') await windowControl.assertExpectedOperationConfirmation();
@@ -813,22 +821,36 @@ async function capture(name, chapter, group, description, captureState = 'none')
   }
   const dimensions = execFileSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', captureDestination], { encoding: 'utf8' });
   if (!dimensions.includes('pixelWidth:') || !dimensions.includes('pixelHeight:')) throw new Error(`Unable to verify screenshot dimensions: ${destination}`);
-  await rename(captureDestination, destination);
   const afterCapture = logFrontmost(`immediately after capture ${name}`);
   const [afterWindowId] = run(finderBinary, finderArgs).split(/\s+/);
   if (afterWindowId !== windowId) throw new Error(`Capture ${name} changed the VS Code window identity.`);
   console.log(`Captured ${name}; frontmost is ${afterCapture.name} (PID ${afterCapture.pid}).`);
   const row = { chapter, group, file: path.relative(outputDir, destination), description };
-  indexRows.push(row);
-  await persistIndex();
+  if (deferAcceptance) row.pendingCapture = captureDestination;
+  else {
+    await rename(captureDestination, destination);
+    indexRows.push(row);
+    await persistIndex();
+  }
   return row;
+}
+
+async function acceptCaptures(rows) {
+  for (const row of rows) {
+    if (row.pendingCapture) {
+      await rename(row.pendingCapture, path.join(outputDir, row.file));
+      delete row.pendingCapture;
+    }
+    indexRows.push(row);
+  }
+  await persistIndex();
 }
 
 async function captureExtra(chapter, group, kind, phase) {
   const interaction = kind === 'find' ? 'find-widget' : `${kind}-expansion`, selector = kind === 'find' ? 'find-widget' : '.monaco-editor .view-lines';
   await runInteraction(interaction, phase, appliedSettings);
   const state = await measureGroup(selector), name = `ch${String(chapter.chapter).padStart(2, '0')}-${group}-${kind}-${phase}.png`;
-  const row = await capture(name, chapter.chapter, group, `${phase} ${kind} state measured in the same fixture editor.`);
+  const row = await capture(name, chapter.chapter, group, `${phase} ${kind} state measured in the same fixture editor.`, 'none', true);
   const text = await windowControl.evaluate("document.querySelector('.monaco-editor .view-lines')?.innerText || ''");
   if (phase === 'before' && kind === 'tab') {
     await windowControl.key('Tab', 'Tab');
@@ -854,7 +876,7 @@ async function capturePair(chapter, groupKey, currentSettings) {
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'before', appliedSettings);
   const before = await measureGroup(groupKey), beforeText = groupKey === 'operation-confirmations' ? 'Before the fixture move, VS Code shows its confirmation dialog.' : `Before ${groupKey}, the staged fixture state is visible.`;
-  const beforeRow = await capture(beforeName, chapter.chapter, groupKey, beforeText, groupKey === 'operation-confirmations' ? 'operation-confirmation' : groupKey === 'recommendation-notifications' ? 'recommendation-toast' : 'none');
+  const beforeRow = await capture(beforeName, chapter.chapter, groupKey, beforeText, groupKey === 'operation-confirmations' ? 'operation-confirmation' : groupKey === 'recommendation-notifications' ? 'recommendation-toast' : 'none', true);
   const extrasBefore = groupKey === 'overlays' ? [await captureExtra(chapter, groupKey, 'find', 'before')] : groupKey === 'tab-completion' ? [await captureExtra(chapter, groupKey, 'tab', 'before'), await captureExtra(chapter, groupKey, 'emmet', 'before')] : [];
   if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'before');
   if (spec.previewSettings) await writeSettings(appliedSettings);
@@ -868,7 +890,7 @@ async function capturePair(chapter, groupKey, currentSettings) {
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'after', currentSettings);
   const after = await measureGroup(groupKey), afterText = groupKey === 'operation-confirmations' ? 'After the setting is applied, the exact fixture file moves without a confirmation.' : `After ${groupKey} is applied, ${spec.description}`;
-  const afterRow = await capture(afterName, chapter.chapter, groupKey, afterText);
+  const afterRow = await capture(afterName, chapter.chapter, groupKey, afterText, 'none', true);
   const extrasAfter = groupKey === 'overlays' ? [await captureExtra(chapter, groupKey, 'find', 'after')] : groupKey === 'tab-completion' ? [await captureExtra(chapter, groupKey, 'tab', 'after'), await captureExtra(chapter, groupKey, 'emmet', 'after')] : [];
   if (before && after) setPairDescription(groupKey, before, after, [beforeRow, afterRow]);
   for (let i = 0; i < extrasBefore.length; i++) {
@@ -883,7 +905,7 @@ async function capturePair(chapter, groupKey, currentSettings) {
     }
   }
   if (groupKey === 'autosave') { beforeRow.description = `Before auto save, ${autosaveSentinel} is in the dirty buffer and absent from disk.`; afterRow.description = `After auto save, ${autosaveSentinel} is on disk and the dirty indicator cleared.`; }
-  await persistIndex();
+  await acceptCaptures([beforeRow, ...extrasBefore.map(({ row }) => row), afterRow, ...extrasAfter.map(({ row }) => row)]);
   if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'after');
   if (spec.previewSettings) await writeSettings(appliedSettings);
 
