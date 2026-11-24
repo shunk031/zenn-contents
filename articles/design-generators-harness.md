@@ -79,28 +79,28 @@ flowchart TD
 
 ## 1. 共通規則をまとめる指示書（`AGENTS.md`）
 
-エージェントの指示が肥大化してルール違反や迷走が起きるのを防ぐため、全モデル共通の基本原則だけを安定して守らせます。リポジトリルートの [`AGENTS.md`](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/AGENTS.md)[^dg_agents_md] では、命名規則やクラス設計、ワークスペース操作、Issue やプルリクエスト (PR) の追跡ルールのみを定めています。ドメイン固有の手順を直接書き込まずローカルスキルへと委任することで、共通規則を簡潔に保っています。[^dg_agents_md]
+指示を小さく保てばルール違反や迷走を減らしやすくなるため、全モデル共通の基本原則だけを守らせる方針としています。リポジトリルートの [`AGENTS.md`](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/AGENTS.md)[^dg_agents_md] では、命名規則やクラス設計、ワークスペース操作、Issue やプルリクエスト (PR) の追跡ルールのみを定めています。ドメイン固有の手順を直接書き込まずローカルスキルへと委任することで、共通規則を簡潔に保っています。[^dg_agents_md]
 
 ## 2. リポジトリローカルスキル（`.agents/skills/`）
 
-作業ごとに必要な専門手順だけをエージェントに読み込ませることで、文脈の圧迫を防ぎ作業精度を高められます。リポジトリ固有の手順は `.agents/skills/` 配下のスキルにまとめています。[^dg_agents_md]
+作業ごとに必要な専門手順だけをエージェントへ読み込ませ、文脈の圧迫を抑えて作業精度を高める狙いがあります。リポジトリ固有の手順は `.agents/skills/` 配下のスキルにまとめています。[^dg_agents_md]
 
 - `design-generators-model-conversion`: モデル変換、公開インターフェース、出力スキーマなどを規定。[^dg_agents_md]
 - `design-generators-documentation`: README やモデルカード、再現手順書の記述規約を規定。[^dg_agents_md]
 - `design-generators-training-reproduction`: S0〜S5 の段階的な訓練再現プロトコル（= 設定の確認から全エポックの訓練までの 6 段階）と記録方法を規定。[^dg_agents_md]
 - `design-generators-parallel-plan-discussion`: 複数エージェントによる設計合意プロトコル（= parallel-plan スキル）を規定。[^dg_parallel_plan]
 
-特に `parallel-plan` スキルは、複数のエージェントが提案と調停を経て設計を合意します。[^dg_parallel_plan] 複数のエージェントの作業タブを管理するターミナルツール Herdr（12/1 の記事で紹介したもの）で開いた作業環境（Git worktree）上の合意記録ファイルを用いて合意を形成します。大規模な設計方針の決定を、1 体のエージェントの偏りに依存せず進められます。
+特に `parallel-plan` スキルは、複数のエージェントが提案と調停を経て設計を合意します。[^dg_parallel_plan] 複数のエージェントの作業タブを管理するターミナルツール Herdr（12/1 の記事で紹介したもの）で開いた作業環境（Git worktree）上の合意記録ファイルを用いて合意を形成します。大規模な設計方針の決定で、1 体のエージェントの偏りに依存するリスクを減らせます。
 
 ## 3. モデルごとのパッケージと共有ライブラリ
 
-多数の論文実装を 1 つのリポジトリへ統合しても、ライブラリのバージョン衝突で困ることはありません。Python のパッケージ管理には [`uv`](https://docs.astral.sh/uv/)[^uv] ワークスペースを採用しています。[^dg_readme] 各モデルを `models/<slug>/` 配下の独立メンバーとして管理し、個別の `pyproject.toml` を持たせています。[^dg_checklist] 元実装が必要とする依存は追加グループ（extra）の `vendor` に分けることで、モデル間の衝突を防いでいます。[^dg_checklist]
+多数の論文実装を 1 つのリポジトリへ統合しても、ライブラリのバージョン衝突を避けやすくなります。Python のパッケージ管理には [`uv`](https://docs.astral.sh/uv/)[^uv] ワークスペースを採用しています。[^dg_readme] 各モデルを `models/<slug>/` 配下の独立メンバーとして管理し、個別の `pyproject.toml` を持たせています。[^dg_checklist] 元実装が必要とする依存は追加グループ（extra）の `vendor` に分けることで、モデル間の衝突を防いでいます。[^dg_checklist]
 
 バウンディングボックス計算などの共通処理は共有ライブラリ（`lib/laygen` や `lib/posgen`、`lib/traingen`）へ集約し、車輪の再発明を防いでいます。[^dg_readme]
 
 ## 4. 機械的検証と CI パイプライン
 
-エージェントが書いたコードの品質を人間が毎回細かく見張らなくても、機械的な関門で水準を保てます。継続的インテグレーション (CI)[^github_actions] により、品質基準を満たしているかを機械的に判定します。[^dg_ci]
+エージェントが書いたコードの品質を人間が毎回細かく見張らなくても、機械的な関門で水準を保ちやすくする狙いがあります。継続的インテグレーション (CI)[^github_actions] により、品質基準を満たしているかを機械的に判定します。[^dg_ci]
 
 - PR メタデータ検査: PR 本文の Issue 参照やチェックリストの記入を機械検査。[^dg_pr_metadata_check]
 - テストのカバレッジ 90% 以上を必須化: パリティテストを除くユニットテストに対し、90% 以上のコード網羅率を強制。[^dg_checklist]
@@ -108,7 +108,7 @@ flowchart TD
 
 ## 5. 検証結果を記録するドキュメント設計
 
-リポジトリを不要な生成物で肥大化させず、誰でも同じコマンドで数値を確かめ直せる再現性を確保できます。推論や環境構築の手順は `REPRODUCING.md`、学習の検証記録は `TRAINING.md` に分けて管理します。巨大なテンソルや画像は Git に含めず、再現に要るメタデータのみを Issue や PR 本文、各パッケージのドキュメントに残す設計としています。[^dg_training_proto][^dg_pr_template]
+不要な生成物によるリポジトリの肥大化を抑え、同じコマンドで数値を確かめ直せる再現性を高めやすくなります。推論や環境構築の手順は `REPRODUCING.md`、学習の検証記録は `TRAINING.md` に分けて管理します。巨大なテンソルや画像は Git に含めず、再現に要るメタデータのみを Issue や PR 本文、各パッケージのドキュメントに残す設計としています。[^dg_training_proto][^dg_pr_template]
 
 # モデルを追加する流れ
 
@@ -144,7 +144,7 @@ sequenceDiagram
 
 モデルの追加作業は、必ず GitHub の Issue を立てることから始まります。[^dg_agents_md] エージェントは Issue の計画コメントで、対象モデルのスコープや公開インターフェースを明文化します。[^dg_agents_md] 利用データセットや、元実装と比較する許容誤差の基準もここで合意します。
 
-設計方針に変更が生じた場合は、計画コメントを書き換えるのではなく修正コメントを追記します。最新の修正コメントが過去の記述を上書きするルールとしています。そのため、エージェントは設計の経緯と最新の合意事項を混同しません。[^dg_agents_md] 設計が合意されると、Issue のステータスラベルは [`plan-agreed`](https://github.com/creative-graphic-design/design-generators/issues?q=is%3Aissue+state%3Aopen+label%3Aplan-agreed) となります。[^dg_agents_md]
+設計方針に変更が生じた場合は、計画コメントを書き換えるのではなく修正コメントを追記します。最新の修正コメントが過去の記述を上書きするルールとしています。この運用により、エージェントが設計の経緯と最新の合意事項を混同するリスクを減らせます。[^dg_agents_md] 設計が合意されると、Issue のステータスラベルは [`plan-agreed`](https://github.com/creative-graphic-design/design-generators/issues?q=is%3Aissue+state%3Aopen+label%3Aplan-agreed) となります。[^dg_agents_md]
 
 ## 2. 専用の worktree での実装と推論パリティ検証（in-progress）
 
