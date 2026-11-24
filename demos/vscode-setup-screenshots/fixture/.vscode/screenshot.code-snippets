@@ -1,0 +1,19 @@
+{
+  "Sample loop": {
+    "prefix": "sam",
+    "body": [
+      "for (const item of ${1:items}) {",
+      "  $0",
+      "}"
+    ],
+    "description": "Loop through sample values"
+  },
+  "Sample card": {
+    "prefix": "sam",
+    "body": [
+      "const card = { title: ${1:title}, active: true };",
+      "$0"
+    ],
+    "description": "Create a sample card"
+  }
+}

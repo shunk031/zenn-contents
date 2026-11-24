@@ -1,41 +1,49 @@
 import { readFileSync } from 'node:fs';
-import { access, cp, mkdir, readFile, rename, rm, writeFile, appendFile } from 'node:fs/promises';
-import { execFileSync, spawn } from 'node:child_process';
+import { access, cp, mkdir, readFile, rename, rm, stat, writeFile, appendFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { VSCodeControl } from './cdp.mjs';
 import { extensionPins, groupSpecs } from './groups.mjs';
+import { installMarketplaceExtension } from './install-extension.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const kitDir = path.resolve(here, '..');
 const outputDir = path.join(kitDir, 'output');
 const smokeMode = process.argv.includes('--smoke');
 const autosaveOnlyMode = process.argv.includes('--autosave-only');
-if (smokeMode && autosaveOnlyMode) throw new Error('--smoke and --autosave-only cannot be combined.');
+const allowFocusChange = process.argv.includes('--allow-focus-change');
+if (smokeMode && autosaveOnlyMode) throw new Error('Capture modes cannot be combined.');
 const captureOutputDir = smokeMode ? path.join(outputDir, 'smoke') : outputDir;
+const pngSignature = Buffer.from('89504e470d0a1a0a', 'hex');
 const runtimeDir = path.join(outputDir, 'runtime');
 const vscodeArchive = path.join(outputDir, 'vscode-1.101.1-darwin-arm64.zip');
 const sourceDir = path.join(runtimeDir, 'sources');
 const profileDir = path.join(os.tmpdir(), `vss-${process.pid}`);
 const extensionsDir = path.join(runtimeDir, 'extensions');
+const marketplaceCacheDir = path.join(runtimeDir, 'marketplace-cache');
 const workspaceDir = path.join(runtimeDir, 'workspace');
 const appPath = path.join(runtimeDir, 'Visual Studio Code.app');
-const appExecutable = path.join(appPath, 'Contents', 'MacOS', 'Electron');
-const cliPath = path.join(appPath, 'Contents', 'Resources', 'app', 'bin', 'code');
 const finderSource = path.join(here, 'window-id.swift');
 const finderBinary = path.join(runtimeDir, 'window-id');
+const launcherSource = path.join(here, 'launch-app.swift');
+const launcherBinary = path.join(runtimeDir, 'launch-app');
 const imageDir = path.join(captureOutputDir, 'images');
 const indexPath = path.join(captureOutputDir, 'image-index.csv');
 const activePortFile = path.join(profileDir, 'DevToolsActivePort');
 const windowSize = '1200,800';
+const customUIStyleId = 'subframe7536.custom-ui-style';
 let devtoolsPort;
+let frontmostBaseline;
+let lastFrontmost;
+let focusChangeCount = 0;
 const fixtureDir = path.join(kitDir, 'fixture');
 const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
 if (process.argv.includes('--help')) {
-  console.log('Usage: node ./scripts/run.mjs [--smoke | --autosave-only]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/. --autosave-only preserves output/images and replaces the chapter 11 autosave pair and image index entries.');
+  console.log('Usage: node ./scripts/run.mjs [--smoke | --autosave-only] [--allow-focus-change]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/. --autosave-only preserves output/images and replaces the chapter 11 autosave pair and image index entries. --allow-focus-change logs frontmost changes and continues.');
   process.exit(0);
 }
 
@@ -64,6 +72,7 @@ if (product.version !== '1.101.1' || product.commit !== '18e3a1ec544e6907be1e944
   throw new Error(`Downloaded VS Code product identity did not match the pin: ${product.version} ${product.commit}`);
 }
 execFileSync('swiftc', ['-O', finderSource, '-o', finderBinary], { stdio: 'inherit' });
+execFileSync('swiftc', ['-O', launcherSource, '-o', launcherBinary], { stdio: 'inherit' });
 
 execFileSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: workspaceDir });
 execFileSync('git', ['config', 'user.name', 'Screenshot Fixture'], { cwd: workspaceDir });
@@ -87,6 +96,27 @@ const imageNames = new Set();
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], ...options }).trim();
+}
+
+function frontmostApplication() {
+  const [pidText, bundleId, name] = run(launcherBinary, ['--frontmost']).split('\t');
+  const pid = Number(pidText);
+  if (!Number.isInteger(pid) || pid < 1 || !bundleId || !name) throw new Error('Could not identify the macOS frontmost application.');
+  return { pid, bundleId, name };
+}
+
+function assertFrontmostUnchanged(stage) {
+  const current = frontmostApplication();
+  if (!frontmostBaseline) frontmostBaseline = current;
+  if (!lastFrontmost) lastFrontmost = frontmostBaseline;
+  if (current.pid !== lastFrontmost.pid || current.bundleId !== lastFrontmost.bundleId) {
+    const change = `Frontmost application changed ${stage}: ${lastFrontmost.name} (PID ${lastFrontmost.pid}) -> ${current.name} (PID ${current.pid}).`;
+    if (!allowFocusChange) throw new Error(change);
+    focusChangeCount += 1;
+    console.log(`${change} Continuing because --allow-focus-change is set.`);
+    lastFrontmost = current;
+  }
+  return current;
 }
 
 function deepMerge(target, source) {
@@ -129,12 +159,21 @@ function copyGroupSettings(sourceSettings, paths) {
 
 async function writeSettings(settings) {
   appliedSettings = structuredClone(settings);
-  await writeFile(userSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+  const runtimeSettings = structuredClone(settings);
+  if (installedExtensions.has(customUIStyleId)) {
+    runtimeSettings['custom-ui-style.watch'] = false;
+    runtimeSettings['custom-ui-style.reloadWithoutPrompting'] = false;
+  }
+  await writeFile(userSettingsPath, `${JSON.stringify(runtimeSettings, null, 2)}\n`, { mode: 0o600 });
   await delay(600);
 }
 
 async function writeTransientSettings(settings) {
   const nextSettings = deepMerge(structuredClone(appliedSettings), settings);
+  if (installedExtensions.has(customUIStyleId)) {
+    nextSettings['custom-ui-style.watch'] = false;
+    nextSettings['custom-ui-style.reloadWithoutPrompting'] = false;
+  }
   await writeFile(userSettingsPath, `${JSON.stringify(nextSettings, null, 2)}\n`, { mode: 0o600 });
   await delay(600);
 }
@@ -154,15 +193,13 @@ async function installRecommendations(chapter) {
     const version = extensionPins.get(id);
     if (!version) throw new Error(`No pinned Marketplace version is configured for recommendation ${extension}`);
     if (installedExtensions.has(id)) continue;
-    console.log(`Installing ${id}@${version} for chapter ${chapter.chapter}.`);
-    execFileSync(cliPath, [
-      '--user-data-dir', profileDir,
-      '--extensions-dir', extensionsDir,
-      '--install-extension', `${id}@${version}`,
-      '--force',
-    ], { stdio: 'inherit' });
+    console.log(`Installing ${id}@${version} from Marketplace for chapter ${chapter.chapter}.`);
+    await installMarketplaceExtension(id, version, extensionsDir, marketplaceCacheDir);
+    await rm(path.join(extensionsDir, 'extensions.json'), { force: true });
+    await rm(path.join(profileDir, 'CachedProfilesData', '__default__profile__', 'extensions.user.cache'), { force: true });
     installedExtensions.add(id);
   }
+  if (installedExtensions.has(customUIStyleId)) await writeSettings(appliedSettings);
 }
 
 function launchArgs() {
@@ -172,6 +209,9 @@ function launchArgs() {
     '--disable-workspace-trust',
     '--disable-telemetry',
     '--disable-updates',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-background-timer-throttling',
     '--remote-debugging-port=0',
     '--window-size=' + windowSize,
     '--skip-welcome',
@@ -196,7 +236,15 @@ async function openFixedFiles() {
 }
 
 function childIsRunning(child) {
-  return child && child.exitCode === null && child.signalCode === null;
+  if (!child?.pid) return false;
+  try {
+    process.kill(child.pid, 0);
+    return true;
+  } catch (error) {
+    if (error.code === 'EPERM') return true;
+    if (error.code === 'ESRCH') return false;
+    throw error;
+  }
 }
 
 async function waitForDevToolsPort(child) {
@@ -223,16 +271,25 @@ async function waitForChildExit(child, timeout) {
 
 async function startApp({ clearNotifications = true } = {}) {
   if (appChild) return;
+  const beforeLaunch = assertFrontmostUnchanged('before VS Code launch');
+  console.log(`Frontmost before VS Code launch: ${beforeLaunch.name} (PID ${beforeLaunch.pid}).`);
   await rm(activePortFile, { force: true });
-  const child = spawn(appExecutable, launchArgs(), { detached: true, stdio: 'ignore' });
-  child.unref();
+  const pidText = run(launcherBinary, [appPath, ...launchArgs()]);
+  const child = { pid: Number(pidText) };
+  if (!Number.isInteger(child.pid) || child.pid < 1) throw new Error('The macOS launcher did not return a VS Code process ID.');
   appChild = child;
+  const afterLaunch = assertFrontmostUnchanged('after VS Code launch');
+  console.log(`Frontmost after VS Code launch: ${afterLaunch.name} (PID ${afterLaunch.pid}).`);
   devtoolsPort = await waitForDevToolsPort(child);
   windowControl = new VSCodeControl(devtoolsPort, appPath);
   await windowControl.connect();
   await openFixedFiles();
+  if (installedExtensions.has(customUIStyleId)) {
+    await windowControl.clickNotificationAction('first time use', 'No', 250);
+  }
   if (clearNotifications) await windowControl.clearNotifications();
   await delay(800);
+  assertFrontmostUnchanged('after VS Code became ready');
 }
 
 async function quitApp() {
@@ -240,9 +297,9 @@ async function quitApp() {
   windowControl?.close();
   windowControl = null;
   if (childIsRunning(child)) {
-    child.kill('SIGTERM');
+    process.kill(child.pid, 'SIGTERM');
     if (!await waitForChildExit(child, 3000)) {
-      child.kill('SIGKILL');
+      process.kill(child.pid, 'SIGKILL');
       if (!await waitForChildExit(child, 3000)) {
         throw new Error(`Could not stop the VS Code process started by this run (PID ${child.pid}).`);
       }
@@ -255,6 +312,23 @@ async function quitApp() {
 
 async function stopApp() {
   await quitApp();
+}
+
+let signalCleanupStarted = false;
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    if (signalCleanupStarted) return;
+    signalCleanupStarted = true;
+    void (async () => {
+      try {
+        await stopApp();
+        await rm(profileDir, { recursive: true, force: true });
+      } catch (error) {
+        console.error(`Could not clean up after ${signal}:`, error);
+      }
+      process.exit(128 + os.constants.signals[signal]);
+    })();
+  });
 }
 
 async function restartApp({ clearNotifications = true } = {}) {
@@ -288,6 +362,16 @@ async function restartApp({ clearNotifications = true } = {}) {
   if (clearNotifications) await windowControl.clearNotifications();
 }
 
+async function applyCustomUIStyleAndRestart() {
+  await windowControl.command('Custom UI Style: Reload');
+  const canceledExtensionRestart = await windowControl.clickNotificationAction('UI Style changed.', 'Cancel');
+  if (!canceledExtensionRestart) {
+    throw new Error('Custom UI Style did not offer its documented reload notification with a Cancel action.');
+  }
+  await quitApp();
+  await startApp();
+}
+
 function sourceSettingsFor(chapter) {
   return readChapterSettings(chapter);
 }
@@ -298,6 +382,13 @@ async function open(file) {
 
 async function goto(line, column = 1) {
   await windowControl.gotoLine(line, column);
+}
+
+function fixtureLine(relativePath, text) {
+  const contents = readFileSync(path.join(workspaceDir, relativePath), 'utf8').split(/\r?\n/);
+  const index = contents.findIndex((line) => line.includes(text));
+  if (index < 0) throw new Error(`Fixture text not found in ${relativePath}: ${text}`);
+  return { line: index + 1, column: contents[index].indexOf(text) + 1, text: contents[index] };
 }
 
 async function runInteraction(name, phase, chapterSettings) {
@@ -341,6 +432,12 @@ async function runInteraction(name, phase, chapterSettings) {
       await windowControl.key('F', 'KeyF', 4);
       await delay(400);
       break;
+    case 'command-palette':
+      await open('src/main.ts');
+      await windowControl.key('Escape', 'Escape');
+      await windowControl.key('P', 'KeyP', 12);
+      await delay(400);
+      break;
     case 'overview-ruler-search':
       await open('src/main.ts');
       await windowControl.key('F', 'KeyF', 4);
@@ -363,11 +460,23 @@ async function runInteraction(name, phase, chapterSettings) {
       await delay(1100);
       break;
     case 'tab-completion':
-      await open('src/emmet.html');
-      await goto(8, 1);
-      await windowControl.key('End', 'End');
-      await windowControl.key('Tab', 'Tab');
-      await delay(700);
+      await open('src/snippet-suggestions.ts');
+      {
+        const prefix = fixtureLine('src/snippet-suggestions.ts', 'sam');
+        await goto(prefix.line, prefix.column + 'sam'.length);
+      }
+      await windowControl.key('Space', 'Space', 2);
+      await delay(500);
+      {
+        const suggestionState = await windowControl.evaluate(`(() => {
+          const widget = document.querySelector('.suggest-widget');
+          const rows = [...document.querySelectorAll('.suggest-widget .monaco-list-row')].map((row) => row.innerText);
+          return { visible: !!widget?.getBoundingClientRect().height, rows };
+        })()`);
+        if (!suggestionState.visible || !suggestionState.rows.some((row) => /sample/i.test(row))) {
+          throw new Error(`The snippet suggestion example did not open with the fixture snippets: ${JSON.stringify(suggestionState)}`);
+        }
+      }
       break;
     case 'selected-suggestion':
       await open('src/suggestions.ts');
@@ -438,10 +547,43 @@ async function runInteraction(name, phase, chapterSettings) {
       await goto(1, 1);
       break;
     case 'code-decorations': {
-      await open('src/styles.css');
-      const [color] = await windowControl.moveToText('#9b87f5');
-      await windowControl.click(color.x, color.y);
+      await open('src/nested-styles.css');
+      {
+        const target = fixtureLine('src/nested-styles.css', '.card-36');
+        await goto(target.line, target.text.indexOf('#9b87f5') + 1);
+      }
       await delay(600);
+      break;
+    }
+    case 'editor-hints': {
+      await open('src/editor-hints.ts');
+      {
+        const target = fixtureLine('src/editor-hints.ts', 'formatLabel(42');
+        await goto(target.line, target.text.indexOf('42') + 1);
+      }
+      if (phase === 'before') await windowControl.command('Trigger Parameter Hints');
+      await delay(700);
+      break;
+    }
+    case 'indentation-tabs': {
+      await open('src/indentation.ts');
+      const target = fixtureLine('src/indentation.ts', 'return `${heading}:');
+      await goto(target.line, 1);
+      break;
+    }
+    case 'folding-and-guides': {
+      await open('src/indentation.ts');
+      const target = fixtureLine('src/indentation.ts', 'return `${heading}:');
+      await goto(target.line, 1);
+      await windowControl.key('End', 'End', 8);
+      await windowControl.moveToSelector('.monaco-editor .glyph-margin');
+      await delay(400);
+      break;
+    }
+    case 'scrollbars-and-ruler': {
+      await open('src/surface-scroll.ts');
+      const target = fixtureLine('src/surface-scroll.ts', 'surface line 40');
+      await goto(target.line, target.column);
       break;
     }
     case 'marker-colors': {
@@ -452,7 +594,7 @@ async function runInteraction(name, phase, chapterSettings) {
     }
     case 'save-diff': {
       const file = path.join(workspaceDir, 'src', 'save-state.ts');
-      await writeFile(file, 'const saved = "same";   ');
+      await writeFile(file, 'const saved = "changed";   ');
       await open('src/save-state.ts');
       await goto(1, 1);
       await windowControl.key('End', 'End');
@@ -474,7 +616,6 @@ async function resetInteraction(name, phase) {
       break;
     case 'tab-completion':
       await windowControl.key('Escape', 'Escape');
-      await windowControl.key('Z', 'KeyZ', 4);
       break;
     case 'selected-suggestion':
       await windowControl.key('Escape', 'Escape');
@@ -483,6 +624,8 @@ async function resetInteraction(name, phase) {
     case 'find-widget':
     case 'overview-ruler-search':
     case 'hover':
+    case 'command-palette':
+    case 'editor-hints':
       await windowControl.key('Escape', 'Escape');
       break;
     case 'multi-cursor':
@@ -500,6 +643,9 @@ async function resetInteraction(name, phase) {
     case 'surface-boundaries':
     case 'code-style':
     case 'code-decorations':
+    case 'indentation-tabs':
+    case 'folding-and-guides':
+    case 'scrollbars-and-ruler':
     case 'marker-colors':
       break;
     case 'save-diff':
@@ -525,18 +671,41 @@ function imageFilename(name) {
 }
 
 async function capture(name, chapter, group, description, captureState = 'none') {
+  assertFrontmostUnchanged(`before capture ${name}`);
   if (captureState === 'operation-confirmation') await windowControl.assertExpectedOperationConfirmation();
   else if (captureState === 'recommendation-toast') await windowControl.assertExpectedRecommendationToast();
   else await windowControl.assertNoModalOrToast();
+  await windowControl.waitForPaint();
   const destination = imageFilename(name);
+  const captureDestination = `${destination}.${process.pid}.capture.png`;
+  await rm(captureDestination, { force: true });
   if (!childIsRunning(appChild)) throw new Error('Refusing to capture without the VS Code process started by this run.');
-  const [windowId, width, height] = run(finderBinary, [appPath, String(appChild.pid)]).split(/\s+/);
+  const finderArgs = [appPath, String(appChild.pid)];
+  if (allowFocusChange) finderArgs.push('--allow-frontmost');
+  const [windowId, width, height, windowOrder, otherWindowOrder] = run(finderBinary, finderArgs).split(/\s+/);
   if (width !== '1200' || height !== '800') {
     throw new Error(`Expected a 1200x800 point window, found ${width}x${height}`);
   }
-  execFileSync('screencapture', ['-x', '-l', windowId, destination], { stdio: 'inherit' });
-  const dimensions = execFileSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', destination], { encoding: 'utf8' });
+  const beforeCapture = assertFrontmostUnchanged(`immediately before capture ${name}`);
+  console.log(`Frontmost before capture ${name}: ${beforeCapture.name} (PID ${beforeCapture.pid}).`);
+  const captureStartedAt = Date.now();
+  execFileSync('screencapture', ['-x', '-l', windowId, captureDestination], { stdio: 'inherit' });
+  const image = await readFile(captureDestination);
+  const imageInfo = await stat(captureDestination);
+  if (imageInfo.size < pngSignature.length || !image.subarray(0, pngSignature.length).equals(pngSignature) || imageInfo.mtimeMs < captureStartedAt) {
+    throw new Error(`The capture was not a fresh PNG: ${captureDestination}`);
+  }
+  const dimensions = execFileSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', captureDestination], { encoding: 'utf8' });
   if (!dimensions.includes('pixelWidth:') || !dimensions.includes('pixelHeight:')) throw new Error(`Unable to verify screenshot dimensions: ${destination}`);
+  await rename(captureDestination, destination);
+  const afterCapture = assertFrontmostUnchanged(`immediately after capture ${name}`);
+  const [afterWindowId, , , afterWindowOrder, afterOtherWindowOrder] = run(finderBinary, finderArgs).split(/\s+/);
+  if (beforeCapture.pid !== afterCapture.pid || afterWindowId !== windowId
+      || (!allowFocusChange && (Number(windowOrder) <= Number(otherWindowOrder)
+        || Number(afterWindowOrder) <= Number(afterOtherWindowOrder)))) {
+    throw new Error(`Capture ${name} did not preserve window identity or frontmost application.`);
+  }
+  console.log(`Captured ${name}; frontmost remains ${afterCapture.name} (PID ${afterCapture.pid}).`);
   indexRows.push({ chapter, group, file: path.relative(outputDir, destination), description });
 }
 
@@ -570,7 +739,9 @@ async function capturePair(chapter, groupKey, currentSettings) {
   const groupSettings = copyGroupSettings(currentSettings, spec.settings);
   const nextSettings = deepMerge(structuredClone(appliedSettings), groupSettings);
   await writeSettings(nextSettings);
-  if (spec.restart) await restartApp();
+  if (spec.settings.some(([first]) => first.startsWith('custom-ui-style.'))) {
+    await applyCustomUIStyleAndRestart();
+  } else if (spec.restart) await restartApp();
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   const interactionResult = await runInteraction(spec.interaction, 'after', currentSettings);
   const autosaveInconclusiveReason = groupKey === 'autosave' && interactionResult === false
@@ -622,6 +793,8 @@ for (const chapter of chapters) {
 }
 
 try {
+  frontmostBaseline = frontmostApplication();
+  console.log(`Frontmost application before the run: ${frontmostBaseline.name} (PID ${frontmostBaseline.pid}).`);
   await startApp();
   if (autosaveOnlyMode) {
     for (const chapter of chapters) {
@@ -716,3 +889,4 @@ if (autosaveOnlyMode) {
   ].join('\n') + '\n');
 }
 console.log(`Captured ${imageNames.size} PNGs. Image index: ${indexPath}`);
+console.log(`Observed ${focusChangeCount} frontmost application change(s).`);

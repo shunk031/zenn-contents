@@ -15,7 +15,7 @@ export const groupSpecs = {
   'minimal-chrome': {
     chapter: 1,
     settings: [setting('workbench.activityBar.location'), setting('workbench.editor.showTabs'), setting('workbench.statusBar.visible')],
-    description: 'The Activity Bar and Status Bar disappear while one editor tab remains.',
+    description: 'Six editor tabs and breadcrumbs collapse to a single title row as the Activity Bar and Status Bar disappear.',
   },
   'editor-aids': {
     chapter: 1,
@@ -36,7 +36,7 @@ export const groupSpecs = {
     chapter: 2,
     settings: [setting('workbench.tree.enableStickyScroll'), setting('workbench.tree.renderIndentGuides'), setting('workbench.tree.indent'), setting('explorer.compactFolders')],
     interaction: 'tree-layout',
-    description: 'Nested folders expand into separate rows without tree indent guides.',
+    description: 'Nested folders use a visible indent guide before the chapter setting removes it; the indent value itself matches the default.',
   },
   'operation-confirmations': {
     chapter: 2,
@@ -65,8 +65,8 @@ export const groupSpecs = {
     chapter: 4,
     settings: [setting('custom-ui-style.stylesheet', '.notification-toast'), setting('custom-ui-style.stylesheet', '.quick-input-widget.show-file-icons'), setting('custom-ui-style.stylesheet', '.quick-input-widget'), setting('custom-ui-style.stylesheet', '.quick-input-list .scrollbar'), setting('custom-ui-style.stylesheet', '.monaco-action-bar.quick-input-inline-action-bar'), setting('custom-ui-style.stylesheet', '.editor-widget.find-widget'), setting('custom-ui-style.stylesheet', '.quick-input-titlebar')],
     restart: true,
-    interaction: 'find-widget',
-    description: 'The Find widget and quick input use the new overlay spacing and shadows.',
+    interaction: 'command-palette',
+    description: 'The open Command Palette shows the chapter spacing and shadow styling.',
   },
   'surface-boundaries': {
     chapter: 4,
@@ -110,13 +110,13 @@ export const groupSpecs = {
     chapter: 7,
     settings: [setting('editor.stickyScroll.enabled'), setting('editor.colorDecorators'), setting('editor.codeLens'), setting('editor.links'), setting('editor.matchBrackets')],
     interaction: 'code-decorations',
-    description: 'The CSS color swatch beside the accent literal disappears.',
+    description: 'A nested CSS block stays in view while its sticky header and accent color swatch respond to the chapter settings.',
   },
   'editor-hints': {
     chapter: 7,
     settings: [setting('editor.parameterHints.enabled'), setting('editor.lightbulb.enabled'), setting('editor.hover.enabled')],
-    interaction: 'hover',
-    description: 'The editor hint and hover UI follows the chapter settings.',
+    interaction: 'editor-hints',
+    description: 'A call with a type error stages signature help and an available code action.',
   },
   'save-and-diff': {
     chapter: 7,
@@ -128,19 +128,19 @@ export const groupSpecs = {
   'line-numbers-and-indent': {
     chapter: 8,
     settings: [setting('editor.lineNumbers'), setting('editor.tabSize'), setting('editor.detectIndentation')],
-    interaction: 'editor-top',
-    description: 'Relative line numbers and the configured indentation width appear in the editor.',
+    interaction: 'indentation-tabs',
+    description: 'Relative line numbers and the narrower tab indentation appear on the same nested code.',
   },
   'folding-and-guides': {
     chapter: 8,
     settings: [setting('editor.showFoldingControls'), setting('editor.guides.indentation'), setting('editor.renderWhitespace'), setting('editor.renderLineHighlight'), setting('editor.occurrencesHighlight'), setting('editor.selectionHighlight')],
-    interaction: 'editor-top',
+    interaction: 'folding-and-guides',
     description: 'Folding controls, indentation guides, whitespace, and code highlights change.',
   },
   'scrollbars-and-ruler': {
     chapter: 9,
     settings: [setting('editor.scrollbar.horizontal'), setting('editor.scrollbar.vertical'), setting('editor.overviewRulerBorder')],
-    interaction: 'editor-top',
+    interaction: 'scrollbars-and-ruler',
     description: 'Editor scrollbars and the overview ruler use the chapter layout.',
   },
   'marker-colors': {
@@ -159,7 +159,7 @@ export const groupSpecs = {
     chapter: 10,
     settings: [setting('editor.tabCompletion'), setting('editor.snippetSuggestions'), setting('emmet.triggerExpansionOnTab')],
     interaction: 'tab-completion',
-    description: 'Tab expands the sample Emmet abbreviation into HTML elements.',
+    description: 'The open TypeScript suggestion list shows built-in snippet items in the configured order.',
   },
   'selected-suggestion-color': {
     chapter: 10,

@@ -103,6 +103,11 @@ export class VSCodeControl {
     return result.result.value;
   }
 
+  async waitForPaint() {
+    const timestamp = await this.evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(performance.now()))))');
+    if (!Number.isFinite(timestamp)) throw new Error('The VS Code renderer did not produce two fresh animation frames.');
+  }
+
   async key(key, code, modifiers = 0) {
     const params = { key, code, modifiers, windowsVirtualKeyCode: keyCode(key) };
     await this.send('Input.dispatchKeyEvent', { ...params, type: 'keyDown' });
@@ -126,9 +131,21 @@ export class VSCodeControl {
   async openFile(relativePath) {
     await this.key('Escape', 'Escape');
     await this.key('P', 'KeyP', 4);
-    await delay(200);
+    const deadline = Date.now() + 10_000;
+    let inputReady = false;
+    while (Date.now() < deadline) {
+      inputReady = await this.evaluate(`(() => {
+        const widget = document.querySelector('.quick-input-widget');
+        const input = widget?.querySelector('input');
+        return !!widget?.getBoundingClientRect().height && input === document.activeElement;
+      })()`);
+      if (inputReady) break;
+      await delay(100);
+    }
+    if (!inputReady) throw new Error(`Quick Open did not become ready before opening ${relativePath}.`);
     await this.type(relativePath);
-    await delay(350);
+    const enteredPath = await this.evaluate("document.querySelector('.quick-input-widget input')?.value");
+    if (enteredPath !== relativePath) throw new Error(`Quick Open received ${JSON.stringify(enteredPath)} instead of ${relativePath}.`);
     await this.key('Enter', 'Enter');
     await delay(450);
   }
@@ -201,6 +218,27 @@ export class VSCodeControl {
     })()`);
     if (!point) throw new Error(`Visible UI element not found: ${selector}`);
     await this.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: point.x, y: point.y });
+  }
+
+  async clickNotificationAction(messagePart, actionLabel, timeout = 10_000) {
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      const clicked = await this.evaluate(`(() => {
+        const messagePart = ${JSON.stringify(messagePart.toLowerCase())};
+        const actionLabel = ${JSON.stringify(actionLabel)};
+        const toast = [...document.querySelectorAll('.notifications-toasts .notification-toast')]
+          .find((item) => item.innerText.toLowerCase().includes(messagePart));
+        if (!toast) return false;
+        const button = [...toast.querySelectorAll('button, [role="button"]')]
+          .find((item) => item.textContent.trim() === actionLabel);
+        if (!button) return false;
+        button.click();
+        return true;
+      })()`);
+      if (clicked) return true;
+      await delay(250);
+    }
+    return false;
   }
 
   async clickExplorerFile(filename) {
