@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { access, cp, mkdir, readFile, rename, rm, stat, writeFile, appendFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
+import { access, cp, mkdir, readFile, readdir, rename, rm, stat, writeFile, appendFile } from 'node:fs/promises';
+import { execFileSync, spawn } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,8 +14,8 @@ const kitDir = path.resolve(here, '..');
 const outputDir = path.join(kitDir, 'output');
 const smokeMode = process.argv.includes('--smoke');
 const autosaveOnlyMode = process.argv.includes('--autosave-only');
-const allowFocusChange = process.argv.includes('--allow-focus-change');
-if (smokeMode && autosaveOnlyMode) throw new Error('Capture modes cannot be combined.');
+const resumeChapter11Mode = process.argv.includes('--resume-chapter-11');
+if ([smokeMode, autosaveOnlyMode, resumeChapter11Mode].filter(Boolean).length > 1) throw new Error('Capture modes cannot be combined.');
 const captureOutputDir = smokeMode ? path.join(outputDir, 'smoke') : outputDir;
 const pngSignature = Buffer.from('89504e470d0a1a0a', 'hex');
 const runtimeDir = path.join(outputDir, 'runtime');
@@ -26,25 +26,24 @@ const extensionsDir = path.join(runtimeDir, 'extensions');
 const marketplaceCacheDir = path.join(runtimeDir, 'marketplace-cache');
 const workspaceDir = path.join(runtimeDir, 'workspace');
 const appPath = path.join(runtimeDir, 'Visual Studio Code.app');
+const appExecutable = path.join(appPath, 'Contents', 'MacOS', 'Electron');
 const finderSource = path.join(here, 'window-id.swift');
 const finderBinary = path.join(runtimeDir, 'window-id');
-const launcherSource = path.join(here, 'launch-app.swift');
-const launcherBinary = path.join(runtimeDir, 'launch-app');
+const cliPath = path.join(appPath, 'Contents', 'Resources', 'app', 'bin', 'code');
+const frontmostSource = path.join(here, 'frontmost.swift');
+const frontmostBinary = path.join(runtimeDir, 'frontmost');
 const imageDir = path.join(captureOutputDir, 'images');
 const indexPath = path.join(captureOutputDir, 'image-index.csv');
 const activePortFile = path.join(profileDir, 'DevToolsActivePort');
 const windowSize = '1200,800';
 const customUIStyleId = 'subframe7536.custom-ui-style';
 let devtoolsPort;
-let frontmostBaseline;
-let lastFrontmost;
-let focusChangeCount = 0;
 let ownerIdleSample;
 const fixtureDir = path.join(kitDir, 'fixture');
 const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
 if (process.argv.includes('--help')) {
-  console.log('Usage: node ./scripts/run.mjs [--smoke | --autosave-only] [--allow-focus-change]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/. --autosave-only preserves output/images and replaces the chapter 11 autosave pair and image index entries. --allow-focus-change logs frontmost changes and continues.');
+  console.log('Usage: node ./scripts/run.mjs [--smoke | --autosave-only | --resume-chapter-11]\nRebuilds the isolated VS Code profile and captures the 72-image screenshot set. --smoke captures only 00-zero and the chapter 1 theme pair under output/smoke/. --autosave-only reshoots the chapter 11 autosave pair for an existing full set. --resume-chapter-11 captures the remaining chapter 11 images after an interrupted full run. Run only while nobody is using the Mac.');
   process.exit(0);
 }
 
@@ -55,10 +54,34 @@ if (autosaveOnlyMode) {
   const existingLines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
   if (existingLines.length !== 73) throw new Error(`Expected an existing 72-image index before targeted capture; found ${existingLines.length - 1} rows.`);
 }
+if (resumeChapter11Mode) {
+  const existingNames = new Set(await readdir(imageDir));
+  const expectedMissing = new Set([
+    'ch11-autosave-after.png',
+    'ch11-recommendation-notifications-before.png',
+    'ch11-recommendation-notifications-after.png',
+    'ch11-checkpoint.png',
+  ]);
+  const requiredNames = new Set([
+    '00-zero.png',
+    ...chapters.flatMap((chapter) => [
+      ...chapter.groups.flatMap((group) => ['before', 'after'].map((side) => `ch${String(chapter.chapter).padStart(2, '0')}-${group}-${side}.png`)),
+      `ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`,
+    ]),
+  ]);
+  const missing = new Set([...requiredNames].filter((name) => !existingNames.has(name)));
+  const unexpected = [...existingNames].filter((name) => !requiredNames.has(name));
+  const interruptedSet = existingNames.size === 68 && missing.size === expectedMissing.size
+    && [...missing].every((name) => expectedMissing.has(name));
+  const completeSet = existingNames.size === 72 && missing.size === 0;
+  if ((!interruptedSet && !completeSet) || unexpected.length) {
+    throw new Error(`Resume mode requires the 68-image interrupted set or a complete 72-image set; found ${existingNames.size} entries, missing ${[...missing].join(', ')}.`);
+  }
+}
 await rm(runtimeDir, { recursive: true, force: true });
 await mkdir(runtimeDir, { recursive: true });
 await rm(profileDir, { recursive: true, force: true });
-if (!autosaveOnlyMode) await rm(imageDir, { recursive: true, force: true });
+if (!autosaveOnlyMode && !resumeChapter11Mode) await rm(imageDir, { recursive: true, force: true });
 await mkdir(imageDir, { recursive: true });
 await mkdir(extensionsDir, { recursive: true });
 await cp(fixtureDir, workspaceDir, { recursive: true });
@@ -74,7 +97,7 @@ if (product.version !== '1.101.1' || product.commit !== '18e3a1ec544e6907be1e944
   throw new Error(`Downloaded VS Code product identity did not match the pin: ${product.version} ${product.commit}`);
 }
 execFileSync('swiftc', ['-O', finderSource, '-o', finderBinary], { stdio: 'inherit' });
-execFileSync('swiftc', ['-O', launcherSource, '-o', launcherBinary], { stdio: 'inherit' });
+execFileSync('swiftc', ['-O', frontmostSource, '-o', frontmostBinary], { stdio: 'inherit' });
 
 execFileSync('git', ['init', '--quiet', '--initial-branch=main'], { cwd: workspaceDir });
 execFileSync('git', ['config', 'user.name', 'Screenshot Fixture'], { cwd: workspaceDir });
@@ -92,6 +115,7 @@ await mkdir(path.dirname(userSettingsPath), { recursive: true });
 let appliedSettings = {};
 let windowControl;
 let appChild;
+let activeFile;
 const installedExtensions = new Set();
 const indexRows = [];
 const imageNames = new Set();
@@ -101,7 +125,7 @@ function run(command, args, options = {}) {
 }
 
 function frontmostApplication() {
-  const [pidText, bundleId, name] = run(launcherBinary, ['--frontmost']).split('\t');
+  const [pidText, bundleId, name] = run(frontmostBinary, []).split('\t');
   const pid = Number(pidText);
   if (!Number.isInteger(pid) || pid < 1 || !bundleId || !name) throw new Error('Could not identify the macOS frontmost application.');
   return { pid, bundleId, name };
@@ -123,17 +147,9 @@ function assertOwnerAway(stage) {
   ownerIdleSample = sample;
 }
 
-function assertFrontmostUnchanged(stage) {
+function logFrontmost(stage) {
   const current = frontmostApplication();
-  if (!frontmostBaseline) frontmostBaseline = current;
-  if (!lastFrontmost) lastFrontmost = frontmostBaseline;
-  if (current.pid !== lastFrontmost.pid || current.bundleId !== lastFrontmost.bundleId) {
-    const change = `Frontmost application changed ${stage}: ${lastFrontmost.name} (PID ${lastFrontmost.pid}) -> ${current.name} (PID ${current.pid}).`;
-    if (!allowFocusChange) throw new Error(change);
-    focusChangeCount += 1;
-    console.log(`${change} Continuing because --allow-focus-change is set.`);
-    lastFrontmost = current;
-  }
+  console.log(`Frontmost ${stage}: ${current.name} (PID ${current.pid}).`);
   return current;
 }
 
@@ -227,9 +243,6 @@ function launchArgs() {
     '--disable-workspace-trust',
     '--disable-telemetry',
     '--disable-updates',
-    '--disable-backgrounding-occluded-windows',
-    '--disable-renderer-backgrounding',
-    '--disable-background-timer-throttling',
     '--remote-debugging-port=0',
     '--window-size=' + windowSize,
     '--skip-welcome',
@@ -250,7 +263,7 @@ const fixedFiles = [
   ];
 
 async function openFixedFiles() {
-  for (const file of fixedFiles) await windowControl.openFile(file);
+  for (const file of fixedFiles) await open(file);
 }
 
 function childIsRunning(child) {
@@ -290,15 +303,11 @@ async function waitForChildExit(child, timeout) {
 async function startApp({ clearNotifications = true } = {}) {
   if (appChild) return;
   assertOwnerAway('VS Code launch');
-  const beforeLaunch = assertFrontmostUnchanged('before VS Code launch');
-  console.log(`Frontmost before VS Code launch: ${beforeLaunch.name} (PID ${beforeLaunch.pid}).`);
+  logFrontmost('before VS Code launch');
   await rm(activePortFile, { force: true });
-  const pidText = run(launcherBinary, [appPath, ...launchArgs()]);
-  const child = { pid: Number(pidText) };
-  if (!Number.isInteger(child.pid) || child.pid < 1) throw new Error('The macOS launcher did not return a VS Code process ID.');
+  const child = spawn(appExecutable, launchArgs(), { detached: true, stdio: 'ignore' });
+  child.unref();
   appChild = child;
-  const afterLaunch = assertFrontmostUnchanged('after VS Code launch');
-  console.log(`Frontmost after VS Code launch: ${afterLaunch.name} (PID ${afterLaunch.pid}).`);
   devtoolsPort = await waitForDevToolsPort(child);
   windowControl = new VSCodeControl(devtoolsPort, appPath);
   await windowControl.connect();
@@ -308,7 +317,7 @@ async function startApp({ clearNotifications = true } = {}) {
   }
   if (clearNotifications) await windowControl.clearNotifications();
   await delay(800);
-  assertFrontmostUnchanged('after VS Code became ready');
+  logFrontmost('after VS Code became ready');
 }
 
 async function quitApp() {
@@ -397,12 +406,19 @@ function sourceSettingsFor(chapter) {
   return readChapterSettings(chapter);
 }
 
-async function open(file) {
-  await windowControl.openFile(file);
+async function open(file, line, column = 1) {
+  const absolutePath = path.join(workspaceDir, file);
+  const args = ['--user-data-dir', profileDir, '--extensions-dir', extensionsDir];
+  args.push('--goto', `${absolutePath}:${line || 1}:${column}`);
+  execFileSync(cliPath, args, { stdio: 'ignore', env: { ...process.env, VSCODE_IPC_HOOK_CLI: '' } });
+  const processCommand = execFileSync('/bin/ps', ['-ww', '-p', String(appChild.pid), '-o', 'command='], { encoding: 'utf8' });
+  if (!processCommand.includes(path.join(appPath, 'Contents', 'MacOS', 'Electron')) || !processCommand.includes(`--user-data-dir ${profileDir}`)) throw new Error('The VS Code CLI did not preserve the isolated kit process identity.');
+  activeFile = file;
 }
 
 async function goto(line, column = 1) {
-  await windowControl.gotoLine(line, column);
+  if (!activeFile) throw new Error('Cannot position the editor before opening a fixture file.');
+  await open(activeFile, line, column);
 }
 
 function fixtureLine(relativePath, text) {
@@ -674,8 +690,7 @@ async function resetInteraction(name, phase) {
       break;
     case 'autosave':
       await windowControl.key('Escape', 'Escape');
-      if (phase === 'before') await windowControl.key('Z', 'KeyZ', 4);
-      await writeFile(path.join(workspaceDir, 'src', 'autosave.ts'), await readFile(path.join(fixtureDir, 'src', 'autosave.ts')));
+      await windowControl.key('Z', 'KeyZ', 4);
       break;
     default:
       break;
@@ -693,7 +708,7 @@ function imageFilename(name) {
 
 async function capture(name, chapter, group, description, captureState = 'none') {
   assertOwnerAway(`capture ${name}`);
-  assertFrontmostUnchanged(`before capture ${name}`);
+  logFrontmost(`before capture ${name}`);
   if (captureState === 'operation-confirmation') await windowControl.assertExpectedOperationConfirmation();
   else if (captureState === 'recommendation-toast') await windowControl.assertExpectedRecommendationToast();
   else await windowControl.assertNoModalOrToast();
@@ -703,13 +718,11 @@ async function capture(name, chapter, group, description, captureState = 'none')
   await rm(captureDestination, { force: true });
   if (!childIsRunning(appChild)) throw new Error('Refusing to capture without the VS Code process started by this run.');
   const finderArgs = [appPath, String(appChild.pid)];
-  if (allowFocusChange) finderArgs.push('--allow-frontmost');
-  const [windowId, width, height, windowOrder, otherWindowOrder] = run(finderBinary, finderArgs).split(/\s+/);
+  const [windowId, width, height] = run(finderBinary, finderArgs).split(/\s+/);
   if (width !== '1200' || height !== '800') {
     throw new Error(`Expected a 1200x800 point window, found ${width}x${height}`);
   }
-  const beforeCapture = assertFrontmostUnchanged(`immediately before capture ${name}`);
-  console.log(`Frontmost before capture ${name}: ${beforeCapture.name} (PID ${beforeCapture.pid}).`);
+  logFrontmost(`immediately before capture ${name}`);
   const captureStartedAt = Date.now();
   execFileSync('screencapture', ['-x', '-l', windowId, captureDestination], { stdio: 'inherit' });
   const image = await readFile(captureDestination);
@@ -720,14 +733,10 @@ async function capture(name, chapter, group, description, captureState = 'none')
   const dimensions = execFileSync('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', captureDestination], { encoding: 'utf8' });
   if (!dimensions.includes('pixelWidth:') || !dimensions.includes('pixelHeight:')) throw new Error(`Unable to verify screenshot dimensions: ${destination}`);
   await rename(captureDestination, destination);
-  const afterCapture = assertFrontmostUnchanged(`immediately after capture ${name}`);
-  const [afterWindowId, , , afterWindowOrder, afterOtherWindowOrder] = run(finderBinary, finderArgs).split(/\s+/);
-  if (beforeCapture.pid !== afterCapture.pid || afterWindowId !== windowId
-      || (!allowFocusChange && (Number(windowOrder) <= Number(otherWindowOrder)
-        || Number(afterWindowOrder) <= Number(afterOtherWindowOrder)))) {
-    throw new Error(`Capture ${name} did not preserve window identity or frontmost application.`);
-  }
-  console.log(`Captured ${name}; frontmost remains ${afterCapture.name} (PID ${afterCapture.pid}).`);
+  const afterCapture = logFrontmost(`immediately after capture ${name}`);
+  const [afterWindowId] = run(finderBinary, finderArgs).split(/\s+/);
+  if (afterWindowId !== windowId) throw new Error(`Capture ${name} changed the VS Code window identity.`);
+  console.log(`Captured ${name}; frontmost is ${afterCapture.name} (PID ${afterCapture.pid}).`);
   indexRows.push({ chapter, group, file: path.relative(outputDir, destination), description });
 }
 
@@ -754,6 +763,14 @@ async function capturePair(chapter, groupKey, currentSettings) {
     : groupKey === 'recommendation-notifications'
       ? 'recommendation-toast'
       : 'none';
+  if (groupKey === 'autosave') {
+    const state = await windowControl.notificationState();
+    const expectedToasts = state.toasts.every((toast) => /failed to save.*autosave\.ts|recommended.*python/i.test(toast));
+    if (state.toasts.length && expectedToasts && !state.dialogs.length && !state.restartPrompt) {
+      await windowControl.clearNotifications();
+      await delay(400);
+    }
+  }
   await capture(beforeName, chapter.chapter, groupKey, beforeText, beforeCaptureState);
   await resetInteraction(spec.interaction, 'before');
   if (spec.previewSettings) await writeSettings(appliedSettings);
@@ -776,6 +793,11 @@ async function capturePair(chapter, groupKey, currentSettings) {
     if (beforeRow) beforeRow.description = autosaveInconclusiveReason;
   }
   const afterText = operationInconclusiveReason || spec.inconclusiveReason || autosaveInconclusiveReason || `After ${groupKey} is applied, ${spec.description}`;
+  if (groupKey === 'autosave' && interactionResult === false) {
+    const state = await windowControl.notificationState();
+    const saveConflict = state.toasts.length === 1 && /failed to save.*autosave\.ts/i.test(state.toasts[0]);
+    if (saveConflict && !state.dialogs.length && !state.restartPrompt) await windowControl.clearNotifications();
+  }
   await capture(afterName, chapter.chapter, groupKey, afterText);
   await resetInteraction(spec.interaction, 'after');
   if (spec.previewSettings) await writeSettings(appliedSettings);
@@ -784,9 +806,6 @@ async function capturePair(chapter, groupKey, currentSettings) {
     await rm(path.join(workspaceDir, '.vscode', 'extensions.json'), { force: true });
   }
 
-  if (spec.interaction === 'autosave') {
-    await writeFile(path.join(workspaceDir, 'src', 'autosave.ts'), await readFile(path.join(fixtureDir, 'src', 'autosave.ts')));
-  }
   return appliedSettings;
 }
 
@@ -815,10 +834,9 @@ for (const chapter of chapters) {
 }
 
 try {
-  frontmostBaseline = frontmostApplication();
-  console.log(`Frontmost application before the run: ${frontmostBaseline.name} (PID ${frontmostBaseline.pid}).`);
+  logFrontmost('before the run');
   await startApp();
-  if (autosaveOnlyMode) {
+  if (autosaveOnlyMode || resumeChapter11Mode) {
     for (const chapter of chapters) {
       await installRecommendations(chapter);
       await restartApp();
@@ -835,6 +853,16 @@ try {
       await writeSettings(nextSettings);
       if (priorGroup.restart) await restartApp();
       await capturePair(chapter, 'autosave', currentSettings);
+      if (resumeChapter11Mode) {
+        await capturePair(chapter, 'recommendation-notifications', currentSettings);
+        await writeSettings(currentSettings);
+        await restartApp();
+        await windowControl.key('Escape', 'Escape');
+        await open('src/main.ts');
+        await delay(600);
+        const checkpointName = `ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`;
+        await capture(checkpointName, chapter.chapter, 'checkpoint', `After chapter ${chapter.chapter}, its cumulative settings are shown in the fixed sample project.`);
+      }
       break;
     }
   } else {
@@ -867,7 +895,7 @@ try {
   await rm(profileDir, { recursive: true, force: true });
 }
 
-const expectedImageCount = smokeMode ? 3 : autosaveOnlyMode ? 2 : 72;
+const expectedImageCount = smokeMode ? 3 : autosaveOnlyMode ? 2 : resumeChapter11Mode ? 5 : 72;
 if (indexRows.length !== expectedImageCount || imageNames.size !== expectedImageCount) {
   throw new Error(`Expected ${expectedImageCount} screenshots; captured ${imageNames.size}`);
 }
@@ -904,6 +932,41 @@ if (autosaveOnlyMode) {
     throw new Error('Could not merge the targeted autosave and multi-cursor index rows into the existing 72-image index.');
   }
   await writeFile(indexPath, mergedLines.join('\n') + '\n');
+} else if (resumeChapter11Mode) {
+  const expected = [
+    { chapter: 0, group: 'zero', file: 'images/00-zero.png', description: 'A fresh profile opens the fixed sample project with no user-installed extensions.' },
+    ...chapters.flatMap((chapter) => [
+      ...chapter.groups.flatMap((group) => {
+        const spec = groupSpecs[group];
+        return ['before', 'after'].map((side) => ({
+          chapter: chapter.chapter,
+          group,
+          file: `images/ch${String(chapter.chapter).padStart(2, '0')}-${group}-${side}.png`,
+          description: group === 'recommendation-notifications' && side === 'before'
+            ? 'Before recommendation-notifications, opening the Python fixture shows an extension recommendation toast.'
+            : group === 'operation-confirmations'
+              ? 'Inconclusive: the CDP Explorer drag did not trigger a move confirmation in VS Code 1.101.1.'
+            : spec.inconclusiveReason || (group === 'autosave'
+              ? 'Inconclusive: with files.autoSave set to afterDelay and files.autoSaveDelay unset, VS Code kept the edited fixture dirty through the 10-second wait.'
+              : side === 'before'
+                ? `The sample project editor and Explorer show the cumulative state before ${group} is applied.`
+                : `After ${group} is applied, ${spec.description}`),
+        }));
+      }),
+      { chapter: chapter.chapter, group: 'checkpoint', file: `images/ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`, description: `After chapter ${chapter.chapter}, its cumulative settings are shown in the fixed sample project.` },
+    ]),
+  ];
+  for (const row of expected) {
+    try {
+      await access(path.join(imageDir, path.basename(row.file)));
+    } catch {
+      throw new Error(`Cannot index missing screenshot ${row.file}`);
+    }
+  }
+  await writeFile(indexPath, [
+    ['chapter', 'group', 'file', 'description'].map(csv).join(','),
+    ...expected.map(rowLine),
+  ].join('\n') + '\n');
 } else {
   await writeFile(indexPath, [
     ['chapter', 'group', 'file', 'description'].map(csv).join(','),
@@ -911,4 +974,3 @@ if (autosaveOnlyMode) {
   ].join('\n') + '\n');
 }
 console.log(`Captured ${imageNames.size} PNGs. Image index: ${indexPath}`);
-console.log(`Observed ${focusChangeCount} frontmost application change(s).`);

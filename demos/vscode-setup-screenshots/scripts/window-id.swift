@@ -2,10 +2,9 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-let allowFrontmost = CommandLine.arguments.count == 4 && CommandLine.arguments[3] == "--allow-frontmost"
-guard (CommandLine.arguments.count == 3 || allowFrontmost),
+guard CommandLine.arguments.count == 3,
       let expectedPID = pid_t(CommandLine.arguments[2]) else {
-    fputs("usage: window-id <app-bundle-path> <pid> [--allow-frontmost]\n", stderr)
+    fputs("usage: window-id <app-bundle-path> <pid>\n", stderr)
     exit(2)
 }
 
@@ -48,21 +47,4 @@ guard let window = candidates.max(by: { area($0) < area($1) }),
     exit(5)
 }
 
-guard let targetIndex = windows.firstIndex(where: { ($0[kCGWindowNumber as String] as? Int) == id }) else {
-    fputs("unable to determine VS Code window order\n", stderr)
-    exit(6)
-}
-let otherWindowIndex = windows.firstIndex { item in
-    guard (item[kCGWindowOwnerPID as String] as? Int) != Int(app.processIdentifier),
-          (item[kCGWindowLayer as String] as? Int) == 0,
-          (item[kCGWindowIsOnscreen as String] as? Bool ?? false) else { return false }
-    return area(item) > 0
-}
-if !allowFrontmost {
-    guard let otherWindowIndex, targetIndex > otherWindowIndex else {
-        fputs("VS Code window is not behind another on-screen app window\n", stderr)
-        exit(7)
-    }
-}
-
-print("\(id) \(Int(rect.width)) \(Int(rect.height)) \(targetIndex) \(otherWindowIndex ?? -1)")
+print("\(id) \(Int(rect.width)) \(Int(rect.height))")

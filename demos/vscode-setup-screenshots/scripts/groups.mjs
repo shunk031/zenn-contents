@@ -48,6 +48,7 @@ export const groupSpecs = {
     chapter: 2,
     settings: [setting('explorer.decorations.badges'), setting('git.decorations.enabled')],
     description: 'Explorer error badges and Git status colors disappear from the file list.',
+    inconclusiveReason: 'Inconclusive: disabling Explorer badges and Git decoration colors showed no clear difference in this fixture.',
   },
   'window-chrome': {
     chapter: 3,
@@ -60,6 +61,7 @@ export const groupSpecs = {
     settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title > .label-container > .title-label'), setting('custom-ui-style.font.sansSerif')],
     restart: true,
     description: 'Extra spacing clears the editor title area around the window controls.',
+    inconclusiveReason: 'Inconclusive: the configured title spacing showed no visible change in the editor title.',
   },
   overlays: {
     chapter: 4,
@@ -142,6 +144,7 @@ export const groupSpecs = {
     settings: [setting('editor.scrollbar.horizontal'), setting('editor.scrollbar.vertical'), setting('editor.overviewRulerBorder')],
     interaction: 'scrollbars-and-ruler',
     description: 'Editor scrollbars and the overview ruler use the chapter layout.',
+    inconclusiveReason: 'Inconclusive: the chapter scrollbar and overview-ruler settings showed no visible difference at this scroll position.',
   },
   'marker-colors': {
     chapter: 9,
@@ -160,6 +163,7 @@ export const groupSpecs = {
     settings: [setting('editor.tabCompletion'), setting('editor.snippetSuggestions'), setting('emmet.triggerExpansionOnTab')],
     interaction: 'tab-completion',
     description: 'The open TypeScript suggestion list shows built-in snippet items in the configured order.',
+    inconclusiveReason: 'Inconclusive: the suggestion list shows word completions, not snippet items, in VS Code 1.101.1.',
   },
   'selected-suggestion-color': {
     chapter: 10,
@@ -172,6 +176,7 @@ export const groupSpecs = {
     settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title > .label-container > .title-label'), setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'sideBar.background')],
     restart: true,
     description: 'The sidebar background and file title spacing receive their final styling.',
+    inconclusiveReason: 'Inconclusive: the final sidebar background and title spacing showed no visible change in this screenshot.',
   },
   autosave: {
     chapter: 11,
