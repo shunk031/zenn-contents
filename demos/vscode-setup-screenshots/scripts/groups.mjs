@@ -42,7 +42,7 @@ export const groupSpecs = {
     chapter: 2,
     settings: [setting('explorer.confirmDragAndDrop'), setting('explorer.confirmDelete')],
     interaction: 'operation-confirmations',
-    description: 'Dragging the fixture file into components opens a confirmation before and moves without one after.',
+    description: 'Moving the fixture file asks for confirmation before and moves without one after.',
   },
   'explorer-decorations': {
     chapter: 2,
@@ -87,13 +87,13 @@ export const groupSpecs = {
     chapter: 5,
     settings: [setting('editor.multiCursorModifier')],
     interaction: 'multi-cursor',
-    description: 'The same Option-click state is measured before and after the modifier preference changes.',
+    description: 'The same Option-click gesture adds three cursors before and one cursor after the modifier changes.',
   },
   'cursor-colors': {
     chapter: 5,
     settings: [setting('workbench.colorCustomizations', 'editorCursor.background')],
     interaction: 'cursor-focus',
-    description: 'The focused cursor style is measured after the chapter background color is applied.',
+    description: 'The focused block cursor changes color after the chapter background is applied.',
   },
   'font-metrics': {
     chapter: 6,
@@ -105,7 +105,7 @@ export const groupSpecs = {
     chapter: 6,
     settings: [setting('editor.fontLigatures'), setting('editor.tokenColorCustomizations')],
     interaction: 'code-style',
-    description: 'The fixture code shows the configured ligatures and token colors.',
+    description: 'The same arrow operator ligature and italic comment receive the chapter typography.',
   },
   'code-decorations': {
     chapter: 7,
@@ -166,7 +166,7 @@ export const groupSpecs = {
     chapter: 10,
     settings: [setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'editorSuggestWidget.selectedBackground')],
     interaction: 'selected-suggestion',
-    description: "A selected completion item's computed background is measured after the chapter color is applied.",
+    description: "The same selected completion item's background changes to the chapter color.",
   },
   'sidebar-and-title': {
     chapter: 11,

@@ -260,7 +260,7 @@ export class VSCodeControl {
 
   async clickExplorerFile(filename) {
     const point = await this.evaluate(`(() => {
-      const rows = [...document.querySelectorAll('.monaco-list-row')];
+      const rows = [...document.querySelectorAll('.explorer-folders-view .monaco-list-row')];
       const row = rows.find((element) => {
         const label = element.getAttribute('aria-label') || '';
         return label.includes(${JSON.stringify(filename)}) || element.textContent.includes(${JSON.stringify(filename)});
@@ -276,7 +276,7 @@ export class VSCodeControl {
   async dragExplorerFileToFolder(filename, folderName) {
     const points = await this.evaluate(`(() => {
       const findRow = (name) => [...document.querySelectorAll('.explorer-folders-view .monaco-list-row')]
-        .find((element) => element.getAttribute('aria-label') === name);
+        .find((element) => ((element.getAttribute('aria-label') || '') + ' ' + element.innerText).toLowerCase().includes(name.toLowerCase()));
       const source = findRow(${JSON.stringify(filename)});
       const target = findRow(${JSON.stringify(folderName)});
       if (!source || !target) return null;
@@ -319,10 +319,10 @@ export class VSCodeControl {
   }
 
   async assertExpectedOperationConfirmation() {
-    const state = await this.notificationState();
+    const state = await this.waitFor(`({toasts:[...document.querySelectorAll('.notifications-toasts .notification-toast')].map(element=>element.innerText),dialogs:[...document.querySelectorAll('.monaco-dialog-box,.monaco-dialog-modal-block,[aria-modal="true"]')].map(element=>element.innerText),restartPrompt:document.body.innerText.includes('requires a restart to take effect')})`, (value) => value.dialogs.some((text) => /move|drag|delete|trash/i.test(text)));
     const text = state.dialogs.join('\n');
-    if (!/move|drag/i.test(text) || state.toasts.length || state.restartPrompt) {
-      throw new Error(`Expected an Explorer move confirmation dialog, found ${JSON.stringify(state)}`);
+    if (!/move|drag|delete|trash/i.test(text) || state.toasts.length || state.restartPrompt) {
+      throw new Error(`Expected an Explorer operation confirmation dialog, found ${JSON.stringify(state)}`);
     }
   }
 

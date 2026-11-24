@@ -64,7 +64,7 @@ lefthook install
 node ./demos/vscode-setup-screenshots/scripts/run.mjs
 ```
 
-Or run `node ./scripts/run.mjs` from this directory. The runner builds a fresh isolated profile and fetches all 11 pinned source snapshots. It installs each chapter's recommended extensions as that chapter is reached. It applies groups cumulatively, captures the screenshots, and writes `output/image-index.csv`. The index has one English description per image. All runtime files, app copies, fetched settings, extension files, and PNGs are ignored.
+Or run `node ./scripts/run.mjs` from this directory. The runner builds a fresh isolated profile and fetches all 11 pinned source snapshots. It installs each chapter's recommended extensions as that chapter is reached. It applies groups cumulatively, captures the screenshots, and writes `output/image-index.csv`. The index has one English description per image and is tracked after a full run; runtime files, app copies, fetched settings, extensions, and PNGs remain ignored.
 
 For a launch, attach, and capture smoke check without replacing the full image set, run `node ./scripts/run.mjs --smoke`. It captures `00-zero` and the chapter 1 theme pair under ignored `output/smoke/`. Like a full run, smoke takes keyboard focus, so run it only while nobody is using the Mac.
 
@@ -76,7 +76,7 @@ The run needs a visible, logged-in macOS desktop for VS Code window capture. The
 
 ## Visual limits
 
-The runner captures the expected recommendation toast only in the before image for that pair. It creates a runtime-only recommendation for `ms-python.python`, opens the Python fixture, then removes the recommendation. The Explorer move pair uses CDP drag data and fails closed unless its confirmation and file move are observed. Tab completion has separate ranking, unique-snippet Tab, and Emmet pairs. Each measured pair records the state it demonstrates; unchanged DOM and target-crop pixels are indexed as inconclusive only for interaction-only or computed-style comparisons.
+The runner captures the expected recommendation toast only in the before image for that pair. It creates a runtime-only recommendation for `ms-python.python`, opens the Python fixture, then removes the recommendation. The Explorer confirmation pair moves a disposable fixture file into `components`, captures the confirmation and moved state, then restores the file. Tab completion has separate ranking, unique-snippet Tab, and Emmet pairs. Every pair is accepted only when both its measured DOM and target-crop pixels change; otherwise the run fails before the pair enters the index.
 
 The fixture includes focused examples for nested sticky scroll, color decorations, signature help, and a TypeScript quick fix. It also covers tab indentation, selected whitespace, surface scrolling, snippet ranking, Tab expansion, and Emmet expansion.
 
@@ -88,7 +88,7 @@ The fixture includes focused examples for nested sticky scroll, color decoration
 - `scripts/fetch-sources.mjs` and `scripts/install-extension.mjs`: fetch the pinned settings and Marketplace packages, then validate extension packages for isolated CLI installation.
 - `scripts/run.mjs`, `scripts/groups.mjs`, and `scripts/cdp.mjs`: prepare the fresh profile, apply cumulative settings, drive UI examples, capture images, write the index, and check expected UI state.
 - `scripts/frontmost.swift` and `scripts/window-id.swift`: read the frontmost app and find the launched copy's window ID.
-- `output/`: ignored run artifacts.
+- `output/`: ignored run artifacts except the tracked full-run `image-index.csv`.
 
 ## References
 
