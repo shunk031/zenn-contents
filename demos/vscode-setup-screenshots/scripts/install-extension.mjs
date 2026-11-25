@@ -9,8 +9,11 @@ export async function installMarketplaceExtension(extensionId, version, cacheDir
   if (!publisher || !name || !version) throw new Error(`Invalid pinned extension: ${extensionId}@${version}`);
   await mkdir(cacheDir, { recursive: true });
   const vsixPath = path.join(cacheDir, `${extensionId}-${version}.vsix`);
-  const packageUrl = `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(publisher)}/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(version)}/vspackage`;
-  execFileSync('curl', ['-fLsS', packageUrl, '-o', vsixPath], { stdio: 'inherit' });
+  if (!await exists(vsixPath)) {
+    const packageUrl = `https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${encodeURIComponent(publisher)}`
+      + `/vsextensions/${encodeURIComponent(name)}/${encodeURIComponent(version)}/vspackage`;
+    execFileSync('curl', ['-fLsS', packageUrl, '-o', vsixPath], { stdio: 'inherit' });
+  }
 
   const downloaded = await readFile(vsixPath);
   // The tested Marketplace response was gzip-wrapped; RFC 1952 defines the 1f 8b signature.
@@ -31,4 +34,14 @@ export async function installMarketplaceExtension(extensionId, version, cacheDir
     await rm(stagingDir, { recursive: true, force: true });
   }
   return vsixPath;
+}
+
+async function exists(file) {
+  try {
+    await readFile(file);
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
 }

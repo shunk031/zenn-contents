@@ -8,19 +8,24 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { VSCodeControl, visibleGeometry } from './cdp.mjs';
 import { extensionPins, groupSpecs } from './groups.mjs';
 import { installMarketplaceExtension } from './install-extension.mjs';
+import * as planner from './planner.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const kitDir = path.resolve(here, '..');
-const outputDir = path.join(kitDir, 'output');
-const smokeMode = process.argv.includes('--smoke');
-const captureOutputDir = smokeMode ? path.join(outputDir, 'smoke') : outputDir;
+const outputRoot = path.join(kitDir, 'output');
+const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
+const pairRegistry = planner.createPairRegistry(chapters, groupSpecs);
+const runOptions = planner.parseRunArgs(process.argv.slice(2), pairRegistry);
+const smokeMode = runOptions.smoke;
+const runId = runOptions.only ? `${new Date().toISOString().replaceAll(':', '').replaceAll('-', '').replaceAll('.', '')}-${process.pid}` : null;
+const outputDir = runOptions.only ? path.join(outputRoot, 'subsets', runId) : smokeMode ? path.join(outputRoot, 'smoke') : outputRoot;
 const pngSignature = Buffer.from('89504e470d0a1a0a', 'hex');
-const runtimeDir = path.join(outputDir, 'runtime');
-const vscodeArchive = path.join(outputDir, 'vscode-1.101.1-darwin-arm64.zip');
+const runtimeDir = runOptions.only ? path.join(outputDir, 'runtime') : path.join(outputRoot, 'runtime');
+const vscodeArchive = path.join(outputRoot, 'vscode-1.101.1-darwin-arm64.zip');
 const sourceDir = path.join(runtimeDir, 'sources');
 const profileDir = path.join(os.tmpdir(), `vss-${process.pid}`);
 const extensionsDir = path.join(runtimeDir, 'extensions');
-const marketplaceCacheDir = path.join(runtimeDir, 'marketplace-cache');
+const marketplaceCacheDir = path.join(outputRoot, 'runtime', 'marketplace-cache');
 const workspaceDir = path.join(runtimeDir, 'workspace');
 const appPath = path.join(runtimeDir, 'Visual Studio Code.app');
 const appExecutable = path.join(appPath, 'Contents', 'MacOS', 'Electron');
@@ -29,29 +34,33 @@ const finderBinary = path.join(runtimeDir, 'window-id');
 const cliPath = path.join(appPath, 'Contents', 'Resources', 'app', 'bin', 'code');
 const frontmostSource = path.join(here, 'frontmost.swift');
 const frontmostBinary = path.join(runtimeDir, 'frontmost');
-const imageDir = path.join(captureOutputDir, 'images');
-const indexPath = path.join(captureOutputDir, 'image-index.csv');
+const imageDir = path.join(outputDir, 'images');
+const indexPath = path.join(outputDir, 'image-index.csv');
 const activePortFile = path.join(profileDir, 'DevToolsActivePort');
 const windowSize = '1200,800';
 const customUIStyleId = 'subframe7536.custom-ui-style';
 let devtoolsPort;
 let ownerIdleSample;
 const fixtureDir = path.join(kitDir, 'fixture');
-const chapters = JSON.parse(await readFile(path.join(kitDir, 'manifest', 'chapters.json'), 'utf8'));
 
-if (process.argv.includes('--help')) {
-  console.log('Usage: node ./scripts/run.mjs [--smoke]\nRebuilds the isolated VS Code profile and captures the screenshot set. --smoke checks zoom crop calibration and multi-cursor. Run only while nobody is using the Mac.');
+if (runOptions.help) {
+  console.log(`Usage: node ./scripts/run.mjs [--smoke] [--only <pair,...>]\nAvailable pairs: ${pairRegistry.map((pair) => pair.canonical).join(', ')}`);
   process.exit(0);
 }
 
 if (process.platform !== 'darwin') throw new Error('This screenshot route requires macOS.');
 assertOwnerAway('run start');
 await mkdir(outputDir, { recursive: true });
-await rm(runtimeDir, { recursive: true, force: true });
-await mkdir(runtimeDir, { recursive: true });
+if (runOptions.only) await mkdir(runtimeDir, { recursive: false });
+else {
+  await rm(runtimeDir, { recursive: true, force: true });
+  await mkdir(runtimeDir, { recursive: true });
+}
 await rm(profileDir, { recursive: true, force: true });
-await rm(imageDir, { recursive: true, force: true });
-await rm(indexPath, { force: true });
+if (!runOptions.only) {
+  await rm(imageDir, { recursive: true, force: true });
+  await rm(indexPath, { force: true });
+}
 await mkdir(imageDir, { recursive: true });
 await mkdir(extensionsDir, { recursive: true });
 await cp(fixtureDir, workspaceDir, { recursive: true });
@@ -79,6 +88,22 @@ await appendFile(path.join(workspaceDir, 'src', 'autosave.ts'), '\nconst trim = 
 
 const fetcher = path.join(here, 'fetch-sources.mjs');
 execFileSync(process.execPath, [fetcher, sourceDir], { stdio: 'inherit' });
+const settingsByChapter = Object.fromEntries(chapters.map((chapter) => [chapter.chapter,
+  JSON.parse(readFileSync(path.join(sourceDir, `ch${String(chapter.chapter).padStart(2, '0')}`, 'settings.json'), 'utf8'))]));
+const recommendationsByChapter = Object.fromEntries(chapters.map((chapter) => [chapter.chapter,
+  JSON.parse(readFileSync(path.join(sourceDir, `ch${String(chapter.chapter).padStart(2, '0')}`, 'extensions.json'), 'utf8')).recommendations]));
+const settingsPlan = planner.buildChronologicalPlan(chapters, settingsByChapter, groupSpecs, pairRegistry);
+const fullPlan = planner.addPairRequirements(settingsPlan, chapters, recommendationsByChapter, extensionPins);
+const selectedPlan = planner.selectPlan(fullPlan, runOptions.only);
+const requiredExtensions = planner.requiredExtensionsThrough(chapters, selectedPlan, recommendationsByChapter, extensionPins);
+if (pairRegistry.length !== 33 || 1 + chapters.length + pairRegistry.length * 2 !== 78) {
+  throw new Error(`Full capture contract changed: ${pairRegistry.length} pairs`);
+}
+if (runOptions.only) {
+  const pairs = selectedPlan.map((pair) => ({ canonical: pair.canonical, before: pair.before, after: pair.after, requiredExtensions: pair.requiredExtensions }));
+  const manifest = { runId, pairs };
+  await writeFile(path.join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+}
 
 const userSettingsPath = path.join(profileDir, 'User', 'settings.json');
 await mkdir(path.dirname(userSettingsPath), { recursive: true });
@@ -89,6 +114,7 @@ let activeFile;
 let plannedSettings = {};
 let autosaveSentinel;
 let indentationSource;
+let snippetPlaceholderWitness;
 const saveWitness = [];
 const installedExtensions = new Set();
 const indexRows = [];
@@ -128,44 +154,6 @@ function logFrontmost(stage) {
   return current;
 }
 
-function deepMerge(target, source) {
-  for (const [key, value] of Object.entries(source)) {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      target[key] = deepMerge(target[key] && typeof target[key] === 'object' ? target[key] : {}, value);
-    } else {
-      target[key] = value;
-    }
-  }
-  return target;
-}
-
-function setPath(target, parts, value) {
-  let cursor = target;
-  for (const part of parts.slice(0, -1)) {
-    if (!cursor[part] || typeof cursor[part] !== 'object' || Array.isArray(cursor[part])) cursor[part] = {};
-    cursor = cursor[part];
-  }
-  cursor[parts.at(-1)] = structuredClone(value);
-}
-
-function copyGroupSettings(sourceSettings, paths) {
-  const subset = {};
-  for (const parts of paths) {
-    let value = sourceSettings;
-    let found = true;
-    for (const part of parts) {
-      if (!value || typeof value !== 'object' || !(part in value)) {
-        found = false;
-        break;
-      }
-      value = value[part];
-    }
-    if (!found) throw new Error(`A group setting is missing from its pinned chapter source: ${parts.join(' / ')}`);
-    setPath(subset, parts, value);
-  }
-  return subset;
-}
-
 async function writeSettings(settings) {
   appliedSettings = structuredClone(settings);
   const runtimeSettings = structuredClone(settings);
@@ -178,7 +166,7 @@ async function writeSettings(settings) {
 }
 
 async function writeTransientSettings(settings) {
-  const nextSettings = deepMerge(structuredClone(appliedSettings), settings);
+  const nextSettings = planner.deepMerge(structuredClone(appliedSettings), settings);
   if (installedExtensions.has(customUIStyleId)) {
     nextSettings['custom-ui-style.watch'] = false;
     nextSettings['custom-ui-style.reloadWithoutPrompting'] = false;
@@ -201,7 +189,7 @@ function sourceFile(chapterNumber, filename) {
 }
 
 function readChapterSettings(chapter) {
-  return JSON.parse(readFileSync(sourceFile(chapter.chapter, 'settings.json'), 'utf8'));
+  return settingsByChapter[chapter.chapter];
 }
 
 async function installRecommendations(chapter) {
@@ -219,13 +207,31 @@ async function installRecommendations(chapter) {
   if (packages.length) {
     await quitApp();
     for (const [id, vsix] of packages) {
-      execFileSync(cliPath, ['--user-data-dir', profileDir, '--extensions-dir', extensionsDir, '--install-extension', vsix, '--force'], { stdio: 'inherit', env: { ...process.env, VSCODE_IPC_HOOK_CLI: '' } });
+      const args = ['--user-data-dir', profileDir, '--extensions-dir', extensionsDir, '--install-extension', vsix, '--force'];
+      execFileSync(cliPath, args, { stdio: 'inherit', env: { ...process.env, VSCODE_IPC_HOOK_CLI: '' } });
       if (appCopyRunning()) throw new Error('Extension CLI unexpectedly left a VS Code process using the kit profile running.');
       const installed = JSON.parse(await readFile(path.join(extensionsDir, `${id}-${extensionPins.get(id)}`, 'package.json'), 'utf8'));
-      if (`${installed.publisher}.${installed.name}`.toLowerCase() !== id || installed.version !== extensionPins.get(id)) throw new Error(`Isolated extension install identity mismatch for ${id}.`);
+      const identity = `${installed.publisher}.${installed.name}`.toLowerCase();
+      if (identity !== id || installed.version !== extensionPins.get(id)) throw new Error(`Isolated extension install identity mismatch for ${id}.`);
     }
   }
   if (installedExtensions.has(customUIStyleId)) await writeSettings(appliedSettings);
+}
+
+async function installRequiredExtensions() {
+  const packages = [];
+  for (const { id, version } of requiredExtensions) {
+    packages.push([id, await installMarketplaceExtension(id, version, marketplaceCacheDir)]);
+  }
+  for (const [id, vsix] of packages) {
+    const args = ['--user-data-dir', profileDir, '--extensions-dir', extensionsDir, '--install-extension', vsix, '--force'];
+    execFileSync(cliPath, args, { stdio: 'inherit', env: { ...process.env, VSCODE_IPC_HOOK_CLI: '' } });
+    const installed = JSON.parse(await readFile(path.join(extensionsDir, `${id}-${extensionPins.get(id)}`, 'package.json'), 'utf8'));
+    if (`${installed.publisher}.${installed.name}`.toLowerCase() !== id || installed.version !== extensionPins.get(id)) {
+      throw new Error(`Isolated extension install identity mismatch for ${id}.`);
+    }
+    installedExtensions.add(id);
+  }
 }
 
 function launchArgs() {
@@ -397,6 +403,38 @@ function fixtureLine(relativePath, text, exactTrimmed = false) {
   return { line: index + 1, column: contents[index].indexOf(text) + 1, text: contents[index] };
 }
 
+async function resetEditorBuffer(relativePath) {
+  const pristine = await readFile(path.join(fixtureDir, relativePath), 'utf8');
+  await open(relativePath);
+  await windowControl.key('A', 'KeyA', 4);
+  await windowControl.type(pristine);
+  await windowControl.key('S', 'KeyS', 4);
+  const file = path.join(workspaceDir, relativePath);
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    if ((await readFile(file, 'utf8')).replaceAll('\r\n', '\n') === pristine.replaceAll('\r\n', '\n')) break;
+    await delay(100);
+  }
+  if ((await readFile(file, 'utf8')).replaceAll('\r\n', '\n') !== pristine.replaceAll('\r\n', '\n')) {
+    throw new Error(`Could not restore pristine fixture bytes for ${relativePath}`);
+  }
+  await open(relativePath);
+}
+
+async function copyEditorBuffer() {
+  await windowControl.key('A', 'KeyA', 4);
+  await windowControl.key('C', 'KeyC', 4);
+  return execFileSync('pbpaste', [], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
+}
+
+async function replaceToken(relativePath, token, replacement) {
+  const target = fixtureLine(relativePath, token, true);
+  await goto(target.line, target.column + token.length);
+  for (let index = 0; index < token.length; index += 1) await windowControl.key('ArrowLeft', 'ArrowLeft');
+  await windowControl.type(replacement);
+  await windowControl.key('Escape', 'Escape');
+}
+
 const evidenceTargets = {
   theme: '.monaco-workbench', 'minimal-chrome': '.monaco-workbench', 'editor-aids': '.monaco-workbench',
   'sidebar-placement': '.monaco-workbench', 'explorer-icons': '.explorer-folders-view', 'tree-layout': '.explorer-folders-view',
@@ -428,12 +466,25 @@ async function measureGroup(key, imageName, override) {
       return rects.some((r) => r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < v.width && r.top < v.height);
     };
     const rect = (n) => { const r=n.getBoundingClientRect(); return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}; };
-    const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(visible);
+    const activeEditor=document.querySelector('.monaco-editor.focused');
+    const targets=[...document.querySelectorAll(${JSON.stringify(selector)})];
+    const scoped=key==='tab-completion'||key==='selected-suggestion-color';
+    const e=targets.find(n=>visible(n)&&(!scoped||activeEditor&&(activeEditor.contains(n)||n.closest('.monaco-editor')===activeEditor)));
     if(!e) return null;
     const box=rect(e), viewport={width:innerWidth,height:innerHeight}, sidebar=document.querySelector('.sidebar');
     const ancestors=[]; for(let n=e;n instanceof Element;n=n.parentElement) ancestors.push(getComputedStyle(n));
     const visibility={display:ancestors.some(s=>s.display==='none')?'none':'block',visibility:ancestors.some(s=>s.visibility==='hidden')?'hidden':'visible',opacity:ancestors.reduce((value,s)=>value*Number(s.opacity||1),1),rects:[e,...e.querySelectorAll('*')].map(rect),viewport};
-    const rows=[...document.querySelectorAll('.suggest-widget .monaco-list-row')], selected=rows.find(n=>n.matches('.focused,.selected,[aria-selected="true"]'));
+    const widgets=[...document.querySelectorAll('.suggest-widget')];
+    const activeWidgets=widgets.filter(n=>activeEditor&&(activeEditor.contains(n)||n.closest('.monaco-editor')===activeEditor));
+    const activeWidget=activeWidgets.find(visible);
+    const rows=[...(activeWidget?.querySelectorAll('.monaco-list-row')||[])];
+    const identify=(n)=>n.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||n.innerText.trim().split('\n')[0];
+    const rowData=(n)=>{
+      const r=n.getBoundingClientRect();
+      return {label:identify(n),detail:n.innerText.trim(),snippet:!!n.querySelector('.codicon-symbol-snippet'),visible:visible(n),
+        inViewport:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight};
+    };
+    const selected=rows.find(n=>n.matches('.focused,.selected,[aria-selected="true"]'));
     const comment=[...document.querySelectorAll('.monaco-editor .view-line')].find(n=>n.innerText.includes('Sample comment'));
     const row=[...document.querySelectorAll('.explorer-folders-view .monaco-list-row')].find(n=>n.innerText.includes('changed.ts'));
     const tree=[...document.querySelectorAll('.explorer-folders-view .monaco-list-row')].filter(visible).map(n=>{
@@ -441,11 +492,11 @@ async function measureGroup(key, imageName, override) {
       const guides=[...n.querySelectorAll('.monaco-tl-indent .indent-guide')].map(g=>[getComputedStyle(g).borderLeftColor,getComputedStyle(g).backgroundColor]);
       return [n.innerText.trim(),n.className,icon?.className,i?.backgroundImage,i?.content,guides];
     });
-    const cursors=[...document.querySelectorAll('.cursors-layer .cursor')].filter(visible), cursorStyle=cursors.map(n=>{
+    const cursors=[...document.querySelectorAll('.monaco-editor.focused .cursors-layer .cursor')].filter(visible), cursorStyle=cursors.map(n=>{
       const s=getComputedStyle(n), r=rect(n), glyph=[...document.querySelectorAll('.monaco-editor .view-line span')].find(g=>{
         const b=g.getBoundingClientRect(); return b.width>0&&b.height>0&&b.right>r.left&&b.left<r.right&&b.bottom>r.top&&b.top<r.bottom;
       });
-      return [s.color,s.backgroundColor,r.width,r.height,s.borderLeft,glyph&&getComputedStyle(glyph).color];
+      return {color:s.color,background:s.backgroundColor,backgroundImage:s.backgroundImage,text:n.textContent,rect:r,glyphColor:glyph&&getComputedStyle(glyph).color};
     });
     const chrome=['.part.activitybar','.part.statusbar','.tabs-container','.breadcrumbs-control','.minimap'].map(q=>[q,[...document.querySelectorAll(q)].some(visible)]);
     const lines=[...document.querySelectorAll('.monaco-editor .view-line')], ink=(n)=>{
@@ -457,8 +508,23 @@ async function measureGroup(key, imageName, override) {
     const base=ink(line('export function')), one=ink(line('const heading'));
     const nested=ink(lines.find(n=>n.innerText.includes('return')&&n.innerText.includes('heading')));
     const commentSpan=comment?.querySelector('span')||comment;
-    const editor=document.querySelector('.monaco-editor'), scroll=editor?.querySelector('.monaco-scrollable-element');
+    const editor=activeEditor||document.querySelector('.monaco-editor'), scroll=editor?.querySelector('.monaco-scrollable-element');
     const title=document.querySelector('.editor-group-container>.title'), fileTitle=document.querySelector('.title .monaco-icon-label.file-icon');
+    const titleText=document.querySelector('.editor-group-container>.title .title-label');
+    const titleTextRange=titleText?(()=>{const range=document.createRange();range.selectNodeContents(titleText);return {width:range.getBoundingClientRect().width};})():null;
+    const titleContainer=fileTitle?.closest('.label-container');
+    const titleState=fileTitle?{bar:visible(title)?rect(title):null,containerWidth:titleContainer?.clientWidth||0,
+      marginLeft:getComputedStyle(fileTitle).marginLeft,marginRight:getComputedStyle(fileTitle).marginRight,
+      text:titleText?.textContent.trim(),textRect:titleTextRange}:null;
+    const sidebarBox=visible(sidebar)?rect(sidebar):null;
+    const sidebarPatch=sidebarBox?{left:sidebarBox.left+8,right:sidebarBox.left+32,top:sidebarBox.bottom-40,bottom:sidebarBox.bottom-16}:null;
+    const findWidget=document.querySelector('.editor-widget.find-widget');
+    const findInput=findWidget?.querySelector('input');
+    const findState=findWidget?{
+      rect:rect(findWidget),query:findInput?.value??null,shadow:getComputedStyle(findWidget).boxShadow,
+      toggles:[...findWidget.querySelectorAll('button,[role="button"]')].map(n=>[
+        n.getAttribute('aria-pressed'),n.getAttribute('aria-checked'),n.getAttribute('aria-label'),n.getAttribute('title')])
+    }:null;
     const dirty=[...document.querySelectorAll('.editor-group-container>.title .codicon-close-dirty')].filter(visible);
     const folding=[...document.querySelectorAll('.monaco-editor .codicon-folding-expanded,.monaco-editor .codicon-folding-collapsed')].filter(visible);
     const swatches=[...document.querySelectorAll('.monaco-editor .colorpicker-color-decoration')].filter(visible);
@@ -470,30 +536,208 @@ async function measureGroup(key, imageName, override) {
     const editorStyle=getComputedStyle(editor), style=getComputedStyle(e), commentStyle=commentSpan?['fontStyle','fontFeatureSettings','color'].map(k=>getComputedStyle(commentSpan)[k]):[];
     const guides=[...document.querySelectorAll('.monaco-editor .indent-guide')].filter(visible).length;
     const whitespace=[...document.querySelectorAll('.monaco-editor .view-line .whitespace')].filter(visible).length;
-    return {box,viewport,visibility,metric:{text:e.innerText?.slice(0,240),editorText:document.querySelector('.monaco-editor .view-lines')?.innerText||'',lineNumbers:[...document.querySelectorAll('.monaco-editor .line-numbers')].slice(0,4).map(n=>n.innerText.trim()),editorBg:editorStyle.backgroundColor,editorColor:editorStyle.color,devicePixelRatio,y:box.top,textX:e.firstChild?(()=>{const r=document.createRange();r.selectNodeContents(e);return r.getBoundingClientRect().x;})():box.left,w:box.width,pad:style.paddingLeft,shadow:style.boxShadow,font:getComputedStyle(lines[0]?.querySelector('span')||e).font,lineHeight:getComputedStyle(lines[0]||e).lineHeight,dirty:dirty.length,chrome,sidebarRect:visible(sidebar)?rect(sidebar):null,sidebar:getComputedStyle(sidebar||e).backgroundColor,tree,toast,dialogs,suggestVisible:visible(document.querySelector('.suggest-widget')),selectedSuggestion:selected?.innerText.trim(),selectedBg:selected&&getComputedStyle(selected).backgroundColor,cursorStyle,cursors:cursors.length,sliders:sliders.length,scroll:[scroll?.scrollTop,scroll?.scrollHeight,scroll?.clientHeight,scroll?.scrollLeft,scroll?.scrollWidth,scroll?.clientWidth],squiggles:document.querySelectorAll('.monaco-editor .squiggly-error').length,badges:document.querySelectorAll('.explorer-folders-view .monaco-list-row .badge,.explorer-folders-view .monaco-list-row .monaco-count-badge').length,gitColor:row?getComputedStyle(row.querySelector('.label-name')||row).color:'',focus:getComputedStyle(document.querySelector('.explorer-folders-view .monaco-list-row.focused')||e).outlineColor,justify:getComputedStyle(title||e).justifyContent,decoration:getComputedStyle(document.querySelector('.monaco-editor .scroll-decoration')||e).display,sticky:[...document.querySelectorAll('.monaco-editor .sticky-widget')].filter(visible).length,swatches:swatches.length,lightbulb:lights.length,signature:signatures.length,folding:folding.length,guides,whitespace,comment:commentStyle,indent:[base,one,nested].slice(1).map(p=>base&&p?Math.round((p.x-base.x)/base.width):null),title:getComputedStyle(fileTitle||e).marginLeft,rows:rows.map(n=>n.innerText.trim()),snippets:rows.filter(n=>n.querySelector('.codicon-symbol-snippet')).map(n=>n.innerText.trim())}};
+    return {
+      box,
+      viewport,
+      visibility,
+      metric: {
+        lineNumbers: [...document.querySelectorAll('.monaco-editor .line-numbers')].slice(0, 4).map((node) => node.innerText.trim()),
+        editorBg: editorStyle.backgroundColor,
+        editorColor: editorStyle.color,
+        devicePixelRatio,
+        y: box.top,
+        textX: e.firstChild ? (() => { const range = document.createRange(); range.selectNodeContents(e); return range.getBoundingClientRect().x; })() : box.left,
+        width: box.width,
+        padding: style.paddingLeft,
+        shadow: style.boxShadow,
+        font: getComputedStyle(lines[0]?.querySelector('span') || e).font,
+        lineHeight: getComputedStyle(lines[0] || e).lineHeight,
+        dirty: dirty.length,
+        chrome,
+        sidebarRect: sidebarBox,
+        sidebarPatch,
+        sidebar: getComputedStyle(sidebar || e).backgroundColor,
+        tree,
+        toast,
+        dialogs,
+        suggestVisible: !!activeWidget && visible(activeWidget),
+        suggestWidgetCount: activeWidgets.filter(visible).length,
+        selectedSuggestion: selected ? identify(selected) : null,
+        selectedBg: selected && getComputedStyle(selected).backgroundColor,
+        selectedRect: selected ? rect(selected) : null,
+        rows: rows.map(rowData),
+        cursorStyle,
+        cursors: cursors.length,
+        sliders: sliders.length,
+        scroll: [scroll?.scrollTop, scroll?.scrollHeight, scroll?.clientHeight, scroll?.scrollLeft, scroll?.scrollWidth, scroll?.clientWidth],
+        squiggles: document.querySelectorAll('.monaco-editor .squiggly-error').length,
+        badges: document.querySelectorAll('.explorer-folders-view .monaco-list-row .badge,.explorer-folders-view .monaco-list-row .monaco-count-badge').length,
+        gitColor: row ? getComputedStyle(row.querySelector('.label-name') || row).color : '',
+        focus: getComputedStyle(document.querySelector('.explorer-folders-view .monaco-list-row.focused') || e).outlineColor,
+        justify: getComputedStyle(title || e).justifyContent,
+        decoration: getComputedStyle(document.querySelector('.monaco-editor .scroll-decoration') || e).display,
+        sticky: [...document.querySelectorAll('.monaco-editor .sticky-widget')].filter(visible).length,
+        swatches: swatches.length,
+        lightbulb: lights.length,
+        signature: signatures.length,
+        folding: folding.length,
+        guides,
+        whitespace,
+        comment: commentStyle,
+        indent: [base, one, nested].slice(1).map((point) => base && point ? Math.round((point.x - base.x) / base.width) : null),
+        title: titleState?.marginLeft || '0px',
+        titleState,
+        findState,
+      },
+    };
   })()`);
   if (!observed || !visibleGeometry(observed.visibility)) {
     throw new Error(`No painted DOM target for ${key}: ${selector}`);
   }
-  const fullPath=path.join(captureOutputDir,'evidence',`${imageName.replace(/\.png$/,'')}.full.png`);
+  const fullPath=path.join(outputDir,'evidence',`${imageName.replace(/\.png$/,'')}.full.png`);
   await mkdir(path.dirname(fullPath),{recursive:true});
   await writeFile(fullPath,await windowControl.captureFullScreenshot());
   await writeFile(`${fullPath}.json`,JSON.stringify({box:observed.box,viewport:observed.viewport,visibility:observed.visibility,metric:observed.metric},null,2));
   return {metric:observed.metric,box:observed.box,viewport:observed.viewport,fullPath};
 }
-
+async function completionState() {
+  return windowControl.evaluate(`(() => {
+    const visible=(node)=>{
+      if(!node)return false;
+      for(let item=node;item instanceof Element;item=item.parentElement){
+        const style=getComputedStyle(item);
+        if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
+      }
+      const rects=[node,...node.querySelectorAll('*')].map(item=>item.getBoundingClientRect());
+      return rects.some(r=>r.width>0&&r.height>0&&r.right>0&&r.bottom>0&&r.left<innerWidth&&r.top<innerHeight);
+    };
+    const editor=document.querySelector('.monaco-editor.focused');
+    const candidates=[...document.querySelectorAll('.suggest-widget')].filter(node=>editor&&(editor.contains(node)||node.closest('.monaco-editor')===editor));
+    const widgets=candidates.filter(visible);
+    const widget=widgets[0];
+    const rows=[...(widget?.querySelectorAll('.monaco-list-row')||[])].map(node=>({
+      label:node.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||node.innerText.trim().split('\\n')[0],
+      detail:node.innerText.trim(),
+      snippet:!!node.querySelector('.codicon-symbol-snippet'),
+      visible:visible(node),
+      inViewport:(()=>{const r=node.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;})(),
+    }));
+    const active=document.activeElement;
+    const selected=[...(widget?.querySelectorAll('.monaco-list-row')||[])].find(node=>node.matches('.focused,.selected,[aria-selected="true"]'));
+    const label=(node)=>node?.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||node?.innerText.trim().split('\\n')[0]||null;
+    const input=editor?.querySelector('textarea.inputarea');
+    return {
+      widgetCount:widgets.length,
+      visible:visible(widget),
+      editorIdentity:editor?.closest('.editor-group-container')?.querySelector('.title-label')?.textContent.trim()||null,
+      editorFocused:!!editor&&editor.contains(active),
+      activeElement:active?.className||active?.tagName||null,
+      caret:input?{start:input.selectionStart,end:input.selectionEnd,value:input.value}:null,
+      rows,
+      selected:label(selected),
+      loading:rows.some(row=>/loading|no suggestions/i.test(row.detail)),
+    };
+  })()`);
+}
+async function saveCompletionDiagnostics(filename) {
+  const diagnostics = await windowControl.evaluate(`(() => {
+    const visible=(node)=>{
+      if(!node)return false;
+      for(let item=node;item instanceof Element;item=item.parentElement){
+        const style=getComputedStyle(item);
+        if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
+      }
+      const rects=[node,...node.querySelectorAll('*')].map(item=>item.getBoundingClientRect());
+      return rects.some(r=>r.width>0&&r.height>0&&r.right>0&&r.bottom>0&&r.left<innerWidth&&r.top<innerHeight);
+    };
+    const editor=document.querySelector('.monaco-editor.focused'), active=document.activeElement;
+    return [...document.querySelectorAll('.suggest-widget')].map(widget=>({
+      visible:visible(widget),
+      editorIdentity:widget.closest('.editor-group-container')?.querySelector('.title-label')?.textContent.trim()||null,
+      activeEditor:!!editor&&(editor.contains(widget)||widget.closest('.monaco-editor')===editor),
+      caret:(()=>{const input=editor?.querySelector('textarea.inputarea');return input?{start:input.selectionStart,end:input.selectionEnd}:null;})(),
+      activeElement:active?.className||active?.tagName||null,
+      rows:[...widget.querySelectorAll('.monaco-list-row')].filter(visible).map(row=>({
+        label:row.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||row.innerText.trim(),
+        detail:row.innerText.trim(),snippet:!!row.querySelector('.codicon-symbol-snippet'),
+      })),
+    }));
+  })()`);
+  const directory = path.join(outputDir, 'evidence');
+  await mkdir(directory, { recursive: true });
+  await writeFile(path.join(directory, `${filename}.completion-diagnostic.json`), JSON.stringify({ activeFile, diagnostics }, null, 2));
+}
+async function waitForCompletion(labels, filename) {
+  const deadline = Date.now() + 10_000;
+  let last;
+  let previous;
+  let stable = 0;
+  while (Date.now() < deadline) {
+    last = await completionState();
+    const ready = last.widgetCount === 1 && last.visible && last.editorFocused && !last.loading
+      && last.editorIdentity === path.basename(activeFile)
+      && last.rows.every((row) => row.visible && row.inViewport)
+      && labels.every((label) => last.rows.some((row) => row.label === label));
+    if (ready) {
+      await windowControl.waitForPaint();
+      const painted = await completionState();
+      const identity = JSON.stringify(painted.rows.map(({ label, detail, snippet }) => [label, detail, snippet]));
+      if (painted.widgetCount === 1 && painted.visible && painted.editorFocused && !painted.loading
+        && painted.editorIdentity === path.basename(activeFile)
+        && painted.rows.every((row) => row.visible && row.inViewport) && labels.every((label) => painted.rows.some((row) => row.label === label))
+        && identity === previous) stable += 1;
+      else stable = 0;
+      previous = identity;
+      if (stable >= 1) return painted;
+    } else {
+      previous = undefined;
+      stable = 0;
+    }
+    await delay(100);
+  }
+  await saveCompletionDiagnostics(filename);
+  throw new Error(`Active-editor completion did not stabilize with ${labels.join(', ')}: ${JSON.stringify(last)}`);
+}
+async function assertNoActiveCompletion(filename) {
+  const state = await completionState();
+  if (!state.widgetCount) return;
+  await saveCompletionDiagnostics(filename);
+  throw new Error(`An active completion remained open before the explicit gesture: ${JSON.stringify(state)}`);
+}
 function pixelDimensions(file) {
   const png=readFileSync(file);
   if (!png.subarray(1,4).equals(Buffer.from('PNG'))) throw new Error(`Evidence is not a PNG: ${file}`);
   return {width:png.readUInt32BE(16),height:png.readUInt32BE(20)};
 }
-
+async function compareRegion(before, after, region, label) {
+  if (before.viewport.width !== after.viewport.width || before.viewport.height !== after.viewport.height) {
+    throw new Error(`${label} viewport changed between pair sides`);
+  }
+  const dimensions = [pixelDimensions(before.fullPath), pixelDimensions(after.fullPath)];
+  const paths = [before, after].map((state) => path.join(path.dirname(state.fullPath), `${path.basename(state.fullPath, '.full.png')}.${label}.png`));
+  for (let index = 0; index < 2; index += 1) {
+    const image = dimensions[index];
+    const x = Math.round(region.left / before.viewport.width * image.width);
+    const y = Math.round(region.top / before.viewport.height * image.height);
+    const width = Math.max(1, Math.min(image.width - x, Math.round((region.right - region.left) / before.viewport.width * image.width)));
+    const height = Math.max(1, Math.min(image.height - y, Math.round((region.bottom - region.top) / before.viewport.height * image.height)));
+    execFileSync('magick', [
+      [before, after][index].fullPath,
+      '-crop', `${width}x${height}+${x}+${y}`,
+      '+repage',
+      paths[index],
+    ], { stdio: 'ignore' });
+  }
+  const result = spawnSync('magick', ['compare', '-metric', 'AE', paths[0], paths[1], 'null:'], { encoding: 'utf8' });
+  if (result.status !== 0 && result.status !== 1) throw new Error(`ImageMagick ${label} comparison failed: ${result.stderr || result.error}`);
+  return { changed: Number((result.stderr || result.stdout).trim().split(/\s+/)[0]) > 0, paths };
+}
 async function compareEvidence(group, before, after) {
   const boxes=[before,after].map((state)=>({
     left:state.box.left/state.viewport.width,top:state.box.top/state.viewport.height,
     right:state.box.right/state.viewport.width,bottom:state.box.bottom/state.viewport.height,
   }));
-  const padding=group==='find-widget'?16:2;
+  const padding=group==='find-widget'?24:2;
   const rect={left:Math.max(0,Math.min(...boxes.map(b=>b.left))-padding/before.viewport.width),
     top:Math.max(0,Math.min(...boxes.map(b=>b.top))-padding/before.viewport.height),
     right:Math.min(1,Math.max(...boxes.map(b=>b.right))+padding/before.viewport.width),
@@ -512,7 +756,6 @@ async function compareEvidence(group, before, after) {
   const changed=Number((result.stderr||result.stdout).trim().split(/\s+/)[0])>0;
   return {changed,paths};
 }
-
 async function setPairDescription(group, before, after, rows) {
   const {metric:a}=before,{metric:b}=after,{changed}=await compareEvidence(group,before,after);
   if(!changed) throw new Error(`${group} target crop contains no changed pixels.`);
@@ -531,7 +774,15 @@ async function setPairDescription(group, before, after, rows) {
   if(group==='surface-boundaries'&&a.focus===b.focus&&a.justify===b.justify&&a.decoration===b.decoration) fail('Focused outline, title alignment, and editor surface boundary did not change.');
   if(group==='cursor-appearance'&&same(a.cursorStyle,b.cursorStyle)) fail('Editor cursor shape or color did not change.');
   if(group==='multi-cursor'&&(a.cursors!==3||b.cursors!==1)) fail(`Option-click cursors were ${a.cursors} before and ${b.cursors} after; expected 3 then 1.`);
-  if(group==='cursor-colors'&&same(a.cursorStyle.map(x=>x[5]),b.cursorStyle.map(x=>x[5]))) fail('Glyph foreground under the block cursor did not change.');
+  if(group==='cursor-colors'){
+    const beforeCursor=a.cursorStyle[0],afterCursor=b.cursorStyle[0];
+    if(!beforeCursor||!afterCursor||beforeCursor.text!=='M'||afterCursor.text!=='M'
+      ||beforeCursor.color!=='rgb(93, 136, 0)'||afterCursor.color!=='rgb(0, 0, 0)'
+      ||beforeCursor.backgroundImage!==afterCursor.backgroundImage
+      ||JSON.stringify(beforeCursor.rect)!==JSON.stringify(afterCursor.rect)) {
+      fail(`The same M glyph did not change to black under the unchanged block cursor: ${JSON.stringify([beforeCursor,afterCursor])}`);
+    }
+  }
   if(group==='font-metrics'&&a.font===b.font&&a.lineHeight===b.lineHeight) fail('Rendered font size and line spacing did not change.');
   if(group==='code-style'&&a.comment[0]===b.comment[0]) fail('The visible Sample comment did not change font style.');
   if(group==='code-decorations'&&(!a.sticky||b.sticky||!a.swatches||b.swatches)) fail(`Sticky header or color swatches did not change: ${a.sticky}/${a.swatches} -> ${b.sticky}/${b.swatches}.`);
@@ -543,23 +794,46 @@ async function setPairDescription(group, before, after, rows) {
   if(group==='marker-colors'&&(!a.squiggles||a.squiggles!==b.squiggles)) fail('The diagnostic squiggle was not preserved for marker-color comparison.');
   if(group==='automatic-suggestions'&&(!a.suggestVisible||b.suggestVisible)) fail('Automatic suggestion visibility did not change.');
   if(group==='tab-completion'){
-    const rank=(m)=>[m.rows.findIndex(row=>m.snippets.some(s=>s.includes(row))),m.rows.findIndex(row=>!m.snippets.some(s=>s.includes(row)))];
-    const ar=rank(a),br=rank(b);
-    if(!a.rows.some(row=>row.includes('sampleNames'))||a.snippets.length<2||b.snippets.length<2||ar[0]<ar[1]||br[0]>br[1]) fail(`Completion providers or ranking were incomplete: ${JSON.stringify([ar,br,a.rows,a.snippets,b.rows,b.snippets])}`);
+    const required=['sampleNames','Sample loop','Sample card'];
+    const rank=(metric)=>required.map((label)=>metric.rows.findIndex((row)=>row.label===label));
+    const beforeRank=rank(a),afterRank=rank(b);
+    const identities=(metric)=>metric.rows.map(({label,snippet})=>[label,snippet]);
+    const snippets=['Sample loop','Sample card'].map((label)=>a.rows.find((row)=>row.label===label)?.snippet);
+    if(a.suggestWidgetCount!==1||b.suggestWidgetCount!==1||!same(identities(a),identities(b))
+      ||a.rows.find((row)=>row.label==='sampleNames')?.snippet||snippets.some((isSnippet)=>!isSnippet)
+      ||beforeRank.some((index)=>index<0)||afterRank.some((index)=>index<0)
+      ||!(beforeRank[0]<beforeRank[1]&&beforeRank[0]<beforeRank[2])
+      ||!(afterRank[1]<afterRank[0]&&afterRank[2]<afterRank[0])) {
+      fail(`The same ordinary completion and two snippets did not reorder: ${JSON.stringify([beforeRank,afterRank,a.rows,b.rows])}`);
+    }
   }
-  if(group==='selected-suggestion-color'&&(!a.selectedSuggestion||a.selectedSuggestion!==b.selectedSuggestion||a.selectedBg===b.selectedBg)) fail('The selected completion color did not change for the same item.');
-  if(group==='sidebar-and-title'&&(a.sidebar!=='rgb(20, 17, 27)'||b.sidebar!=='rgb(25, 21, 33)'||a.title===b.title)) fail('Final sidebar color and title spacing did not both change.');
+  if(group==='selected-suggestion-color'&&(a.suggestWidgetCount!==1||b.suggestWidgetCount!==1||a.selectedSuggestion!=='active'||a.selectedSuggestion!==b.selectedSuggestion
+    ||a.selectedBg!=='rgb(77, 77, 77)'||b.selectedBg!=='rgb(58, 51, 75)'||same(a.selectedRect,b.selectedRect)===false)) {
+    fail(`The named active completion did not receive the selected-row color: ${JSON.stringify([a.selectedSuggestion,a.selectedBg,b.selectedSuggestion,b.selectedBg])}`);
+  }
+  if(group==='sidebar-and-title'){
+    const beforeTitle=a.titleState,afterTitle=b.titleState;
+    if(a.sidebar!=='rgb(20, 17, 27)'||b.sidebar!=='rgb(25, 21, 33)'
+      ||beforeTitle?.marginLeft!=='0px'||beforeTitle?.marginRight!=='0px'
+      ||afterTitle?.marginLeft!=='60px'||afterTitle?.marginRight!=='60px'
+      ||beforeTitle?.text!==afterTitle?.text||beforeTitle?.text!==path.basename(activeFile)
+      ||beforeTitle.textRect.width>beforeTitle.containerWidth
+      ||afterTitle.textRect.width<=afterTitle.containerWidth-120) {
+      fail(`The long title did not cross the available-width boundary after symmetric margins: ${JSON.stringify([beforeTitle,afterTitle])}`);
+    }
+  }
   if(group==='autosave'&&(a.dirty<1||b.dirty!==0||!autosaveSentinel)) fail(`Single-title dirty action did not clear: ${a.dirty} -> ${b.dirty}.`);
   if(group==='recommendation-notifications'&&(!a.toast.some(text=>/recommend/i.test(text))||b.toast.length)) fail('The Python recommendation toast did not disappear.');
   for(const row of rows) row.description=`${row.file.endsWith('before.png')?'Before':'After'} ${group}: ${groupSpecs[group].description}`;
 }
-
 async function runInteraction(name, phase, chapterSettings) {
   if (!name) return;
   switch (name) {
     case 'title-spacing':
-    case 'sidebar-title':
       await open('src/main.ts');
+      break;
+    case 'sidebar-title':
+      await open('src/suggestions-completion-settings-in-the-vscode-editor-workbench-with-tabs-shortcuts-and-extension-configuration-preview.ts');
       break;
     case 'explorer-decorations':
       await open('src/changed.ts');
@@ -569,6 +843,11 @@ async function runInteraction(name, phase, chapterSettings) {
       await open('src/main.ts');
       await goto(8, 12);
       break;
+    case 'cursor-colors': {
+      const target = fixtureLine('src/cursor-color.ts', 'MMMM');
+      await open('src/cursor-color.ts', target.line, target.column);
+      break;
+    }
     case 'editor-top':
       await open('src/main.ts');
       await goto(1, 1);
@@ -596,7 +875,14 @@ async function runInteraction(name, phase, chapterSettings) {
     case 'find-widget':
       await open('src/main.ts');
       await windowControl.key('F', 'KeyF', 4);
-      await delay(400);
+      await windowControl.waitFor("!!document.querySelector('.editor-widget.find-widget input')");
+      await windowControl.type('vss-find-no-match-9zq');
+      await windowControl.waitFor("document.querySelector('.editor-widget.find-widget input')?.value==='vss-find-no-match-9zq'");
+      if (await readFile(path.join(workspaceDir, activeFile), 'utf8').then((text) => text.includes('vss-find-no-match-9zq'))) {
+        throw new Error('The fixed Find query unexpectedly occurs in the fixture file.');
+      }
+      await windowControl.moveToText('Format a name.');
+      await windowControl.waitForPaint();
       break;
     case 'command-palette':
       await open('src/main.ts');
@@ -620,33 +906,59 @@ async function runInteraction(name, phase, chapterSettings) {
         const prefix = fixtureLine('src/snippet-suggestions.ts', 'sam', true);
         await goto(prefix.line, prefix.column + 'sam'.length);
       }
-      await windowControl.command('Trigger Suggest');
-      await windowControl.waitForPainted('.suggest-widget');
-      {
-        const state = await windowControl.waitFor(`(() => { const rows=[...document.querySelectorAll('.suggest-widget .monaco-list-row')].map(row=>({text:row.innerText,snippet:!!row.querySelector('.codicon-symbol-snippet')})); return {visible:!!document.querySelector('.suggest-widget')?.getBoundingClientRect().height,rows}; })()`,
-          (value) => value.visible && value.rows.some((row) => !row.snippet && row.text.includes('sampleNames'))
-            && ['Sample loop', 'Sample card'].every((label) => value.rows.some((row) => row.snippet && row.text.includes(label))));
-        if (!state.visible) throw new Error(`The completion providers did not finish: ${JSON.stringify(state)}`);
+      try {
+        await windowControl.waitFor("(()=>{const e=document.querySelector('.monaco-editor.focused');return e?.contains(document.activeElement)&&e.innerText.includes('sam')})()");
+      }
+      catch (error) { await saveCompletionDiagnostics('tab-completion-editor-focus'); throw error; }
+      await assertNoActiveCompletion('tab-completion-before-trigger');
+      await windowControl.key(' ', 'Space', 2);
+      await waitForCompletion(['sampleNames', 'Sample loop', 'Sample card'], 'tab-completion');
+      break;
+    case 'tab-expansion': {
+      const file = 'src/snippet-suggestions.ts';
+      await resetEditorBuffer(file);
+      await replaceToken(file, 'sam', 'shotloop');
+      await windowControl.key('Escape', 'Escape');
+      if (appliedSettings['editor.tabFocusMode'] === true) throw new Error('Tab expansion fixture has editor.tabFocusMode enabled.');
+      await assertNoActiveCompletion('tab-expansion-before-tab');
+      await windowControl.key('Tab', 'Tab');
+      await windowControl.waitForPaint();
+      if (!await windowControl.evaluate("!!document.querySelector('.monaco-editor.focused')?.contains(document.activeElement)")) throw new Error('Tab lost editor focus.');
+      snippetPlaceholderWitness = null;
+      if (phase === 'after') {
+        await windowControl.key('C', 'KeyC', 4);
+        snippetPlaceholderWitness = execFileSync('pbpaste', [], { encoding: 'utf8' });
       }
       break;
-    case 'tab-expansion':
-      await open('src/snippet-suggestions.ts');
-      { const line=fixtureLine('src/snippet-suggestions.ts','sam',true); await goto(line.line,1); await windowControl.key('Home','Home'); await windowControl.key('End','End',8); await windowControl.type('shotloop'); await windowControl.key('Escape','Escape'); if(phase==='after'){ await windowControl.key('Tab','Tab'); if(!await windowControl.evaluate("document.querySelector('.monaco-editor').innerText.includes('for (const item of items)')")) throw new Error('Tab did not expand the unique fixture snippet.'); } }
-      break;
+    }
     case 'emmet-expansion': {
-      await open('src/emmet.html'); const line=fixtureLine('src/emmet.html','ul>li.item*3',true); await goto(line.line,line.text.length+1); await windowControl.key('Escape','Escape');
-      if(phase==='after'){ await windowControl.key('Tab','Tab'); if(await windowControl.evaluate("document.querySelector('.monaco-editor').innerText.match(/<li class=\"item\">/g)?.length")!==3) throw new Error('Emmet did not expand three fixture list items.'); }
+      const file = 'src/emmet.html';
+      await resetEditorBuffer(file);
+      const target = fixtureLine(file, 'ul>li.item*3', true);
+      await goto(target.line, target.column + 'ul>li.item*3'.length);
+      await windowControl.key('Escape', 'Escape');
+      if (appliedSettings['editor.tabFocusMode'] === true) throw new Error('Emmet fixture has editor.tabFocusMode enabled.');
+      await assertNoActiveCompletion('emmet-expansion-before-tab');
+      await windowControl.key('Tab', 'Tab');
+      await windowControl.waitForPaint();
+      if (!await windowControl.evaluate("!!document.querySelector('.monaco-editor.focused')?.contains(document.activeElement)")) throw new Error('Tab lost editor focus.');
       break;
     }
-    case 'selected-suggestion':
+    case 'selected-suggestion': {
       await open('src/suggestions.ts');
-      { const target = fixtureLine('src/suggestions.ts', 'sample', true); await goto(target.line, target.text.length + 1); }
+      const target = fixtureLine('src/suggestions.ts', 'sample', true);
+      await goto(target.line, target.text.length + 1);
       await windowControl.type('.');
-      await windowControl.command('Trigger Suggest');
-      await windowControl.waitForPainted('.suggest-widget');
-      await windowControl.key('ArrowDown', 'ArrowDown');
-      await windowControl.waitForPainted('.suggest-widget .monaco-list-row.focused,.suggest-widget .monaco-list-row.selected,.suggest-widget .monaco-list-row[aria-selected="true"]');
+      await assertNoActiveCompletion('selected-suggestion-before-trigger');
+      await windowControl.key(' ', 'Space', 2);
+      let state = await waitForCompletion(['active'], 'selected-suggestion-color');
+      for (let index = 0; index <= state.rows.length && state.selected !== 'active'; index += 1) {
+        await windowControl.key('ArrowDown', 'ArrowDown');
+        state = await completionState();
+      }
+      if (state.selected !== 'active') throw new Error(`Could not select the active member completion: ${JSON.stringify(state)}`);
       break;
+    }
     case 'autosave':
       if (phase === 'before') {
         await open('src/autosave.ts');
@@ -787,12 +1099,12 @@ async function runInteraction(name, phase, chapterSettings) {
       throw new Error(`Unknown UI interaction: ${name}`);
   }
 }
-
 async function resetInteraction(name) {
   if(name==='automatic-suggestions'){
     await windowControl.key('Escape','Escape');await windowControl.key('Backspace','Backspace');
   }else if(name==='selected-suggestion'){
-    await windowControl.key('Escape','Escape');await windowControl.key('Z','KeyZ',4);
+    await windowControl.key('Escape','Escape');
+    await resetEditorBuffer('src/suggestions.ts');
   }else if(name==='operation-confirmations'){
     await windowControl.key('Escape','Escape');await windowControl.assertNoModalOrToast();
     await rm(path.join(workspaceDir,'src/components/delete-me.txt'),{force:true});
@@ -803,13 +1115,11 @@ async function resetInteraction(name) {
   await open('src/main.ts');
   await goto(1, 1);
 }
-
 function imageFilename(name) {
   if (imageNames.has(name)) throw new Error(`Duplicate screenshot name: ${name}`);
   imageNames.add(name);
   return path.join(imageDir, name);
 }
-
 async function capture(name, chapter, group, description, captureState = 'none', deferAcceptance = false) {
   assertOwnerAway(`capture ${name}`);
   logFrontmost(`before capture ${name}`);
@@ -849,7 +1159,6 @@ async function capture(name, chapter, group, description, captureState = 'none',
   }
   return row;
 }
-
 async function acceptCaptures(rows) {
   for (const row of rows) {
     if (row.pendingCapture) {
@@ -861,106 +1170,222 @@ async function acceptCaptures(rows) {
   await persistIndex();
 }
 
-async function captureExtra(chapter, group, kind, phase) {
-  const interaction = kind === 'find' ? 'find-widget' : `${kind}-expansion`, selector = kind === 'find' ? '.editor-widget.find-widget' : '.monaco-editor .view-lines';
-  await runInteraction(interaction, phase, appliedSettings);
-  const name = `ch${String(chapter.chapter).padStart(2, '0')}-${group}-${kind}-${phase}.png`, state = await measureGroup(kind === 'find' ? 'find-widget' : group, name, selector);
-  const row = await capture(name, chapter.chapter, group, `${phase} ${kind} state measured in the same fixture editor.`, 'none', true);
-  const text = await windowControl.evaluate("document.querySelector('.monaco-editor .view-lines')?.innerText || ''");
-  if (phase === 'before' && kind === 'tab') {
-    await windowControl.key('Tab', 'Tab');
-    const after = await windowControl.evaluate("document.querySelector('.monaco-editor .view-lines')?.innerText || ''");
-    if (!after.includes('shotloop') || after.includes('for (const item of items)')) throw new Error('Tab completion expanded while its setting was disabled.');
-    if (after !== text) await windowControl.key('Z', 'KeyZ', 4);
-    await windowControl.key('Z', 'KeyZ', 4);
-  } else if (phase === 'before' && kind === 'emmet') {
-    await windowControl.key('Tab', 'Tab');
-    const after = await windowControl.evaluate("document.querySelector('.monaco-editor .view-lines')?.innerText || ''");
-    if (!after.includes('ul>li.item*3') || after.includes('<li')) throw new Error('Emmet expanded while its setting was disabled.');
-    if (after !== text) await windowControl.key('Z', 'KeyZ', 4);
-  } else if (phase === 'after' && kind === 'tab') { await windowControl.key('Z', 'KeyZ', 4); await windowControl.key('Z', 'KeyZ', 4); }
-  else if (phase === 'after' && kind === 'emmet') await windowControl.key('Z', 'KeyZ', 4);
-  await resetInteraction(interaction, phase);
-  return { state, row };
+async function applyPairSettings(settings, spec, { initial = false } = {}) {
+  const previous = structuredClone(appliedSettings);
+  if (JSON.stringify(previous) === JSON.stringify(settings)) return;
+  await writeSettings(settings);
+  if (initial || !appChild) return;
+  const oldStyle = previous['custom-ui-style.stylesheet'];
+  const newStyle = settings['custom-ui-style.stylesheet'];
+  const styleChanged = JSON.stringify(oldStyle) !== JSON.stringify(newStyle);
+  const windowChanged = [...new Set([...Object.keys(previous), ...Object.keys(settings)])]
+    .filter((key) => key.startsWith('window.'))
+    .some((key) => JSON.stringify(previous[key]) !== JSON.stringify(settings[key]));
+  if (styleChanged && installedExtensions.has(customUIStyleId)) await applyCustomUIStyleAndRestart();
+  else if (spec.restart || windowChanged) await restartApp();
+  else await assertThemeReady();
 }
 
+async function compareMean(pathname) {
+  const value = execFileSync('magick', [pathname, '-colorspace', 'Gray', '-format', '%[fx:mean*255]', 'info:'], { encoding: 'utf8' });
+  const mean = Number(value);
+  if (!Number.isFinite(mean)) throw new Error(`Could not measure grayscale pixels in ${pathname}`);
+  return mean;
+}
+async function recordPairFailure(descriptor, names, error, cleanup) {
+  if (error.code === 'OWNER_RETURNED') throw error;
+  let message = String(error.message || error).replace(/\s+/g, ' ').trim();
+  try {
+    await cleanup();
+  } catch (failure) {
+    message += `; cleanup: ${failure.message}`;
+  }
+  if (JSON.stringify(appliedSettings) !== JSON.stringify(descriptor.after)) {
+    await applyPairSettings(descriptor.after, descriptor.spec);
+  }
+  if (descriptor.spec.previewSettings) await writeSettings(descriptor.after);
+  const failedDir = path.join(outputDir, 'failed');
+  await mkdir(failedDir, { recursive: true });
+  for (const name of names) {
+    const staged = `${path.join(imageDir, name)}.${process.pid}.capture.png`;
+    const image = path.join(imageDir, name);
+    const failed = path.join(failedDir, name);
+    const source = await access(staged).then(() => staged, () => access(image).then(() => image, () => null));
+    if (source) {
+      await rename(source, failed);
+      indexRows.push({ chapter: descriptor.chapter, group: descriptor.groupKey, file: path.relative(outputDir, failed), description: `failed: ${message}` });
+    }
+  }
+  failedPairs.push(`${descriptor.canonical}: ${message}`);
+  await persistIndex();
+  console.error(`Failed pair ${descriptor.canonical}: ${message}`);
+  if (runOptions.only) throw new Error(`Selected pair failed: ${descriptor.canonical}: ${message}`);
+}
+async function captureExtraPair(descriptor) {
+  const { chapter, groupKey, kind, spec } = descriptor;
+  const names = [`${descriptor.filename}-before.png`, `${descriptor.filename}-after.png`];
+  const beforeSettings = descriptor.before;
+  const afterSettings = descriptor.after;
+  const interaction = kind === 'find' ? 'find-widget' : `${kind}-expansion`;
+  const selector = kind === 'find' ? '.editor-widget.find-widget' : '.monaco-editor .view-lines';
+  const evidenceKey = kind === 'find' ? 'find-widget' : 'tab-completion';
+  const rows = [];
+  const states = [];
+  try {
+    await applyPairSettings(beforeSettings, spec);
+    if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
+    for (const [index, phase] of ['before', 'after'].entries()) {
+      if (index === 1) {
+        await applyPairSettings(afterSettings, spec);
+        if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
+      }
+      await runInteraction(interaction, phase, appliedSettings);
+      const state = await measureGroup(evidenceKey, names[index], selector);
+      const description = phase === 'before' ? `Before ${kind} expansion is enabled.` : `After ${kind} expansion is enabled.`;
+      const row = await capture(names[index], chapter, groupKey, description, 'none', true);
+      states.push(state);
+      rows.push(row);
+      if (kind !== 'find') {
+        const fullText = await copyEditorBuffer();
+        const pristine = (await readFile(path.join(fixtureDir, kind === 'tab' ? 'src/snippet-suggestions.ts' : 'src/emmet.html'), 'utf8')).replaceAll('\r\n', '\n');
+        if (kind === 'tab') {
+          const replacement = phase === 'before' ? 'shotloop' : 'for (const item of items) {\n  \n}';
+          const expected = normalizeEditorText(pristine.replace(/^sam$/m, replacement));
+          if (normalizeEditorText(fullText) !== expected) throw new Error(`Tab expansion did not preserve the exact expected fixture text: ${fullText}`);
+          if (phase === 'after' && snippetPlaceholderWitness !== 'items') throw new Error('The Sample loop placeholder was not selected.');
+          row.description = phase === 'before'
+            ? 'The Tab key leaves shotloop as literal text while completion is off.'
+            : 'The Tab key expands shotloop into the Sample loop body.';
+        } else {
+          if (phase === 'before') {
+            if (normalizeEditorText(fullText) !== normalizeEditorText(pristine)) {
+              throw new Error(`Emmet off did not preserve the abbreviation and surrounding HTML: ${fullText}`);
+            }
+          } else {
+            const list = fullText.match(/<ul>\s*[\s\S]*?<\/ul>/)?.[0] || '';
+            const items = [...list.matchAll(/<li class="item"><\/li>/g)];
+            if (!list.startsWith('<ul>') || !list.endsWith('</ul>') || items.length !== 3
+              || fullText.includes('ul>li.item*3') || !fullText.includes('<title>Emmet sample</title>')) {
+              throw new Error(`Emmet did not expand the abbreviation into three list items: ${fullText}`);
+            }
+          }
+          row.description = phase === 'before'
+            ? 'The Tab key leaves ul>li.item*3 as literal HTML text.'
+            : 'The Tab key expands the abbreviation into three li.item elements.';
+        }
+      }
+      if (index === 0 && kind !== 'find') await resetEditorBuffer(kind === 'tab' ? 'src/snippet-suggestions.ts' : 'src/emmet.html');
+    }
+    const [before, after] = states;
+    const broadPixels = await compareEvidence(evidenceKey, before, after);
+    if (!broadPixels.changed) throw new Error(`${kind} editor crop contains no changed pixels.`);
+    if (kind === 'find') {
+      const a = before.metric.findState;
+      const b = after.metric.findState;
+      if (!a || !b || a.query !== 'vss-find-no-match-9zq' || a.query !== b.query
+        || JSON.stringify(a.toggles) !== JSON.stringify(b.toggles)
+        || JSON.stringify(a.rect) !== JSON.stringify(b.rect)
+        || !a.shadow.includes('0px 0px 8px 2px') || b.shadow !== 'none') {
+        throw new Error(`Find query, geometry, toggles, or shadow transition did not match: ${JSON.stringify([a, b])}`);
+      }
+      const viewport = before.viewport;
+      const regions = planner.findShadowRegions(a.rect, a.shadow, viewport);
+      const shadow = await compareRegion(before, after, regions.shadow, 'find-shadow-exterior');
+      const control = await compareRegion(before, after, regions.control, 'find-shadow-control');
+      const [beforeMean, afterMean] = await Promise.all([compareMean(shadow.paths[0]), compareMean(shadow.paths[1])]);
+      const [controlBefore, controlAfter] = await Promise.all([compareMean(control.paths[0]), compareMean(control.paths[1])]);
+      if (!shadow.changed || afterMean <= beforeMean || control.changed || Math.abs(controlBefore - controlAfter) > 0.01) {
+        throw new Error('The lower exterior shadow band did not lighten against its unchanged control.');
+      }
+      rows[0].description = 'The same no-match Find widget has its default lower exterior shadow.';
+      rows[1].description = 'The same no-match Find widget has no lower exterior shadow.';
+    }
+    if (kind !== 'find') await resetEditorBuffer(kind === 'tab' ? 'src/snippet-suggestions.ts' : 'src/emmet.html');
+    await resetInteraction(interaction, 'after');
+    if (spec.previewSettings) await writeSettings(afterSettings);
+    await acceptCaptures(rows);
+  } catch (error) {
+    await recordPairFailure(descriptor, names, error, async () => {
+      if (kind === 'find') await resetInteraction(interaction, 'failed');
+      else await resetEditorBuffer(kind === 'tab' ? 'src/snippet-suggestions.ts' : 'src/emmet.html');
+    });
+  }
+}
+function normalizeEditorText(text) {
+  return text.replaceAll('\r\n', '\n').replace(/\n[ \t]+(?=\n)/g, '\n');
+}
 async function capturePair(chapter, groupKey, currentSettings) {
-  const spec=groupSpecs[groupKey],tag=`ch${String(chapter.chapter).padStart(2,'0')}-${groupKey}`;
-  const beforeName=`${tag}-before.png`,afterName=`${tag}-after.png`;
-  const pairFiles=[beforeName,afterName,...(groupKey==='overlays'?['find-before','find-after'].map(s=>`ch04-overlays-${s}.png`):groupKey==='tab-completion'?['tab-before','tab-after','emmet-before','emmet-after'].map(s=>`ch10-tab-completion-${s}.png`):[])];
-  const beforeSettings=structuredClone(plannedSettings);
-  const afterSettings=deepMerge(structuredClone(beforeSettings),copyGroupSettings(currentSettings,spec.settings));
-  plannedSettings=structuredClone(afterSettings);
-  const rows=[];
-  let advanced=false,failure;
-  try{
-    if(JSON.stringify(appliedSettings)!==JSON.stringify(beforeSettings)) await writeSettings(beforeSettings);
-    if(spec.previewSettings) await writeTransientSettings(spec.previewSettings);
-    await runInteraction(spec.interaction,'before',beforeSettings);
-    const before=await measureGroup(groupKey,beforeName);
-    const beforeRow=await capture(beforeName,chapter.chapter,groupKey,'Before the setting change, the same fixture state is staged.',groupKey==='operation-confirmations'?'operation-confirmation':groupKey==='recommendation-notifications'?'recommendation-toast':'none',true);
+  const descriptor = fullPlan.find((pair) => pair.chapter === chapter.chapter && pair.groupKey === groupKey && pair.kind === 'group');
+  const spec = descriptor.spec;
+  const tag = descriptor.filename;
+  const beforeName = `${tag}-before.png`;
+  const afterName = `${tag}-after.png`;
+  const pairFiles = [beforeName, afterName];
+  const beforeSettings = descriptor.before;
+  const afterSettings = descriptor.after;
+  const rows = [];
+  try {
+    await applyPairSettings(beforeSettings, spec);
+    if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
+    await runInteraction(spec.interaction, 'before', beforeSettings);
+    const before = await measureGroup(groupKey, beforeName);
+    const beforeState = groupKey === 'operation-confirmations' ? 'operation-confirmation' : groupKey === 'recommendation-notifications' ? 'recommendation-toast' : 'none';
+    const beforeRow = await capture(beforeName, chapter.chapter, groupKey, `Before: ${spec.description}.`, beforeState, true);
     rows.push(beforeRow);
-    const extrasBefore=groupKey==='overlays'?[await captureExtra(chapter,groupKey,'find','before')]:groupKey==='tab-completion'?[await captureExtra(chapter,groupKey,'tab','before'),await captureExtra(chapter,groupKey,'emmet','before')]:[];
-    rows.push(...extrasBefore.map(({row})=>row));
-    if(groupKey!=='autosave') await resetInteraction(spec.interaction,'before');
-    if(spec.previewSettings) await writeSettings(beforeSettings);
-    await writeSettings(afterSettings);
-    if(spec.settings.some(([key])=>key.startsWith('custom-ui-style.'))) await applyCustomUIStyleAndRestart();
-    else if(spec.restart) await restartApp();
-    advanced=true;
-    if(spec.previewSettings) await writeTransientSettings(spec.previewSettings);
-    await runInteraction(spec.interaction,'after',currentSettings);
-    const after=await measureGroup(groupKey,afterName);
-    const afterRow=await capture(afterName,chapter.chapter,groupKey,groupKey==='operation-confirmations'?'After the move, the file is in components without a confirmation dialog.':`After the setting change, ${spec.description||'the fixture shows the chapter style.'}`,'none',true);
+    if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'before');
+    if (spec.previewSettings) await writeSettings(beforeSettings);
+    await applyPairSettings(afterSettings, spec);
+    if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
+    await runInteraction(spec.interaction, 'after', appliedSettings);
+    const after = await measureGroup(groupKey, afterName);
+    const afterRow = await capture(afterName, chapter.chapter, groupKey, `After the setting change, ${spec.description}.`, 'none', true);
     rows.push(afterRow);
-    const extrasAfter=groupKey==='overlays'?[await captureExtra(chapter,groupKey,'find','after')]:groupKey==='tab-completion'?[await captureExtra(chapter,groupKey,'tab','after'),await captureExtra(chapter,groupKey,'emmet','after')]:[];
-    rows.push(...extrasAfter.map(({row})=>row));
-    await setPairDescription(groupKey,before,after,[beforeRow,afterRow]);
-    for(let i=0;i<extrasBefore.length;i++){
-      const kind=groupKey==='overlays'?'find':i?'emmet':'tab',a=extrasBefore[i],b=extrasAfter[i];
-      const pixels=await compareEvidence(kind==='find'?'find-widget':groupKey,a.state,b.state);
-      if(!pixels.changed) throw new Error(`${kind} target crop contains no changed pixels.`);
-      if(kind==='find'){
-        if(!a.state.metric.shadow||a.state.metric.shadow==='none'||b.state.metric.shadow!=='none'||a.state.metric.text!==b.state.metric.text) throw new Error('Find widget shadow or same-widget evidence failed.');
-        a.row.description='Before chapter 4 overlay styles, the open Find widget has its default shadow.';
-        b.row.description='After chapter 4 overlay styles, the same Find widget has no shadow.';
-      }else{
-        const beforeText=a.state.metric.editorText,afterText=b.state.metric.editorText;
-        if(!beforeText.includes(kind==='tab'?'shotloop':'ul>li.item*3')||!afterText.includes(kind==='tab'?'for (const item of items)':'<li class="item">')) throw new Error(`${kind} expansion text did not match the staged buffer.`);
-        a.row.description=kind==='tab'?'Before Tab completion is enabled, the editor shows the literal shotloop snippet prefix.':'Before Emmet Tab expansion is enabled, the editor shows ul>li.item*3.';
-        b.row.description=kind==='tab'?'After Tab completion is enabled, the editor shows the expanded Sample loop snippet.':'After Emmet Tab expansion is enabled, the editor shows three li.item elements.';
+    await setPairDescription(groupKey, before, after, rows);
+    if (groupKey === 'cursor-colors') {
+      const cursor = before.metric.cursorStyle[0].rect;
+      const glyphPixels = await compareRegion(before, after, cursor, 'cursor-glyph');
+      const control = { left: cursor.right - 3, right: cursor.right - 1, top: cursor.top + 1, bottom: cursor.top + 3 };
+      const gradientPixels = await compareRegion(before, after, control, 'cursor-gradient-control');
+      if (!glyphPixels.changed || gradientPixels.changed || before.metric.cursorStyle[0].glyphColor !== after.metric.cursorStyle[0].glyphColor) {
+        throw new Error('The cursor glyph did not change while its gradient-only pixels and underlying token remained unchanged.');
       }
     }
-    if(groupKey==='autosave'){
-      beforeRow.description=`Before auto save, ${autosaveSentinel} is in the dirty buffer and absent from disk.`;
-      afterRow.description=`After auto save, ${autosaveSentinel} is on disk and the dirty indicator cleared.`;
+    if (groupKey === 'selected-suggestion-color') {
+      const rect = before.metric.selectedRect;
+      const patch = { left: rect.left + rect.width * 0.72, right: rect.left + rect.width * 0.82, top: rect.top + rect.height * 0.35, bottom: rect.top + rect.height * 0.65 };
+      if (!(await compareRegion(before, after, patch, 'selected-row-fill')).changed) throw new Error('The selected row background patch did not change.');
     }
-    if(groupKey!=='autosave') await resetInteraction(spec.interaction,'after');
-    if(spec.previewSettings) await writeSettings(afterSettings);
-    if(groupKey==='recommendation-notifications') await rm(path.join(workspaceDir,'.vscode','extensions.json'),{force:true});
+    if (groupKey === 'sidebar-and-title') {
+      if (!(await compareRegion(before, after, before.metric.titleState.bar, 'title-margin-effect')).changed) throw new Error('The title crop did not show truncation.');
+      if (!(await compareRegion(before, after, before.metric.sidebarPatch, 'sidebar-color')).changed) throw new Error('The blank sidebar color patch contains no changed pixels.');
+      beforeRow.description = 'Before the title margin change, the long filename fits and the Explorer uses #14111B.';
+      afterRow.description = 'After the title margin change, the long filename is clipped and the Explorer uses #191521.';
+    }
+    if (groupKey === 'cursor-colors') {
+      beforeRow.description = 'The M under the focused block cursor is green while the cursor gradient remains visible.';
+      afterRow.description = 'The same M under the focused block cursor is black with the same cursor gradient.';
+    }
+    if (groupKey === 'tab-completion') {
+      beforeRow.description = 'The ordinary sampleNames completion ranks ahead of both fixture snippets.';
+      afterRow.description = 'Both fixture snippets rank ahead of the same sampleNames completion.';
+    }
+    if (groupKey === 'selected-suggestion-color') {
+      beforeRow.description = 'The selected active completion row uses the theme background #4D4D4D.';
+      afterRow.description = 'The same selected active completion row uses #3A334B.';
+    }
+    if (groupKey === 'autosave') {
+      beforeRow.description = `Before auto save, ${autosaveSentinel} is in the dirty buffer and absent from disk.`;
+      afterRow.description = `After auto save, ${autosaveSentinel} is on disk and the dirty indicator cleared.`;
+    }
+    if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'after');
+    if (spec.previewSettings) await writeSettings(afterSettings);
+    if (groupKey === 'recommendation-notifications') await rm(path.join(workspaceDir, '.vscode', 'extensions.json'), { force: true });
     await acceptCaptures(rows);
-  }catch(error){
-    if(error.code==='OWNER_RETURNED') throw error;
-    failure=String(error.message||error).replace(/\s+/g,' ').trim();
-    try{await resetInteraction(spec.interaction,'failed');}catch(cleanup){failure+=`; cleanup: ${cleanup.message}`;}
-    if(!advanced){
-      await writeSettings(afterSettings);
-      if(spec.settings.some(([key])=>key.startsWith('custom-ui-style.'))) await applyCustomUIStyleAndRestart();
-      else if(spec.restart) await restartApp();
-      advanced=true;
-    }
-    if(spec.previewSettings) await writeSettings(afterSettings);
-    if(groupKey==='recommendation-notifications') await rm(path.join(workspaceDir,'.vscode','extensions.json'),{force:true});
-    const selected=new Set(pairFiles);
-    for(let i=indexRows.length-1;i>=0;i--) if(selected.has(path.basename(indexRows[i].file))) indexRows.splice(i,1);
-    const failedDir=path.join(outputDir,'failed');await mkdir(failedDir,{recursive:true});
-    for(const name of pairFiles){
-      const staged=`${path.join(imageDir,name)}.${process.pid}.capture.png`,image=path.join(imageDir,name),failed=path.join(failedDir,name);
-      const source=await access(staged).then(()=>staged,()=>access(image).then(()=>image,()=>null));
-      if(source){await rename(source,failed);indexRows.push({chapter:chapter.chapter,group:groupKey,file:path.relative(outputDir,failed),description:`failed: ${failure}`});}
-    }
-    failedPairs.push(`${chapter.chapter}-${groupKey}: ${failure}`);await persistIndex();
-    console.error(`Failed pair ${chapter.chapter}-${groupKey}: ${failure}`);
+  } catch (error) {
+    await recordPairFailure(descriptor, pairFiles, error, async () => {
+      if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'failed');
+      if (groupKey === 'recommendation-notifications') await rm(path.join(workspaceDir, '.vscode', 'extensions.json'), { force: true });
+    });
   }
   return appliedSettings;
 }
@@ -968,22 +1393,10 @@ async function capturePair(chapter, groupKey, currentSettings) {
 function csv(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
-
 function rowLine(row) { return [row.chapter, row.group, row.file, row.description].map(csv).join(','); }
 
 async function persistIndex() {
   await writeFile(indexPath,[['chapter','group','file','description'].map(csv).join(','),...indexRows.map(rowLine)].join('\n')+'\n');
-}
-
-const groupCount = chapters.reduce((count, chapter) => count + chapter.groups.length, 0);
-if (groupCount !== 30) throw new Error(`Expected 30 visual groups; found ${groupCount}`);
-for (const chapter of chapters) {
-  const sourceSettings = readChapterSettings(chapter);
-  for (const groupKey of chapter.groups) {
-    const spec = groupSpecs[groupKey];
-    if (!spec || spec.chapter !== chapter.chapter) throw new Error(`Group ${groupKey} is missing or assigned to the wrong chapter`);
-    copyGroupSettings(sourceSettings, spec.settings);
-  }
 }
 
 async function applyChapterSnapshot(settings) {
@@ -995,39 +1408,64 @@ async function applyChapterSnapshot(settings) {
 
 try {
   logFrontmost('before the run');
-  await startApp();
-  await capture('00-zero.png',0,'zero','A fresh profile opens the fixed sample project with no user-installed extensions.');
-  for(const chapter of chapters){
-    await installRecommendations(chapter);
-    await restartApp();
-    const currentSettings=readChapterSettings(chapter);
-    if(smokeMode){
-      if(chapter.chapter<=2||chapter.chapter===4){await applyChapterSnapshot(currentSettings);continue;}
-      if(chapter.chapter===3){await capturePair(chapter,'window-chrome',currentSettings);await applyChapterSnapshot(currentSettings);continue;}
-      if(chapter.chapter===5){
-        const cursor=groupSpecs['cursor-appearance'],next=deepMerge(structuredClone(plannedSettings),copyGroupSettings(currentSettings,cursor.settings));
-        await writeSettings(next);await applyCustomUIStyleAndRestart();plannedSettings=structuredClone(next);
-        await capturePair(chapter,'multi-cursor',currentSettings);
-        break;
-      }
-      continue;
+  if (runOptions.only) {
+    await installRequiredExtensions();
+    await writeSettings(selectedPlan[0].before);
+    await startApp();
+    for (const descriptor of selectedPlan) {
+      const chapter = chapters.find((item) => item.chapter === descriptor.chapter);
+      if (descriptor.kind === 'group') await capturePair(chapter, descriptor.groupKey, settingsByChapter[descriptor.chapter]);
+      else await captureExtraPair(descriptor);
     }
-    for(const groupKey of chapter.groups) await capturePair(chapter,groupKey,currentSettings);
-    await applyChapterSnapshot(currentSettings);
-    await windowControl.key('Escape','Escape');
-    await open('src/main.ts');
-    const checkpoint=`ch${String(chapter.chapter).padStart(2,'0')}-checkpoint.png`;
-    await capture(checkpoint,chapter.chapter,'checkpoint',`After chapter ${chapter.chapter}, its cumulative settings are shown in the fixed sample project.`);
+  } else {
+    await startApp();
+    await capture('00-zero.png', 0, 'zero', 'A fresh profile opens the fixed sample project with no user-installed extensions.');
+    for (const chapter of chapters) {
+      await installRecommendations(chapter);
+      await restartApp();
+      const currentSettings = readChapterSettings(chapter);
+      if (smokeMode) {
+        if (chapter.chapter <= 2 || chapter.chapter === 4) {
+          await applyChapterSnapshot(currentSettings);
+          continue;
+        }
+        if (chapter.chapter === 3) {
+          await capturePair(chapter, 'window-chrome', currentSettings);
+          await applyChapterSnapshot(currentSettings);
+          continue;
+        }
+        if (chapter.chapter === 5) {
+          const cursor = groupSpecs['cursor-appearance'];
+          const next = planner.deepMerge(structuredClone(plannedSettings), planner.copyGroupSettings(currentSettings, cursor.settings));
+          await writeSettings(next);
+          await applyCustomUIStyleAndRestart();
+          plannedSettings = structuredClone(next);
+          await capturePair(chapter, 'multi-cursor', currentSettings);
+          break;
+        }
+        continue;
+      }
+      for (const groupKey of chapter.groups) {
+        await capturePair(chapter, groupKey, currentSettings);
+        const extras = fullPlan.filter((pair) => pair.chapter === chapter.chapter && pair.groupKey === groupKey && pair.kind !== 'group');
+        for (const descriptor of extras) await captureExtraPair(descriptor);
+      }
+      await applyChapterSnapshot(currentSettings);
+      await windowControl.key('Escape', 'Escape');
+      await open('src/main.ts');
+      const checkpoint = `ch${String(chapter.chapter).padStart(2, '0')}-checkpoint.png`;
+      await capture(checkpoint, chapter.chapter, 'checkpoint', `After chapter ${chapter.chapter}, its cumulative settings are shown in the fixed sample project.`);
+    }
   }
 } finally {
   await quitApp();
   await rm(profileDir,{recursive:true,force:true});
 }
 
-const expectedImageCount=smokeMode?5:78;
+const expectedImageCount = runOptions.only ? selectedPlan.length * 2 : smokeMode ? 5 : 78;
 if(!failedPairs.length&&indexRows.length!==expectedImageCount) throw new Error(`Expected ${expectedImageCount} image-index rows; recorded ${indexRows.length}`);
 for(const row of indexRows) await access(path.join(outputDir,row.file));
-if(!smokeMode&&!failedPairs.length&&!indexRows.some(row=>row.file.endsWith('ch11-checkpoint.png'))) throw new Error('Full run did not record the chapter 11 checkpoint.');
+if(!runOptions.only&&!smokeMode&&!failedPairs.length&&!indexRows.some(row=>row.file.endsWith('ch11-checkpoint.png'))) throw new Error('Missing chapter 11 checkpoint.');
 await persistIndex();
 console.log(`Captured ${indexRows.filter((row) => !row.description.startsWith('failed:')).length} PNGs; failed pairs: ${failedPairs.length}. Image index: ${indexPath}`);
 if (failedPairs.length) { console.error(failedPairs.join('\n')); process.exitCode = 1; }

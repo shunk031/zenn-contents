@@ -162,7 +162,7 @@ export const groupSpecs = {
     chapter: 10,
     settings: [setting('editor.tabCompletion'), setting('editor.snippetSuggestions'), setting('emmet.triggerExpansionOnTab')],
     interaction: 'tab-completion',
-    description: 'Snippet ranking, Tab expansion, and Emmet expansion are captured in separate states.',
+    description: 'Both fixture snippets move above the same ordinary completion.',
   },
   'selected-suggestion-color': {
     chapter: 10,
@@ -175,7 +175,7 @@ export const groupSpecs = {
     settings: [setting('custom-ui-style.stylesheet', '.title .monaco-icon-label.file-icon'), setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'sideBar.background')],
     restart: true,
     interaction: 'sidebar-title',
-    description: 'The sidebar changes to #191521 and the file title gains 60 px spacing.',
+    description: 'The Explorer background changes to #191521, and the long open filename is clipped by the symmetric 60 px title margins.',
   },
   autosave: {
     chapter: 11,

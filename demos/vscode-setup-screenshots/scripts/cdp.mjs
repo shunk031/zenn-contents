@@ -10,6 +10,10 @@ export function visibleGeometry(state) {
     && state.rects.some((rect) => intersectsViewport(rect, state.viewport));
 }
 
+export function paintedMatch(states) {
+  return states.some((state) => visibleGeometry(state));
+}
+
 export class VSCodeControl {
   constructor(port, expectedAppPath) {
     this.port = port;
@@ -151,14 +155,20 @@ export class VSCodeControl {
   }
 
   async elementPainted(selector) {
-    const state=await this.evaluate(`(() => {
-      const e=document.querySelector(${JSON.stringify(selector)});
-      if(!e)return null;
-      const styles=[];for(let n=e;n instanceof Element;n=n.parentElement)styles.push(getComputedStyle(n));
-      const rects=[e,...e.querySelectorAll('*')].map(n=>{const r=n.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};});
-      return {display:styles.some(s=>s.display==='none')?'none':'block',visibility:styles.some(s=>s.visibility==='hidden')?'hidden':'visible',opacity:styles.reduce((v,s)=>v*Number(s.opacity||1),1),rects,viewport:{width:innerWidth,height:innerHeight}};
+    const states=await this.evaluate(`(() => {
+      return [...document.querySelectorAll(${JSON.stringify(selector)})].map((e) => {
+        const styles=[];for(let n=e;n instanceof Element;n=n.parentElement)styles.push(getComputedStyle(n));
+        const rect=n=>{const r=n.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+        const rects=[e,...e.querySelectorAll('*')].map(rect);
+        return {
+          display:styles.some(s=>s.display==='none')?'none':'block',
+          visibility:styles.some(s=>s.visibility==='hidden')?'hidden':'visible',
+          opacity:styles.reduce((v,s)=>v*Number(s.opacity||1),1),rects,
+          viewport:{width:innerWidth,height:innerHeight},
+        };
+      });
     })()`);
-    return visibleGeometry(state);
+    return paintedMatch(states || []);
   }
 
   async waitForPainted(selector, expected=true, timeout=10_000) {
@@ -365,5 +375,5 @@ export class VSCodeControl {
 
 function keyCode(key) {
   if (key.length === 1) return key.toUpperCase().charCodeAt(0);
-  return ({ Enter: 13, Escape: 27, Backspace: 8, Tab: 9, Space: 32, End: 35, ArrowDown: 40, ArrowUp: 38 })[key] ?? 0;
+  return ({ Enter: 13, Escape: 27, Backspace: 8, Tab: 9, Space: 32, End: 35, ArrowDown: 40, ArrowUp: 38, ArrowLeft: 37, ArrowRight: 39 })[key] ?? 0;
 }
