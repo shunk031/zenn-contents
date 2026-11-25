@@ -405,14 +405,15 @@ function fixtureLine(relativePath, text, exactTrimmed = false) {
 
 async function resetEditorBuffer(relativePath) {
   const pristine = await readFile(path.join(fixtureDir, relativePath)), target = path.join(workspaceDir, relativePath);
-  await open(relativePath); await windowControl.key('Escape', 'Escape'); await windowControl.key('A', 'KeyA', 4);
-  await windowControl.type(pristine.toString('utf8')); await windowControl.key('S', 'KeyS', 4);
-  const restored = (await readFile(target)).equals(pristine);
-  if (!restored) throw new Error(`Could not restore pristine fixture bytes for ${relativePath}`);
+  await writeFile(target, pristine); await open(relativePath); await windowControl.command('File: Revert File');
+  const dialog = await windowControl.evaluate("document.querySelector('.monaco-dialog-box')?.innerText||''");
+  if (dialog) { if (!/revert/i.test(dialog)) throw new Error(`Unexpected fixture reset dialog: ${dialog}`); await windowControl.key('Enter', 'Enter'); }
+  if (!(await readFile(target)).equals(pristine) || !Buffer.from(await copyEditorBuffer()).equals(pristine)) throw new Error(`Could not restore pristine fixture bytes in the editor and workspace for ${relativePath}`);
 }
 
 async function copyEditorBuffer() {
   await windowControl.key('A', 'KeyA', 4); await windowControl.key('C', 'KeyC', 4);
+  await delay(100);
   return execFileSync('pbpaste', [], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
 }
 
@@ -663,14 +664,9 @@ async function saveCompletionDiagnostics(filename) {
   await mkdir(directory, { recursive: true });
   await writeFile(path.join(directory, `${filename}.completion-diagnostic.json`), JSON.stringify({ activeFile, diagnostics }, null, 2));
 }
-async function waitForTypeScriptServer() {
-  const server = path.join(appPath, 'Contents/Resources/app/extensions/node_modules/typescript/lib/tsserver.js');
-  for (let attempt = 0; attempt < 100; attempt++) if (execFileSync('/bin/ps', ['-ww', '-axo', 'command='], { encoding: 'utf8' }).includes(server)) return; else await delay(100);
-  throw new Error(`TypeScript language features did not start in the isolated subset profile: ${server}`);
-}
 async function waitForCompletion(labels, filename, expectedLine) {
-  const deadline = Date.now() + 15_000;
-  let retryAt = Date.now() + 1000, last, previous, stable = 0;
+  const deadline = Date.now() + 25_000;
+  let last, previous, stable = 0;
   while (Date.now() < deadline) {
     last = await completionState(expectedLine);
     const ready = last.widgetCount === 1 && last.visible && last.editorFocused && !last.loading
@@ -691,9 +687,6 @@ async function waitForCompletion(labels, filename, expectedLine) {
     } else {
       previous = undefined;
       stable = 0;
-    }
-    if (labels[0] === 'sampleNames' && Date.now() >= retryAt && !last.rows.some((row) => row.label === labels[0])) {
-      await windowControl.key('Escape','Escape'); await windowControl.key(' ','Space',2); retryAt=Date.now()+1000;
     }
     await delay(100);
   }
@@ -835,7 +828,7 @@ async function runInteraction(name, phase, chapterSettings) {
       await open('src/main.ts');
       break;
     case 'sidebar-title':
-      await open('src/completion-settings-preview-for-the-vscode-editor-workbench.ts');
+      await open('src/completion-settings-preview-for-the-vscode-editor-workbench-ui.ts');
       break;
     case 'explorer-decorations':
       await open('src/changed.ts');
@@ -876,7 +869,7 @@ async function runInteraction(name, phase, chapterSettings) {
     }
     case 'find-widget':
       await open('src/main.ts');
-      await windowControl.key('f', 'KeyF', 4);
+      await windowControl.command('Find');
       await windowControl.waitFor("!!document.querySelector('.editor-widget.find-widget input')", Boolean, 10_000, 'Find widget input visible');
       await windowControl.type('vss-find-no-match-9zq');
       await windowControl.waitFor("document.querySelector('.editor-widget.find-widget input')?.value==='vss-find-no-match-9zq'", Boolean, 10_000, 'Find query entered');
@@ -913,7 +906,7 @@ async function runInteraction(name, phase, chapterSettings) {
       }
       catch (error) { await saveCompletionDiagnostics('tab-completion-editor-focus'); throw error; }
       await assertNoActiveCompletion('tab-completion-before-trigger');
-      await waitForTypeScriptServer();
+      await windowControl.command('TypeScript: Restart TS Server');
       await windowControl.key(' ', 'Space', 2);
       await waitForCompletion(['sampleNames', 'Sample loop', 'Sample card'], 'tab-completion', 'sam');
       break;
@@ -953,7 +946,7 @@ async function runInteraction(name, phase, chapterSettings) {
       await goto(target.line, target.text.length + 1);
       await windowControl.type('.');
       await assertNoActiveCompletion('selected-suggestion-before-trigger');
-      await waitForTypeScriptServer();
+      await windowControl.command('TypeScript: Restart TS Server');
       await windowControl.key(' ', 'Space', 2);
       let state = await waitForCompletion(['active'], 'selected-suggestion-color', 'sample.');
       for (let index = 0; index <= state.rows.length && state.selected !== 'active'; index += 1) {
