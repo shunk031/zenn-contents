@@ -5,8 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { paintedMatch } from './cdp.mjs';
 import { groupSpecs } from './groups.mjs';
 import { addPairRequirements, buildChronologicalPlan, createPairRegistry, findShadowPixelsPass, findShadowRegions, parseRunArgs, selectPlan } from './planner.mjs';
-
 const kit = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const rendererCall = /(?:windowControl|this)\.(?:evaluate|waitFor)\(\s*(\`(?:\\.|[^\`])*\`|'(?:\\.|[^'])*'|"(?:\\.|[^"])*")/gs;
+for (const file of ['run.mjs', 'cdp.mjs']) for (const [, raw] of readFileSync(path.join(kit, 'scripts', file), 'utf8').matchAll(rendererCall)) {
+  const template = raw[0] === '`' ? raw.replace(/\$\{[^{}]*\}/g, 'null') : raw;
+  const expression = new Function(`return ${template}`)();
+  assert.doesNotThrow(() => new Function(`return (${expression})`), `${file} renderer expression`);
+}
 const chapters = JSON.parse(readFileSync(path.join(kit, 'manifest/chapters.json'), 'utf8'));
 const registry = createPairRegistry(chapters, groupSpecs);
 assert.equal(registry.length, 33); assert.equal(1 + chapters.length + registry.length * 2, 78);

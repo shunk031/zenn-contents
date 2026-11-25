@@ -478,7 +478,7 @@ async function measureGroup(key, imageName, override) {
     const activeWidgets=widgets.filter(n=>activeEditor&&(activeEditor.contains(n)||n.closest('.monaco-editor')===activeEditor));
     const activeWidget=activeWidgets.find(visible);
     const rows=[...(activeWidget?.querySelectorAll('.monaco-list-row')||[])];
-    const identify=(n)=>n.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||n.innerText.trim().split('\n')[0];
+    const identify=(n)=>n.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||n.innerText.trim().split('\\n')[0];
     const rowData=(n)=>{
       const r=n.getBoundingClientRect();
       return {label:identify(n),detail:n.innerText.trim(),snippet:!!n.querySelector('.codicon-symbol-snippet'),visible:visible(n),

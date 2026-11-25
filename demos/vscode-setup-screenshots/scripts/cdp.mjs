@@ -118,7 +118,7 @@ export class VSCodeControl {
       returnByValue: true,
       awaitPromise: true,
     });
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
+    if (result.exceptionDetails) throw new Error(`${result.exceptionDetails.exception?.description || result.exceptionDetails.text}; renderer expression=${JSON.stringify(expression)}`);
     return result.result.value;
   }
 
