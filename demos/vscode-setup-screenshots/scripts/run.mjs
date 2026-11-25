@@ -424,7 +424,7 @@ async function measureGroup(key, imageName, override) {
         if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) return false;
       }
       const v = { width: innerWidth, height: innerHeight };
-      const rects = [node.getBoundingClientRect(), ...node.querySelectorAll('*')].map((item) => item.getBoundingClientRect());
+      const rects = [node, ...node.querySelectorAll('*')].map((item) => item.getBoundingClientRect());
       return rects.some((r) => r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < v.width && r.top < v.height);
     };
     const rect = (n) => { const r=n.getBoundingClientRect(); return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}; };
