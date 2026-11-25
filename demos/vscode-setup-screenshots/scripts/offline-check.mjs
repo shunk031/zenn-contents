@@ -8,8 +8,7 @@ import { addPairRequirements, buildChronologicalPlan, createPairRegistry, findSh
 const kit = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rendererCall = /(?:windowControl|this)\.(?:evaluate|waitFor)\(\s*(\`(?:\\.|[^\`])*\`|'(?:\\.|[^'])*'|"(?:\\.|[^"])*")/gs;
 for (const file of ['run.mjs', 'cdp.mjs']) for (const [, raw] of readFileSync(path.join(kit, 'scripts', file), 'utf8').matchAll(rendererCall)) {
-  const template = raw[0] === '`' ? raw.replace(/\$\{[^{}]*\}/g, 'null') : raw;
-  const expression = new Function(`return ${template}`)();
+  const expression = new Function(`return ${raw[0] === '`' ? raw.replace(/\$\{[^{}]*\}/g, 'null') : raw}`)();
   assert.doesNotThrow(() => new Function(`return (${expression})`), `${file} renderer expression`);
 }
 const chapters = JSON.parse(readFileSync(path.join(kit, 'manifest/chapters.json'), 'utf8'));
