@@ -110,11 +110,12 @@ await mkdir(path.dirname(userSettingsPath), { recursive: true });
 let appliedSettings = {};
 let windowControl;
 let appChild;
+let targetHeight;
 let activeFile;
 let plannedSettings = {};
 let autosaveSentinel;
 let indentationSource;
-let snippetPlaceholderWitness;
+let placeholderWitness;
 const saveWitness = [];
 const installedExtensions = new Set();
 const indexRows = [];
@@ -319,7 +320,13 @@ async function startApp({ clearNotifications = true } = {}) {
     await windowControl.clickNotificationAction('first time use', 'No', 250);
   }
   if (clearNotifications) await windowControl.clearNotifications();
-  await delay(800);
+  await delay(800); const height = await windowControl.evaluate('innerHeight');
+  targetHeight ??= height;
+  if (height !== targetHeight) {
+    const { windowId: id, bounds: b } = await windowControl.send('Browser.getWindowForTarget');
+    await windowControl.send('Browser.setWindowBounds',{windowId:id,bounds:{...b,height:b.height+targetHeight-height}});
+    await windowControl.waitFor(`innerHeight===${targetHeight}`);
+  }
   logFrontmost('after VS Code became ready');
 }
 
@@ -412,10 +419,10 @@ async function resetEditorBuffer(relativePath) {
 }
 
 async function copyEditorBuffer() {
-  await windowControl.key('A', 'KeyA', 4); await windowControl.key('C', 'KeyC', 4);
-  await delay(100);
+  await windowControl.key('A', 'KeyA', 4); await windowControl.key('C', 'KeyC', 4); await delay(100);
   return execFileSync('pbpaste', [], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
 }
+function selectedText(){return windowControl.evaluate("document.querySelector('.focused .selected-text').textContent")}
 
 async function replaceToken(relativePath, token, replacement) {
   const target = fixtureLine(relativePath, token, true);
@@ -666,7 +673,7 @@ async function saveCompletionDiagnostics(filename) {
 }
 async function waitForCompletion(labels, filename, expectedLine) {
   const deadline = Date.now() + 25_000;
-  let last, previous, stable = 0;
+  let retryAt = Date.now() + 1000, last, previous, stable = 0;
   while (Date.now() < deadline) {
     last = await completionState(expectedLine);
     const ready = last.widgetCount === 1 && last.visible && last.editorFocused && !last.loading
@@ -687,6 +694,9 @@ async function waitForCompletion(labels, filename, expectedLine) {
     } else {
       previous = undefined;
       stable = 0;
+    }
+    if(labels[0]==='sampleNames'&&Date.now()>=retryAt&&!last.rows.some(r=>r.label==='sampleNames')){
+      await windowControl.key('Escape','Escape');await windowControl.key(' ','Space',2);retryAt=Date.now()+1000;
     }
     await delay(100);
   }
@@ -869,7 +879,7 @@ async function runInteraction(name, phase, chapterSettings) {
     }
     case 'find-widget':
       await open('src/main.ts');
-      await windowControl.command('Find');
+      await windowControl.command('Find with Arguments');
       await windowControl.waitFor("!!document.querySelector('.editor-widget.find-widget input')", Boolean, 10_000, 'Find widget input visible');
       await windowControl.type('vss-find-no-match-9zq');
       await windowControl.waitFor("document.querySelector('.editor-widget.find-widget input')?.value==='vss-find-no-match-9zq'", Boolean, 10_000, 'Find query entered');
@@ -920,11 +930,8 @@ async function runInteraction(name, phase, chapterSettings) {
       await windowControl.key('Tab', 'Tab');
       await windowControl.waitForPaint();
       if (!await windowControl.evaluate("!!document.querySelector('.monaco-editor.focused')?.contains(document.activeElement)")) throw new Error('Tab lost editor focus.');
-      snippetPlaceholderWitness = null;
-      if (phase === 'after') {
-        await windowControl.key('C', 'KeyC', 4);
-        snippetPlaceholderWitness = execFileSync('pbpaste', [], { encoding: 'utf8' });
-      }
+      placeholderWitness = null;
+      if (phase === 'after') placeholderWitness = await selectedText();
       break;
     }
     case 'emmet-expansion': {
@@ -946,7 +953,6 @@ async function runInteraction(name, phase, chapterSettings) {
       await goto(target.line, target.text.length + 1);
       await windowControl.type('.');
       await assertNoActiveCompletion('selected-suggestion-before-trigger');
-      await windowControl.command('TypeScript: Restart TS Server');
       await windowControl.key(' ', 'Space', 2);
       let state = await waitForCompletion(['active'], 'selected-suggestion-color', 'sample.');
       for (let index = 0; index <= state.rows.length && state.selected !== 'active'; index += 1) {
@@ -1248,7 +1254,7 @@ async function captureExtraPair(descriptor) {
           const replacement = phase === 'before' ? 'shotloop' : 'for (const item of items) {\n  \n}';
           const expected = normalizeEditorText(pristine.replace(/^sam$/m, replacement));
           if (normalizeEditorText(fullText) !== expected) throw new Error(`Tab expansion did not preserve the exact expected fixture text: ${fullText}`);
-          if (phase === 'after' && snippetPlaceholderWitness !== 'items') throw new Error('The Sample loop placeholder was not selected.');
+          if(phase==='after'&&placeholderWitness!=='items')throw Error('Sample loop placeholder not selected.');
           row.description = phase === 'before'
             ? 'The Tab key leaves shotloop as literal text while completion is off.'
             : 'The Tab key expands shotloop into the Sample loop body.';
