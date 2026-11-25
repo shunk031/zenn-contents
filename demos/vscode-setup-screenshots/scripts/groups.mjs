@@ -94,7 +94,7 @@ export const groupSpecs = {
   'cursor-colors': {
     chapter: 5,
     settings: [setting('workbench.colorCustomizations', 'editorCursor.background')],
-    interaction: 'cursor-focus',
+    interaction: 'cursor-colors',
     description: 'The glyph beneath the focused block cursor changes color after the chapter background is applied.',
   },
   'font-metrics': {

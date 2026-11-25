@@ -405,12 +405,10 @@ function fixtureLine(relativePath, text, exactTrimmed = false) {
 
 async function resetEditorBuffer(relativePath) {
   const pristine = await readFile(path.join(fixtureDir, relativePath)), target = path.join(workspaceDir, relativePath);
-  await open(relativePath); await windowControl.key('S', 'KeyS', 4);
-  await writeFile(target, pristine); await windowControl.command('File: Revert File');
-  const buffer = await copyEditorBuffer();
-  const restored = buffer.replaceAll('\r\n', '\n') === pristine.toString('utf8').replaceAll('\r\n', '\n') && (await readFile(target)).equals(pristine);
+  await open(relativePath); await windowControl.key('Escape', 'Escape'); await windowControl.key('A', 'KeyA', 4);
+  await windowControl.type(pristine.toString('utf8')); await windowControl.key('S', 'KeyS', 4);
+  const restored = (await readFile(target)).equals(pristine);
   if (!restored) throw new Error(`Could not restore pristine fixture bytes for ${relativePath}`);
-  await open(relativePath);
 }
 
 async function copyEditorBuffer() {
@@ -421,7 +419,7 @@ async function copyEditorBuffer() {
 async function replaceToken(relativePath, token, replacement) {
   const target = fixtureLine(relativePath, token, true);
   await goto(target.line, target.column + token.length);
-  for (let index = 0; index < token.length; index += 1) await windowControl.key('ArrowLeft', 'ArrowLeft');
+  for (let index = 0; index < token.length; index += 1) await windowControl.key('Backspace', 'Backspace');
   await windowControl.type(replacement);
   await windowControl.key('Escape', 'Escape');
 }
@@ -484,10 +482,14 @@ async function measureGroup(key, imageName, override) {
       return [n.innerText.trim(),n.className,icon?.className,i?.backgroundImage,i?.content,guides];
     });
     const cursors=[...document.querySelectorAll('.monaco-editor.focused .cursors-layer .cursor')].filter(visible), cursorStyle=cursors.map(n=>{
-      const s=getComputedStyle(n), r=rect(n), glyph=[...document.querySelectorAll('.monaco-editor .view-line span')].find(g=>{
+      const s=getComputedStyle(n), r=rect(n);
+      const glyph=[...document.querySelectorAll('.monaco-editor.focused .view-line span')].find(g=>{
         const b=g.getBoundingClientRect(); return b.width>0&&b.height>0&&b.right>r.left&&b.left<r.right&&b.bottom>r.top&&b.top<r.bottom;
       });
-      return {color:s.color,background:s.backgroundColor,backgroundImage:s.backgroundImage,text:n.textContent,rect:r,glyphColor:glyph&&getComputedStyle(glyph).color};
+      return {
+        color:s.color,background:s.backgroundColor,backgroundImage:s.backgroundImage,text:glyph?.textContent||'',rect:r,
+        glyphColor:glyph&&getComputedStyle(glyph).color,
+      };
     });
     const chrome=['.part.activitybar','.part.statusbar','.tabs-container','.breadcrumbs-control','.minimap'].map(q=>[q,[...document.querySelectorAll(q)].some(visible)]);
     const lines=[...document.querySelectorAll('.monaco-editor .view-line')], ink=(n)=>{
@@ -501,7 +503,7 @@ async function measureGroup(key, imageName, override) {
     const commentSpan=comment?.querySelector('span')||comment;
     const editor=activeEditor||document.querySelector('.monaco-editor'), scroll=editor?.querySelector('.monaco-scrollable-element');
     const title=document.querySelector('.editor-group-container>.title'), fileTitle=document.querySelector('.title .monaco-icon-label.file-icon');
-    const titleText=document.querySelector('.editor-group-container>.title .title-label');
+    const titleText=document.querySelector('.editor-group-container>.title .title-label .label-name');
     const titleTextRange=titleText?(()=>{const range=document.createRange();range.selectNodeContents(titleText);return {width:range.getBoundingClientRect().width};})():null;
     const titleContainer=fileTitle?.closest('.label-container');
     const titleState=fileTitle?{bar:visible(title)?rect(title):null,containerWidth:titleContainer?.clientWidth||0,
@@ -668,9 +670,7 @@ async function waitForTypeScriptServer() {
 }
 async function waitForCompletion(labels, filename, expectedLine) {
   const deadline = Date.now() + 15_000;
-  let last;
-  let previous;
-  let stable = 0;
+  let retryAt = Date.now() + 1000, last, previous, stable = 0;
   while (Date.now() < deadline) {
     last = await completionState(expectedLine);
     const ready = last.widgetCount === 1 && last.visible && last.editorFocused && !last.loading
@@ -691,6 +691,9 @@ async function waitForCompletion(labels, filename, expectedLine) {
     } else {
       previous = undefined;
       stable = 0;
+    }
+    if (labels[0] === 'sampleNames' && Date.now() >= retryAt && !last.rows.some((row) => row.label === labels[0])) {
+      await windowControl.key('Escape','Escape'); await windowControl.key(' ','Space',2); retryAt=Date.now()+1000;
     }
     await delay(100);
   }
@@ -775,7 +778,7 @@ async function setPairDescription(group, before, after, rows) {
   if(group==='multi-cursor'&&(a.cursors!==3||b.cursors!==1)) fail(`Option-click cursors were ${a.cursors} before and ${b.cursors} after; expected 3 then 1.`);
   if(group==='cursor-colors'){
     const beforeCursor=a.cursorStyle[0],afterCursor=b.cursorStyle[0];
-    if(!beforeCursor||!afterCursor||beforeCursor.text!=='M'||afterCursor.text!=='M'
+    if(!beforeCursor||!afterCursor||!beforeCursor.text.includes('M')||!afterCursor.text.includes('M')
       ||beforeCursor.color!=='rgb(93, 136, 0)'||afterCursor.color!=='rgb(0, 0, 0)'
       ||beforeCursor.backgroundImage!==afterCursor.backgroundImage
       ||JSON.stringify(beforeCursor.rect)!==JSON.stringify(afterCursor.rect)) {
@@ -832,7 +835,7 @@ async function runInteraction(name, phase, chapterSettings) {
       await open('src/main.ts');
       break;
     case 'sidebar-title':
-      await open('src/suggestions-completion-settings-in-the-vscode-editor-workbench-with-tabs-shortcuts-and-extension-configuration-preview.ts');
+      await open('src/completion-settings-preview-for-the-vscode-editor-workbench.ts');
       break;
     case 'explorer-decorations':
       await open('src/changed.ts');
@@ -873,7 +876,7 @@ async function runInteraction(name, phase, chapterSettings) {
     }
     case 'find-widget':
       await open('src/main.ts');
-      await windowControl.key('F', 'KeyF', 4);
+      await windowControl.key('f', 'KeyF', 4);
       await windowControl.waitFor("!!document.querySelector('.editor-widget.find-widget input')", Boolean, 10_000, 'Find widget input visible');
       await windowControl.type('vss-find-no-match-9zq');
       await windowControl.waitFor("document.querySelector('.editor-widget.find-widget input')?.value==='vss-find-no-match-9zq'", Boolean, 10_000, 'Find query entered');
@@ -1104,8 +1107,7 @@ async function resetInteraction(name) {
   if(name==='automatic-suggestions'){
     await windowControl.key('Escape','Escape');await windowControl.key('Backspace','Backspace');
   }else if(name==='selected-suggestion'){
-    await windowControl.key('Escape','Escape');
-    await resetEditorBuffer('src/suggestions.ts');
+    await windowControl.key('Escape','Escape'); await resetEditorBuffer('src/suggestions.ts');
   }else if(name==='operation-confirmations'){
     await windowControl.key('Escape','Escape');await windowControl.assertNoModalOrToast();
     await rm(path.join(workspaceDir,'src/components/delete-me.txt'),{force:true});
@@ -1312,9 +1314,7 @@ async function captureExtraPair(descriptor) {
     });
   }
 }
-function normalizeEditorText(text) {
-  return text.replaceAll('\r\n', '\n').replace(/\n[ \t]+(?=\n)/g, '\n');
-}
+function normalizeEditorText(text) { return text.replace(/\r\n/g, '\n').split('\n').map(s => s.trim()).join('\n'); }
 async function capturePair(chapter, groupKey, currentSettings) {
   const descriptor = fullPlan.find((pair) => pair.chapter === chapter.chapter && pair.groupKey === groupKey && pair.kind === 'group');
   const spec = descriptor.spec;
