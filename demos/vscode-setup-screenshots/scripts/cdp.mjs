@@ -1,5 +1,15 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
+export function intersectsViewport(rect, viewport) {
+  return !!rect && rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0
+    && rect.left < viewport.width && rect.top < viewport.height;
+}
+
+export function visibleGeometry(state) {
+  return !!state && state.display !== 'none' && state.visibility !== 'hidden' && Number(state.opacity) > 0
+    && state.rects.some((rect) => intersectsViewport(rect, state.viewport));
+}
+
 export class VSCodeControl {
   constructor(port, expectedAppPath) {
     this.port = port;
@@ -140,11 +150,26 @@ export class VSCodeControl {
     if (!Number.isFinite(timestamp)) throw new Error('The VS Code renderer did not produce two fresh animation frames.');
   }
 
-  async capturePixels(selector, padding = 2) {
-    const clip = await this.evaluate(`(() => { const e = [...document.querySelectorAll(${JSON.stringify(selector)})].find((n) => n.getBoundingClientRect().width && n.getBoundingClientRect().height); if (!e) return null; const r = e.getBoundingClientRect(); return { x: Math.max(0, r.x - ${padding}), y: Math.max(0, r.y - ${padding}), width: r.width + ${padding * 2}, height: r.height + ${padding * 2}, scale: 1 }; })()`);
-    if (!clip) throw new Error(`No visible pixel target matched ${selector}`);
-    const image = await this.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: false });
-    return image.data;
+  async elementPainted(selector) {
+    const state=await this.evaluate(`(() => {
+      const e=document.querySelector(${JSON.stringify(selector)});
+      if(!e)return null;
+      const styles=[];for(let n=e;n instanceof Element;n=n.parentElement)styles.push(getComputedStyle(n));
+      const rects=[e,...e.querySelectorAll('*')].map(n=>{const r=n.getBoundingClientRect();return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height};});
+      return {display:styles.some(s=>s.display==='none')?'none':'block',visibility:styles.some(s=>s.visibility==='hidden')?'hidden':'visible',opacity:styles.reduce((v,s)=>v*Number(s.opacity||1),1),rects,viewport:{width:innerWidth,height:innerHeight}};
+    })()`);
+    return visibleGeometry(state);
+  }
+
+  async waitForPainted(selector, expected=true, timeout=10_000) {
+    const deadline=Date.now()+timeout;
+    while(Date.now()<deadline){const painted=await this.elementPainted(selector);if(painted===expected)return painted;await delay(100);}
+    throw new Error(`Timed out waiting for ${selector} painted=${expected}`);
+  }
+
+  async captureFullScreenshot() {
+    const image = await this.send('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
+    return Buffer.from(image.data, 'base64');
   }
 
   async key(key, code, modifiers = 0) {
@@ -165,15 +190,6 @@ export class VSCodeControl {
     await delay(250);
     await this.key('Enter', 'Enter');
     await delay(700);
-  }
-
-  async gotoLine(line, column = 1) {
-    await this.key('Escape', 'Escape');
-    await this.key('G', 'KeyG', 2);
-    await delay(200);
-    await this.type(`${line}:${column}`);
-    await this.key('Enter', 'Enter');
-    await delay(250);
   }
 
   async click(x, y, modifiers = 0) {

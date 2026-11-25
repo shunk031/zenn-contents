@@ -66,31 +66,16 @@ node ./demos/vscode-setup-screenshots/scripts/run.mjs
 
 Or run `node ./scripts/run.mjs` from this directory. The runner builds a fresh isolated profile and fetches all 11 pinned source snapshots. It installs each chapter's recommended extensions as that chapter is reached. It applies groups cumulatively, captures the screenshots, and writes `output/image-index.csv`. The index has one English description per image and is tracked after a full run; runtime files, app copies, fetched settings, extensions, and PNGs remain ignored.
 
-For a launch, attach, and capture smoke check without replacing the full image set, run `node ./scripts/run.mjs --smoke`. It captures `00-zero` and the chapter 1 theme pair under ignored `output/smoke/`. Like a full run, smoke takes keyboard focus, so run it only while nobody is using the Mac.
-
-To reshoot only the chapter 11 autosave pair while preserving the other PNGs, run `node ./scripts/run.mjs --autosave-only`. This mode requires the existing 78-image index. It applies chapters cumulatively through the chapter 11 `sidebar-and-title` group, then replaces the autosave rows with a per-run sentinel check. Chapter 11 sets `files.autoSave` to `afterDelay` but leaves `files.autoSaveDelay` unset. VS Code's documented default delay is 1,000 ms ([Auto Save documentation](https://code.visualstudio.com/docs/editing/codebasics)). The 10-second timeout is a bounded margin over that delay; a save error or a sentinel that stays dirty fails the pair and preserves the notification text.
-
-After an interrupted run with 74 images, or to repair chapter 11 in a complete set, run `node ./scripts/run.mjs --resume-chapter-11`. The runner preserves existing PNGs and the measured index, then replaces the chapter 11 autosave pair, recommendation pair, and final checkpoint. Counts follow the 78-image set: one zero image, 11 checkpoints, 60 group-pair images, and six supplemental states. Unexpected save errors stop capture with their complete text.
+For a launch, attach, and capture smoke check without replacing the full image set, run `node ./scripts/run.mjs --smoke`. It writes five PNGs: the zero state and both sides of the chapter 3 zoom and chapter 5 multi-cursor pairs. These pairs calibrate renderer crops and the cursor witness. Smoke takes keyboard focus, so run it only while nobody is using the Mac.
 
 The run needs a visible, logged-in macOS desktop for VS Code window capture. The terminal app that launches the kit also needs the Screen & System Audio Recording permission described above. The app is started with workspace-trust prompts, telemetry, and update checks disabled. Unexpected dialogs and toasts stop capture. The fixture uses neutral names and a synthetic Git identity. App copies, fetched sources, extensions, and screenshots remain under ignored `output/`.
 
 ## Visual limits
 
-The runner captures the expected recommendation toast only in the before image for that pair. It creates a runtime-only recommendation for `ms-python.python`, opens the Python fixture, then removes the recommendation. The Explorer confirmation pair moves a disposable fixture file into `components`, captures the confirmation and moved state, then restores the file. Tab completion has separate ranking, unique-snippet Tab, and Emmet pairs. Every pair is accepted only when both its measured DOM and target-crop pixels change; otherwise the run fails before the pair enters the index.
+The runner captures the expected recommendation toast only in the before image for that pair. It creates a runtime-only recommendation for `ms-python.python`, opens the Python fixture, then removes it. The Explorer confirmation pair moves a disposable fixture file into `components`, captures the confirmation and moved state, then restores the file. Tab completion has separate ranking, unique-snippet Tab, and Emmet pairs.
 
-The fixture includes focused examples for nested sticky scroll, color decorations, signature help, and a TypeScript quick fix. It also covers tab indentation, selected whitespace, surface scrolling, snippet ranking, Tab expansion, and Emmet expansion.
+Every pair must satisfy its setting-specific visible-state contract and show changed pixels in the aligned target crop. A failed pair is recorded, then the runner continues with planned cumulative settings.
 
-`output/image-index.csv` is updated after each capture. Pair descriptions come from measured DOM, target-crop pixels, editor state, or fixture filesystem state. If a pair fails, the index records `failed: <error>`. Its PNGs go to `output/failed/`, outside selected `output/images/`. The runner continues, then exits non-zero.
+`output/image-index.csv` is updated after each capture. Before measurements, the runner waits for two renderer frames. It saves full DevTools screenshots and DOM measurements under ignored `output/evidence/`. Crop coordinates use measured renderer bounds and renderer-to-image size ratios. The runner aligns both crop dimensions and uses ImageMagick's exact nonzero-pixel comparison. The native window PNG remains the book image.
 
-## Kit layout
-
-- `manifest/chapters.json` and `fixture/`: chapter commit pins, source paths, visual group keys, and the fixed sample project; the manifest contains no settings values.
-- `scripts/fetch-sources.mjs` and `scripts/install-extension.mjs`: fetch the pinned settings and Marketplace packages, then validate extension packages for isolated CLI installation.
-- `scripts/run.mjs`, `scripts/groups.mjs`, and `scripts/cdp.mjs`: prepare the fresh profile, apply cumulative settings, drive UI examples, capture images, write the index, and check expected UI state.
-- `scripts/frontmost.swift` and `scripts/window-id.swift`: read the frontmost app and find the launched copy's window ID.
-- `output/`: ignored run artifacts except the tracked full-run `image-index.csv`.
-
-## References
-
-- Apple [window-list API](https://developer.apple.com/documentation/coregraphics/cgwindowlistcopywindowinfo%28_%3A_%3A%29?language=_5).
-- Chrome DevTools Protocol [Input domain](https://chromedevtools.github.io/devtools-protocol/tot/Input/).
+Pair descriptions come from measured DOM, editor state, or fixture filesystem state. If a pair fails, existing PNGs are recorded as `failed: <error>` under `output/failed/`, outside selected `output/images/`. The runner continues, then exits non-zero.

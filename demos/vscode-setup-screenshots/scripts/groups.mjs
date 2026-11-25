@@ -43,7 +43,7 @@ export const groupSpecs = {
     settings: [setting('explorer.confirmDragAndDrop'), setting('explorer.confirmDelete')],
     interaction: 'operation-confirmations',
     previewSettings: { 'window.dialogStyle': 'custom' },
-    description: 'The explorer.confirmDragAndDrop move confirmation disappears after. Dialogs use custom rendering temporarily so the confirmation is visible in the capture.',
+    description: 'Moving delete-me.txt prompts before the setting change and moves into components without a dialog after.',
   },
   'explorer-decorations': {
     chapter: 2,
@@ -76,6 +76,7 @@ export const groupSpecs = {
     settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after'), setting('custom-ui-style.stylesheet', '.monaco-scrollable-element > .shadow.top'), setting('custom-ui-style.stylesheet', '.sidebar .title-label'), setting('custom-ui-style.stylesheet', '.sidebar'), setting('custom-ui-style.stylesheet', '.monaco-workbench .monaco-list:not(.element-focused):focus:before'), setting('custom-ui-style.stylesheet', '.monaco-list-row.focused'), setting('custom-ui-style.stylesheet', '.monaco-editor .scroll-decoration'), setting('custom-ui-style.stylesheet', '.title-actions'), setting('custom-ui-style.stylesheet', '.title.show-file-icons .label-container .monaco-icon-label.file-icon'), setting('custom-ui-style.stylesheet', '.title .monaco-icon-label:after')],
     restart: true,
     interaction: 'surface-boundaries',
+    description: 'The focused Explorer outline disappears and the editor title centers within the changed surface boundaries.',
   },
   'cursor-appearance': {
     chapter: 5,
@@ -94,7 +95,7 @@ export const groupSpecs = {
     chapter: 5,
     settings: [setting('workbench.colorCustomizations', 'editorCursor.background')],
     interaction: 'cursor-focus',
-    description: 'The focused block cursor changes color after the chapter background is applied.',
+    description: 'The glyph beneath the focused block cursor changes color after the chapter background is applied.',
   },
   'font-metrics': {
     chapter: 6,
@@ -106,7 +107,7 @@ export const groupSpecs = {
     chapter: 6,
     settings: [setting('editor.fontLigatures'), setting('editor.tokenColorCustomizations')],
     interaction: 'code-style',
-    description: 'The same arrow operator ligature and italic comment receive the chapter typography.',
+    description: 'The same Sample comment changes from upright to italic in the chapter typography.',
   },
   'code-decorations': {
     chapter: 7,
@@ -174,7 +175,7 @@ export const groupSpecs = {
     settings: [setting('custom-ui-style.stylesheet', '.title .monaco-icon-label.file-icon'), setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'sideBar.background')],
     restart: true,
     interaction: 'sidebar-title',
-    description: 'The sidebar background and file title spacing receive their final styling.',
+    description: 'The sidebar changes to #191521 and the file title gains 60 px spacing.',
   },
   autosave: {
     chapter: 11,
@@ -187,6 +188,6 @@ export const groupSpecs = {
     settings: [setting('extensions.ignoreRecommendations'), setting('update.mode')],
     interaction: 'recommendations',
     restart: true,
-    description: 'No extension recommendation toast appears when the Python fixture is open.',
+    description: 'The Python extension recommendation toast appears before and is absent after recommendations are ignored.',
   },
 };
