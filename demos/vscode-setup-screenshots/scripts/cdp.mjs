@@ -319,9 +319,9 @@ export class VSCodeControl {
   }
 
   async assertExpectedOperationConfirmation() {
-    const state = await this.waitFor(`({toasts:[...document.querySelectorAll('.notifications-toasts .notification-toast')].map(element=>element.innerText),dialogs:[...document.querySelectorAll('.monaco-dialog-box,.monaco-dialog-modal-block,[aria-modal="true"]')].map(element=>element.innerText),restartPrompt:document.body.innerText.includes('requires a restart to take effect')})`, (value) => value.dialogs.some((text) => /move|drag|delete|trash/i.test(text)));
+    const state = await this.waitFor(`({toasts:[...document.querySelectorAll('.notifications-toasts .notification-toast')].map(element=>element.innerText),dialogs:[...document.querySelectorAll('.monaco-dialog-box,.monaco-dialog-modal-block,[aria-modal="true"]')].map(element=>element.innerText),restartPrompt:document.body.innerText.includes('requires a restart to take effect')})`, (value) => value.dialogs.some((text) => /move/i.test(text) && /delete-me\.txt/i.test(text) && /components/i.test(text)));
     const text = state.dialogs.join('\n');
-    if (!/move|drag|delete|trash/i.test(text) || state.toasts.length || state.restartPrompt) {
+    if (!/move/i.test(text) || !/delete-me\.txt/i.test(text) || !/components/i.test(text) || state.toasts.length || state.restartPrompt) {
       throw new Error(`Expected an Explorer operation confirmation dialog, found ${JSON.stringify(state)}`);
     }
   }

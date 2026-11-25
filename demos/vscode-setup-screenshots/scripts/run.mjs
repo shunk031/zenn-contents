@@ -656,9 +656,17 @@ async function runInteraction(name, phase, chapterSettings) {
       await windowControl.command('File: Reveal Active File in Explorer');
       await windowControl.command('View: Focus Explorer');
       await windowControl.dragExplorerFileToFolder('delete-me.txt', 'components');
-      if (phase === 'before') await windowControl.assertExpectedOperationConfirmation();
+      if (phase === 'before') {
+        await windowControl.assertExpectedOperationConfirmation();
+        if ((await readFile(file)).compare(original) !== 0 || await access(movedFile).then(() => true, () => false)) throw new Error('The pending move confirmation changed the fixture file.');
+      }
       else {
-        if ((await readFile(movedFile).catch(() => Buffer.alloc(0))).compare(original) !== 0 || await access(file).then(() => true, () => false)) throw new Error('Explorer drop did not move the exact fixture file.');
+        const deadline = Date.now() + 10_000;
+        while (Date.now() < deadline) {
+          if ((await readFile(movedFile).catch(() => Buffer.alloc(0))).compare(original) === 0 && !await access(file).then(() => true, () => false)) break;
+          await delay(250);
+        }
+        if ((await readFile(movedFile).catch(() => Buffer.alloc(0))).compare(original) !== 0 || await access(file).then(() => true, () => false)) throw new Error('Explorer drop did not move the exact fixture file within 10 seconds.');
         await windowControl.command('File: Reveal Active File in Explorer');
         await windowControl.waitFor("[...document.querySelectorAll('.explorer-folders-view .monaco-list-row')].some((row) => row.innerText.includes('delete-me.txt'))");
       }
@@ -889,7 +897,7 @@ async function capturePair(chapter, groupKey, currentSettings) {
   try {
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'before', appliedSettings);
-  const before = await measureGroup(groupKey), beforeText = groupKey === 'operation-confirmations' ? 'Before moving delete-me.txt, VS Code shows its Explorer confirmation.' : `Before ${groupKey}, the staged fixture state is visible.`;
+  const before = await measureGroup(groupKey), beforeText = groupKey === 'operation-confirmations' ? 'Before explorer.confirmDragAndDrop is disabled, VS Code shows the move confirmation. Dialogs use custom rendering temporarily so the confirmation is visible in the capture.' : `Before ${groupKey}, the staged fixture state is visible.`;
   const beforeRow = await capture(beforeName, chapter.chapter, groupKey, beforeText, groupKey === 'operation-confirmations' ? 'operation-confirmation' : groupKey === 'recommendation-notifications' ? 'recommendation-toast' : 'none', true);
   const extrasBefore = groupKey === 'overlays' ? [await captureExtra(chapter, groupKey, 'find', 'before')] : groupKey === 'tab-completion' ? [await captureExtra(chapter, groupKey, 'tab', 'before'), await captureExtra(chapter, groupKey, 'emmet', 'before')] : [];
   if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'before');
@@ -903,7 +911,7 @@ async function capturePair(chapter, groupKey, currentSettings) {
   } else if (spec.restart) await restartApp();
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'after', currentSettings);
-  const after = await measureGroup(groupKey), afterText = groupKey === 'operation-confirmations' ? 'After the setting is applied, the fixture file moves without a confirmation.' : `After ${groupKey} is applied, ${spec.description}`;
+  const after = await measureGroup(groupKey), afterText = groupKey === 'operation-confirmations' ? 'After explorer.confirmDragAndDrop is disabled, the file moves without confirmation. Dialogs use custom rendering temporarily so the confirmation is visible in the capture.' : `After ${groupKey} is applied, ${spec.description}`;
   const afterRow = await capture(afterName, chapter.chapter, groupKey, afterText, 'none', true);
   const extrasAfter = groupKey === 'overlays' ? [await captureExtra(chapter, groupKey, 'find', 'after')] : groupKey === 'tab-completion' ? [await captureExtra(chapter, groupKey, 'tab', 'after'), await captureExtra(chapter, groupKey, 'emmet', 'after')] : [];
   if (before && after) setPairDescription(groupKey, before, after, [beforeRow, afterRow]);
@@ -951,7 +959,7 @@ async function capturePair(chapter, groupKey, currentSettings) {
       }
       if (spec.previewSettings) await writeSettings(appliedSettings);
       if (groupKey === 'recommendation-notifications') await rm(path.join(workspaceDir, '.vscode', 'extensions.json'), { force: true });
-    } catch (recoveryError) { if (recoveryError.code === 'OWNER_RETURNED') throw recoveryError; console.error(`Cumulative settings recovery failed: ${recoveryError.message}`); }
+    } catch (recoveryError) { if (recoveryError.code === 'OWNER_RETURNED') throw recoveryError; throw new Error(`Cumulative settings recovery failed; stopping before the next pair: ${recoveryError.message}`, { cause: recoveryError }); }
   }
   return appliedSettings;
 }

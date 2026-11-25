@@ -42,7 +42,8 @@ export const groupSpecs = {
     chapter: 2,
     settings: [setting('explorer.confirmDragAndDrop'), setting('explorer.confirmDelete')],
     interaction: 'operation-confirmations',
-    description: 'Moving the fixture file asks for confirmation before and moves without one after.',
+    previewSettings: { 'window.dialogStyle': 'custom' },
+    description: 'The explorer.confirmDragAndDrop move confirmation disappears after. Dialogs use custom rendering temporarily so the confirmation is visible in the capture.',
   },
   'explorer-decorations': {
     chapter: 2,
