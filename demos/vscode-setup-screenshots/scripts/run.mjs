@@ -124,6 +124,7 @@ let indentationSource;
 const installedExtensions = new Set();
 const indexRows = [];
 const imageNames = new Set();
+const failedPairs = [];
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], ...options }).trim();
@@ -884,6 +885,8 @@ async function capturePair(chapter, groupKey, currentSettings) {
   const spec = groupSpecs[groupKey];
   const beforeName = `ch${String(chapter.chapter).padStart(2, '0')}-${groupKey}-before.png`;
   const afterName = `ch${String(chapter.chapter).padStart(2, '0')}-${groupKey}-after.png`;
+  const pairFiles = [beforeName, afterName, ...(groupKey === 'overlays' ? ['find-before', 'find-after'].map((side) => `ch04-overlays-${side}.png`) : groupKey === 'tab-completion' ? ['tab-before', 'tab-after', 'emmet-before', 'emmet-after'].map((side) => `ch10-tab-completion-${side}.png`) : [])];
+  try {
   if (spec.previewSettings) await writeTransientSettings(spec.previewSettings);
   await runInteraction(spec.interaction, 'before', appliedSettings);
   const before = await measureGroup(groupKey), beforeText = groupKey === 'operation-confirmations' ? 'Before moving delete-me.txt, VS Code shows its Explorer confirmation.' : `Before ${groupKey}, the staged fixture state is visible.`;
@@ -916,14 +919,39 @@ async function capturePair(chapter, groupKey, currentSettings) {
     }
   }
   if (groupKey === 'autosave') { beforeRow.description = `Before auto save, ${autosaveSentinel} is in the dirty buffer and absent from disk.`; afterRow.description = `After auto save, ${autosaveSentinel} is on disk and the dirty indicator cleared.`; }
-  await acceptCaptures([beforeRow, ...extrasBefore.map(({ row }) => row), afterRow, ...extrasAfter.map(({ row }) => row)]);
   if (groupKey !== 'autosave') await resetInteraction(spec.interaction, 'after');
   if (spec.previewSettings) await writeSettings(appliedSettings);
 
   if (groupKey === 'recommendation-notifications') {
     await rm(path.join(workspaceDir, '.vscode', 'extensions.json'), { force: true });
   }
-
+  await acceptCaptures([beforeRow, ...extrasBefore.map(({ row }) => row), afterRow, ...extrasAfter.map(({ row }) => row)]);
+  } catch (error) {
+    if (error.code === 'OWNER_RETURNED') throw error;
+    const message = String(error.message || error).replace(/\s+/g, ' ').trim();
+    const failedDir = path.join(outputDir, 'failed');
+    await mkdir(failedDir, { recursive: true });
+    for (const name of pairFiles) {
+      const staged = `${path.join(imageDir, name)}.${process.pid}.capture.png`, selected = path.join(imageDir, name), failed = path.join(failedDir, name);
+      if (await access(staged).then(() => true, () => false)) await rename(staged, failed);
+      else if (await access(selected).then(() => true, () => false)) await rename(selected, failed);
+      indexRows.push({ chapter: chapter.chapter, group: groupKey, file: path.relative(outputDir, await access(failed).then(() => failed, () => selected)), description: `failed: ${message}` });
+    }
+    failedPairs.push(`${chapter.chapter}-${groupKey}: ${message}`);
+    await persistIndex();
+    console.error(`Failed pair ${chapter.chapter}-${groupKey}: ${message}`);
+    try { await resetInteraction(spec.interaction, 'failed'); } catch (cleanupError) { console.error(`Pair recovery failed: ${cleanupError.message}`); }
+    try {
+      const settings = copyGroupSettings(currentSettings, spec.settings);
+      if (JSON.stringify(copyGroupSettings(appliedSettings, spec.settings)) !== JSON.stringify(settings)) {
+        await writeSettings(deepMerge(structuredClone(appliedSettings), settings));
+        if (spec.settings.some(([first]) => first.startsWith('custom-ui-style.'))) await applyCustomUIStyleAndRestart();
+        else if (spec.restart) await restartApp();
+      }
+      if (spec.previewSettings) await writeSettings(appliedSettings);
+      if (groupKey === 'recommendation-notifications') await rm(path.join(workspaceDir, '.vscode', 'extensions.json'), { force: true });
+    } catch (recoveryError) { if (recoveryError.code === 'OWNER_RETURNED') throw recoveryError; console.error(`Cumulative settings recovery failed: ${recoveryError.message}`); }
+  }
   return appliedSettings;
 }
 
@@ -1023,9 +1051,7 @@ try {
 }
 
 const expectedImageCount = smokeMode ? 3 : autosaveOnlyMode ? 2 : resumeChapter11Mode ? 5 : 78;
-if (indexRows.length !== expectedImageCount || imageNames.size !== expectedImageCount) {
-  throw new Error(`Expected ${expectedImageCount} screenshots; captured ${imageNames.size}`);
-}
+if (indexRows.length !== expectedImageCount) throw new Error(`Expected ${expectedImageCount} index rows; recorded ${indexRows.length}`);
 if (autosaveOnlyMode) {
   const existingLines = (await readFile(indexPath, 'utf8')).trimEnd().split('\n');
   if (existingLines.length !== 79) throw new Error(`Expected an existing 78-image index before targeted capture; found ${existingLines.length - 1} rows.`);
@@ -1039,4 +1065,5 @@ if (autosaveOnlyMode) {
     ...indexRows.map(rowLine),
   ].join('\n') + '\n');
 }
-console.log(`Captured ${imageNames.size} PNGs. Image index: ${indexPath}`);
+console.log(`Captured ${indexRows.filter((row) => !row.description.startsWith('failed:')).length} PNGs; failed pairs: ${failedPairs.length}. Image index: ${indexPath}`);
+if (failedPairs.length) { console.error(failedPairs.join('\n')); process.exitCode = 1; }

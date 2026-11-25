@@ -80,7 +80,7 @@ The runner captures the expected recommendation toast only in the before image f
 
 The fixture includes focused examples for nested sticky scroll, color decorations, signature help, and a TypeScript quick fix. It also covers tab indentation, selected whitespace, surface scrolling, snippet ranking, Tab expansion, and Emmet expansion.
 
-`output/image-index.csv` is updated after each capture. Pair descriptions come from measured DOM, target-crop pixels, editor state, or fixture filesystem state. A failed required assertion stops the run rather than labelling an unverified screenshot.
+`output/image-index.csv` is updated after each capture. Pair descriptions come from measured DOM, target-crop pixels, editor state, or fixture filesystem state. If a pair fails, the index records `failed: <error>`. Its PNGs go to `output/failed/`, outside selected `output/images/`. The runner continues, then exits non-zero.
 
 ## Kit layout
 
