@@ -943,8 +943,9 @@ async function capturePair(chapter, groupKey, currentSettings) {
     try { await resetInteraction(spec.interaction, 'failed'); } catch (cleanupError) { console.error(`Pair recovery failed: ${cleanupError.message}`); }
     try {
       const settings = copyGroupSettings(currentSettings, spec.settings);
-      if (JSON.stringify(copyGroupSettings(appliedSettings, spec.settings)) !== JSON.stringify(settings)) {
-        await writeSettings(deepMerge(structuredClone(appliedSettings), settings));
+      const cumulativeSettings = deepMerge(structuredClone(appliedSettings), settings);
+      if (JSON.stringify(cumulativeSettings) !== JSON.stringify(appliedSettings)) {
+        await writeSettings(cumulativeSettings);
         if (spec.settings.some(([first]) => first.startsWith('custom-ui-style.'))) await applyCustomUIStyleAndRestart();
         else if (spec.restart) await restartApp();
       }
