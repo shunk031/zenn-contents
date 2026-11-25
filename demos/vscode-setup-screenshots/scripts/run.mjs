@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { access, cp, mkdir, readFile, rename, rm, stat, writeFile, appendFile } from 'node:fs/promises';
+import { access, copyFile, cp, mkdir, readFile, rename, rm, stat, writeFile, appendFile } from 'node:fs/promises';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -404,26 +404,17 @@ function fixtureLine(relativePath, text, exactTrimmed = false) {
 }
 
 async function resetEditorBuffer(relativePath) {
-  const pristine = await readFile(path.join(fixtureDir, relativePath), 'utf8');
-  await open(relativePath);
-  await windowControl.key('A', 'KeyA', 4);
-  await windowControl.type(pristine);
-  await windowControl.key('S', 'KeyS', 4);
-  const file = path.join(workspaceDir, relativePath);
-  const deadline = Date.now() + 10_000;
-  while (Date.now() < deadline) {
-    if ((await readFile(file, 'utf8')).replaceAll('\r\n', '\n') === pristine.replaceAll('\r\n', '\n')) break;
-    await delay(100);
-  }
-  if ((await readFile(file, 'utf8')).replaceAll('\r\n', '\n') !== pristine.replaceAll('\r\n', '\n')) {
-    throw new Error(`Could not restore pristine fixture bytes for ${relativePath}`);
-  }
+  const pristine = await readFile(path.join(fixtureDir, relativePath)), target = path.join(workspaceDir, relativePath);
+  await open(relativePath); await windowControl.key('S', 'KeyS', 4);
+  await writeFile(target, pristine); await windowControl.command('File: Revert File');
+  const buffer = await copyEditorBuffer();
+  const restored = buffer.replaceAll('\r\n', '\n') === pristine.toString('utf8').replaceAll('\r\n', '\n') && (await readFile(target)).equals(pristine);
+  if (!restored) throw new Error(`Could not restore pristine fixture bytes for ${relativePath}`);
   await open(relativePath);
 }
 
 async function copyEditorBuffer() {
-  await windowControl.key('A', 'KeyA', 4);
-  await windowControl.key('C', 'KeyC', 4);
+  await windowControl.key('A', 'KeyA', 4); await windowControl.key('C', 'KeyC', 4);
   return execFileSync('pbpaste', [], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
 }
 
@@ -468,7 +459,7 @@ async function measureGroup(key, imageName, override) {
     const rect = (n) => { const r=n.getBoundingClientRect(); return {left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}; };
     const activeEditor=document.querySelector('.monaco-editor.focused');
     const targets=[...document.querySelectorAll(${JSON.stringify(selector)})];
-    const scoped=key==='tab-completion'||key==='selected-suggestion-color';
+    const scoped=${key === 'tab-completion' || key === 'selected-suggestion-color'};
     const e=targets.find(n=>visible(n)&&(!scoped||activeEditor&&(activeEditor.contains(n)||n.closest('.monaco-editor')===activeEditor)));
     if(!e) return null;
     const box=rect(e), viewport={width:innerWidth,height:innerHeight}, sidebar=document.querySelector('.sidebar');
@@ -501,7 +492,7 @@ async function measureGroup(key, imageName, override) {
     const chrome=['.part.activitybar','.part.statusbar','.tabs-container','.breadcrumbs-control','.minimap'].map(q=>[q,[...document.querySelectorAll(q)].some(visible)]);
     const lines=[...document.querySelectorAll('.monaco-editor .view-line')], ink=(n)=>{
       if(!n)return null; const walker=document.createTreeWalker(n,NodeFilter.SHOW_TEXT);
-      while(walker.nextNode()){const index=walker.currentNode.textContent.search(/\S/);if(index>=0){const range=document.createRange();range.setStart(walker.currentNode,index);range.setEnd(walker.currentNode,index+1);const r=range.getBoundingClientRect();return {x:r.x,width:r.width};}}
+      while(walker.nextNode()){const index=walker.currentNode.textContent.search(/\\S/);if(index>=0){const range=document.createRange();range.setStart(walker.currentNode,index);range.setEnd(walker.currentNode,index+1);const r=range.getBoundingClientRect();return {x:r.x,width:r.width};}}
       return null;
     };
     const line=(text)=>lines.find(n=>n.innerText.replace(/\u00a0/g,' ').includes(text));
@@ -600,7 +591,7 @@ async function measureGroup(key, imageName, override) {
   await writeFile(`${fullPath}.json`,JSON.stringify({box:observed.box,viewport:observed.viewport,visibility:observed.visibility,metric:observed.metric},null,2));
   return {metric:observed.metric,box:observed.box,viewport:observed.viewport,fullPath};
 }
-async function completionState() {
+async function completionState(expectedLine) {
   return windowControl.evaluate(`(() => {
     const visible=(node)=>{
       if(!node)return false;
@@ -625,14 +616,17 @@ async function completionState() {
     const active=document.activeElement;
     const selected=[...(widget?.querySelectorAll('.monaco-list-row')||[])].find(node=>node.matches('.focused,.selected,[aria-selected="true"]'));
     const label=(node)=>node?.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||node?.innerText.trim().split('\\n')[0]||null;
-    const input=editor?.querySelector('textarea.inputarea');
+    const cursor=editor?.querySelector('.cursors-layer .cursor'), caretLine=[...editor.querySelectorAll('.view-line')].find(node=>node.innerText.trim()===${JSON.stringify(expectedLine)});
+    const caretRange=caretLine&&document.createRange(); if(caretRange) caretRange.selectNodeContents(caretLine);
+    const caretRect=caretRange?.getBoundingClientRect(), cursorRect=cursor?.getBoundingClientRect();
+    const caret=caretRect&&cursorRect?{line:caretLine.innerText.trim(),atEnd:Math.abs(cursorRect.x+cursorRect.width/2-caretRect.right)<16}:null;
     return {
       widgetCount:widgets.length,
       visible:visible(widget),
-      editorIdentity:editor?.closest('.editor-group-container')?.querySelector('.title-label')?.textContent.trim()||null,
+      editorIdentity:editor?.closest('.editor-group-container')?.querySelector('.title-label .label-name')?.textContent.trim()||null,
       editorFocused:!!editor&&editor.contains(active),
       activeElement:active?.className||active?.tagName||null,
-      caret:input?{start:input.selectionStart,end:input.selectionEnd,value:input.value}:null,
+      caret,
       rows,
       selected:label(selected),
       loading:rows.some(row=>/loading|no suggestions/i.test(row.detail)),
@@ -655,7 +649,7 @@ async function saveCompletionDiagnostics(filename) {
       visible:visible(widget),
       editorIdentity:widget.closest('.editor-group-container')?.querySelector('.title-label')?.textContent.trim()||null,
       activeEditor:!!editor&&(editor.contains(widget)||widget.closest('.monaco-editor')===editor),
-      caret:(()=>{const input=editor?.querySelector('textarea.inputarea');return input?{start:input.selectionStart,end:input.selectionEnd}:null;})(),
+      caret:(()=>{const r=editor?.querySelector('.cursors-layer .cursor')?.getBoundingClientRect();return r?{x:r.x,y:r.y,width:r.width,height:r.height}:null;})(),
       activeElement:active?.className||active?.tagName||null,
       rows:[...widget.querySelectorAll('.monaco-list-row')].filter(visible).map(row=>({
         label:row.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||row.innerText.trim(),
@@ -667,23 +661,28 @@ async function saveCompletionDiagnostics(filename) {
   await mkdir(directory, { recursive: true });
   await writeFile(path.join(directory, `${filename}.completion-diagnostic.json`), JSON.stringify({ activeFile, diagnostics }, null, 2));
 }
-async function waitForCompletion(labels, filename) {
-  const deadline = Date.now() + 10_000;
+async function waitForTypeScriptServer() {
+  const server = path.join(appPath, 'Contents/Resources/app/extensions/node_modules/typescript/lib/tsserver.js');
+  for (let attempt = 0; attempt < 100; attempt++) if (execFileSync('/bin/ps', ['-ww', '-axo', 'command='], { encoding: 'utf8' }).includes(server)) return; else await delay(100);
+  throw new Error(`TypeScript language features did not start in the isolated subset profile: ${server}`);
+}
+async function waitForCompletion(labels, filename, expectedLine) {
+  const deadline = Date.now() + 15_000;
   let last;
   let previous;
   let stable = 0;
   while (Date.now() < deadline) {
-    last = await completionState();
+    last = await completionState(expectedLine);
     const ready = last.widgetCount === 1 && last.visible && last.editorFocused && !last.loading
-      && last.editorIdentity === path.basename(activeFile)
+      && last.editorIdentity === path.basename(activeFile) && last.caret?.line === expectedLine && last.caret.atEnd
       && last.rows.every((row) => row.visible && row.inViewport)
       && labels.every((label) => last.rows.some((row) => row.label === label));
     if (ready) {
       await windowControl.waitForPaint();
-      const painted = await completionState();
+      const painted = await completionState(expectedLine);
       const identity = JSON.stringify(painted.rows.map(({ label, detail, snippet }) => [label, detail, snippet]));
       if (painted.widgetCount === 1 && painted.visible && painted.editorFocused && !painted.loading
-        && painted.editorIdentity === path.basename(activeFile)
+        && painted.editorIdentity === path.basename(activeFile) && painted.caret?.line === expectedLine && painted.caret.atEnd
         && painted.rows.every((row) => row.visible && row.inViewport) && labels.every((label) => painted.rows.some((row) => row.label === label))
         && identity === previous) stable += 1;
       else stable = 0;
@@ -875,9 +874,9 @@ async function runInteraction(name, phase, chapterSettings) {
     case 'find-widget':
       await open('src/main.ts');
       await windowControl.key('F', 'KeyF', 4);
-      await windowControl.waitFor("!!document.querySelector('.editor-widget.find-widget input')");
+      await windowControl.waitFor("!!document.querySelector('.editor-widget.find-widget input')", Boolean, 10_000, 'Find widget input visible');
       await windowControl.type('vss-find-no-match-9zq');
-      await windowControl.waitFor("document.querySelector('.editor-widget.find-widget input')?.value==='vss-find-no-match-9zq'");
+      await windowControl.waitFor("document.querySelector('.editor-widget.find-widget input')?.value==='vss-find-no-match-9zq'", Boolean, 10_000, 'Find query entered');
       if (await readFile(path.join(workspaceDir, activeFile), 'utf8').then((text) => text.includes('vss-find-no-match-9zq'))) {
         throw new Error('The fixed Find query unexpectedly occurs in the fixture file.');
       }
@@ -911,8 +910,9 @@ async function runInteraction(name, phase, chapterSettings) {
       }
       catch (error) { await saveCompletionDiagnostics('tab-completion-editor-focus'); throw error; }
       await assertNoActiveCompletion('tab-completion-before-trigger');
+      await waitForTypeScriptServer();
       await windowControl.key(' ', 'Space', 2);
-      await waitForCompletion(['sampleNames', 'Sample loop', 'Sample card'], 'tab-completion');
+      await waitForCompletion(['sampleNames', 'Sample loop', 'Sample card'], 'tab-completion', 'sam');
       break;
     case 'tab-expansion': {
       const file = 'src/snippet-suggestions.ts';
@@ -950,11 +950,12 @@ async function runInteraction(name, phase, chapterSettings) {
       await goto(target.line, target.text.length + 1);
       await windowControl.type('.');
       await assertNoActiveCompletion('selected-suggestion-before-trigger');
+      await waitForTypeScriptServer();
       await windowControl.key(' ', 'Space', 2);
-      let state = await waitForCompletion(['active'], 'selected-suggestion-color');
+      let state = await waitForCompletion(['active'], 'selected-suggestion-color', 'sample.');
       for (let index = 0; index <= state.rows.length && state.selected !== 'active'; index += 1) {
         await windowControl.key('ArrowDown', 'ArrowDown');
-        state = await completionState();
+        state = await completionState('sample.');
       }
       if (state.selected !== 'active') throw new Error(`Could not select the active member completion: ${JSON.stringify(state)}`);
       break;
@@ -1458,7 +1459,7 @@ try {
     }
   }
 } finally {
-  await quitApp();
+  await quitApp(); if (runOptions.only) await copyFile(path.join(fixtureDir, 'src/emmet.html'), path.join(workspaceDir, 'src/emmet.html'));
   await rm(profileDir,{recursive:true,force:true});
 }
 

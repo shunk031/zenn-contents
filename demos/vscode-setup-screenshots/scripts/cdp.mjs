@@ -122,7 +122,7 @@ export class VSCodeControl {
     return result.result.value;
   }
 
-  async waitFor(expression, ready = Boolean, timeout = 10_000) {
+  async waitFor(expression, ready = Boolean, timeout = 10_000, state = expression) {
     const deadline = Date.now() + timeout;
     let value;
     while (Date.now() < deadline) {
@@ -130,7 +130,7 @@ export class VSCodeControl {
       if (ready(value)) return value;
       await delay(100);
     }
-    throw new Error(`Timed out waiting for UI state: ${JSON.stringify(value)}`);
+    throw new Error(`Timed out waiting for ${state}: ${JSON.stringify(value)}; renderer expression=${JSON.stringify(expression)}`);
   }
 
   waitForEvent(method, timeout = 10_000) {
