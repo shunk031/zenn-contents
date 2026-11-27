@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { access, copyFile, cp, mkdir, readFile, rename, rm, stat, writeFile, appendFile } from 'node:fs/promises';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import os from 'node:os';
@@ -9,6 +9,7 @@ import { VSCodeControl, findSearchFieldSelector, visibleGeometry } from './cdp.m
 import { identifyCompletionRows, pairFailureMessage, selectionCopyPass, tabCompletionPass } from './completion.mjs';
 import { extensionPins, groupSpecs } from './groups.mjs';
 import { installMarketplaceExtension } from './install-extension.mjs';
+import { explorerDecorationsPass, failedPairIndexRows, titleSpacingPass } from './pair-evidence.mjs';
 import * as planner from './planner.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -26,7 +27,7 @@ const vscodeArchive = path.join(outputRoot, 'vscode-1.101.1-darwin-arm64.zip');
 const sourceDir = path.join(runtimeDir, 'sources');
 const profileDir = path.join(os.tmpdir(), `vss-${process.pid}`);
 const extensionsDir = path.join(runtimeDir, 'extensions');
-const marketplaceCacheDir = path.join(outputRoot, 'runtime', 'marketplace-cache');
+const marketplaceCacheDir = path.join(outputRoot, 'marketplace-cache');
 const workspaceDir = path.join(runtimeDir, 'workspace');
 const appPath = path.join(runtimeDir, 'Visual Studio Code.app');
 const appExecutable = path.join(appPath, 'Contents', 'MacOS', 'Electron');
@@ -58,6 +59,10 @@ else {
   await mkdir(runtimeDir, { recursive: true });
 }
 await rm(profileDir, { recursive: true, force: true });
+process.once('exit', () => {
+  try { rmSync(profileDir, { recursive: true, force: true }); }
+  catch (error) { console.error('Could not remove the temporary VS Code profile on exit:', error); }
+});
 if (!runOptions.only) {
   await rm(imageDir, { recursive: true, force: true });
   await rm(indexPath, { force: true });
@@ -391,9 +396,11 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     void (async () => {
       try {
         await quitApp();
-        await rm(profileDir, { recursive: true, force: true });
       } catch (error) {
         console.error(`Could not clean up after ${signal}:`, error);
+      } finally {
+        try { await rm(profileDir, { recursive: true, force: true }); }
+        catch (error) { console.error(`Could not remove the temporary VS Code profile after ${signal}:`, error); }
       }
       process.exit(128 + os.constants.signals[signal]);
     })();
@@ -878,9 +885,9 @@ async function setPairDescription(group, before, after, rows) {
   if(group==='explorer-icons'&&same(a.tree,b.tree)) fail('Explorer icons or disclosure arrows did not change.');
   if(group==='tree-layout'&&(same(a.tree,b.tree)||!a.guides||b.guides)) fail('Visible Explorer indent guides did not disappear.');
   if(group==='operation-confirmations'&&(!a.dialogs.some(t=>/move/i.test(t))||b.dialogs.length||same(a.tree,b.tree))) fail('Move dialog or resulting Explorer tree did not change.');
-  if(group==='explorer-decorations'&&a.gitColor===b.gitColor&&a.badges===b.badges) fail('Git color or Explorer badge did not change.');
+  if(group==='explorer-decorations'&&!explorerDecorationsPass(a,b)) fail('Git color and Explorer badge did not both change.');
   if(group==='window-chrome'&&a.devicePixelRatio===b.devicePixelRatio&&a.w===b.w) fail('The workbench zoom geometry did not change.');
-  if(group==='title-spacing'&&(a.pad!=='20px'||b.pad!=='60px'||b.textX<=a.textX)) fail(`Title spacing did not move the title ink: ${JSON.stringify([a.pad,b.pad,a.textX,b.textX])}`);
+  if(group==='title-spacing'&&!titleSpacingPass(a,b)) fail(`Title spacing did not move the title ink: ${JSON.stringify([a.padding,b.padding,a.textX,b.textX])}`);
   if(group==='overlays'&&a.y===b.y&&a.shadow===b.shadow) fail('Command Palette position and shadow did not change.');
   if(group==='surface-boundaries'&&a.focus===b.focus&&a.justify===b.justify&&a.decoration===b.decoration) fail('Focused outline, title alignment, and editor surface boundary did not change.');
   if(group==='cursor-appearance'&&same(a.cursorStyle,b.cursorStyle)) fail('Editor cursor shape or color did not change.');
@@ -1299,6 +1306,7 @@ async function recordPairFailure(descriptor, names, error, cleanup) {
   if (error.code === 'OWNER_RETURNED') throw error;
   const primary = String(error.message || error).replace(/\s+/g, ' ').trim();
   const secondary = [...(error.secondaryCauses || [])];
+  const failedFiles = [];
   const failurePath = path.join(outputDir, 'evidence', `${descriptor.filename}-failure.json`);
   await mkdir(path.dirname(failurePath), { recursive: true });
   await writeFile(failurePath, `${JSON.stringify({ primary, diagnostics: [...rankingDiagnosticPaths] }, null, 2)}\n`);
@@ -1315,6 +1323,7 @@ async function recordPairFailure(descriptor, names, error, cleanup) {
   const failedDir = path.join(outputDir, 'failed');
   await attempt('failed image directory', () => mkdir(failedDir, { recursive: true }));
   for (const name of names) {
+    let indexedFile = '';
     await attempt(`preserve ${name}`, async () => {
       const staged = `${path.join(imageDir, name)}.${process.pid}.capture.png`;
       const image = path.join(imageDir, name);
@@ -1322,10 +1331,12 @@ async function recordPairFailure(descriptor, names, error, cleanup) {
       const source = await access(staged).then(() => staged, () => access(image).then(() => image, () => null));
       if (source) {
         await rename(source, failed);
-        indexRows.push({ chapter: descriptor.chapter, group: descriptor.groupKey, file: path.relative(outputDir, failed), description: `failed: ${message}` });
+        indexedFile = path.relative(outputDir, failed);
       }
     });
+    failedFiles.push(indexedFile);
   }
+  indexRows.push(...failedPairIndexRows(descriptor, failedFiles, message));
   failedPairs[failedPairs.length - 1] = `${descriptor.canonical}: ${message}`;
   await attempt('image index persistence', persistIndex);
   console.error(`Failed pair ${descriptor.canonical}: ${message}`);
@@ -1569,13 +1580,17 @@ try {
     }
   }
 } finally {
-  await quitApp(); if (runOptions.only) await copyFile(path.join(fixtureDir, 'src/emmet.html'), path.join(workspaceDir, 'src/emmet.html'));
-  await rm(profileDir,{recursive:true,force:true});
+  try {
+    await quitApp();
+    if (runOptions.only) await copyFile(path.join(fixtureDir, 'src/emmet.html'), path.join(workspaceDir, 'src/emmet.html'));
+  } finally {
+    await rm(profileDir,{recursive:true,force:true});
+  }
 }
 
 const expectedImageCount = runOptions.only ? selectedPlan.length * 2 : smokeMode ? 5 : 78;
 if(!failedPairs.length&&indexRows.length!==expectedImageCount) throw new Error(`Expected ${expectedImageCount} image-index rows; recorded ${indexRows.length}`);
-for(const row of indexRows) await access(path.join(outputDir,row.file));
+for(const row of indexRows) if (row.file) await access(path.join(outputDir,row.file));
 if(!runOptions.only&&!smokeMode&&!failedPairs.length&&!indexRows.some(row=>row.file.endsWith('ch11-checkpoint.png'))) throw new Error('Missing chapter 11 checkpoint.');
 await persistIndex();
 console.log(`Captured ${indexRows.filter((row) => !row.description.startsWith('failed:')).length} PNGs; failed pairs: ${failedPairs.length}. Image index: ${indexPath}`);

@@ -4,10 +4,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { findSearchFieldSelector, paintedMatch } from './cdp.mjs';
 import { completionIdentity, pairFailureMessage, selectionCopyPass, tabCompletionPass } from './completion.mjs';
+import { explorerDecorationsPass, failedPairIndexRows, titleSpacingPass } from './pair-evidence.mjs';
 import { groupSpecs } from './groups.mjs';
 import { addPairRequirements, buildChronologicalPlan, createPairRegistry, findShadowPixelsPass, findShadowRegions, parseRunArgs, selectPlan } from './planner.mjs';
 const kit = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runSource = readFileSync(path.join(kit, 'scripts/run.mjs'), 'utf8');
+const installerSource = readFileSync(path.join(kit, 'scripts/install-extension.mjs'), 'utf8');
 const extensionSource = readFileSync(path.join(kit, 'scripts/ranking-diagnostic-extension.js'), 'utf8');
 let focusedChecks = 0;
 function focusedCheck(condition, label) { assert.ok(condition, label); focusedChecks += 1; }
@@ -114,11 +116,29 @@ const viewportCheck = !includes(runSource, 'targetHeight', 'Browser.setWindowBou
 const failureCheck = runSource.indexOf('await writeFile(failurePath') < runSource.indexOf("await attempt('cleanup'")
   && pairFailureMessage('primary', ['cleanup failed', 'restore failed']) === 'primary; secondary: cleanup failed; secondary: restore failed'
   && runSource.includes("attempt('settings restoration'");
+const profileCleanupCheck = includes(runSource, "process.once('exit'", 'rmSync(profileDir', 'await rm(profileDir,{recursive:true,force:true})')
+  && includes(installerSource, "await mkdtemp(path.join(os.tmpdir(), 'vss-vsix-'))", 'finally {', 'await rm(stagingDir, { recursive: true, force: true })');
+const cacheLifetimeCheck = includes(runSource, "const marketplaceCacheDir = path.join(outputRoot, 'marketplace-cache')", "await rm(runtimeDir, { recursive: true, force: true })");
+const failureIndexWiringCheck = includes(runSource, "let indexedFile = '';", 'failedFiles.push(indexedFile)', 'indexRows.push(...failedPairIndexRows(descriptor, failedFiles, message))', 'if (row.file) await access(path.join(outputDir,row.file))');
+const titleSpacingWiringCheck = includes(runSource, 'titleSpacingPass(a,b)', 'a.padding,b.padding,a.textX,b.textX');
 const sourceChecks = [
   [rankingCheck, 'ranking positive/negative'], [selectionCheck, 'selection copy and paint/focus'],
   [findCheck, 'shared Find locator and gates'], [diagnosticCheck, 'diagnostic scope and no pass route'],
   [logCheck, 'verbose logs preserved before cleanup'], [styleCheck, 'style reload and geometry evidence'],
   [viewportCheck, 'resize removed; viewport gate retained'], [failureCheck, 'primary first; restoration secondary'],
+  [profileCleanupCheck, 'temporary profile and installer staging cleanup'], [cacheLifetimeCheck, 'Marketplace cache survives runtime recreation'],
+  [failureIndexWiringCheck, 'empty failed-pair rows wired into the full index'],
+  [titleSpacingWiringCheck, 'title-spacing gate uses captured padding metric'],
 ];
 for (const [pass, label] of sourceChecks) focusedCheck(pass, label);
+const decorationBefore = { gitColor: '#f00', badges: true };
+focusedCheck(!explorerDecorationsPass(decorationBefore, { gitColor: '#0f0', badges: true }), 'Explorer Git-color-only change fails');
+focusedCheck(!explorerDecorationsPass(decorationBefore, { gitColor: '#f00', badges: false }), 'Explorer-badge-only change fails');
+focusedCheck(explorerDecorationsPass(decorationBefore, { gitColor: '#0f0', badges: false }), 'Explorer pair passes when both effects change');
+const titleBefore = { padding: '20px', textX: 120 };
+focusedCheck(titleSpacingPass(titleBefore, { padding: '60px', textX: 180 }), 'Title-spacing gate passes with captured padding and moved ink');
+focusedCheck(!titleSpacingPass(titleBefore, { padding: '60px', textX: 120 }), 'Title-spacing gate fails without moved ink');
+focusedCheck(!titleSpacingPass({ padding: '0px', textX: 120 }, { padding: '60px', textX: 180 }), 'Title-spacing gate fails for unexpected before padding');
+const missingCaptureRows = failedPairIndexRows({ chapter: 10, groupKey: 'tab-completion' }, ['', ''], 'capture timeout');
+focusedCheck(missingCaptureRows.length === 2 && missingCaptureRows.every((row) => row.file === '' && row.description === 'failed: capture timeout'), 'No-image failure is indexed with empty file columns');
 console.log(`Offline planner, selector, shadow-mask, and focused design checks passed (${focusedChecks}/${focusedChecks}).`);
