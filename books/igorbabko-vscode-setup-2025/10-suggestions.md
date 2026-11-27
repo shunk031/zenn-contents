@@ -28,11 +28,11 @@ title: "Suggestions"
 ### 自動提案の抑制と手動呼び出し
 コード入力中に自動で補完候補が頻繁に表示されるのを防ぎます。通常テキスト入力時のクイック提案を `editor.quickSuggestions.other: "off"`（既定値 `"on"`）で無効化します（コメントや文字列の既定値 `"off"` はそのまま維持されます）。また、`.` などのトリガー文字を入力した際の自動提案表示も `editor.suggestOnTriggerCharacters: false`（既定値 `true`）でオフにします。動画では、補完リストは自動表示させず、必要なときのみショートカットキーで手動表示させる方針をとっています。補完候補を手動で呼び出すショートカットキーの既定値は、macOS で `⌃Space`、Windows や Linux で `Ctrl+Space` です。
 
+左の設定前のドット入力で開く提案ポップアップに対し、右の設定後の一覧は閉じた状態を保ちます。
+
 | Before | After |
 | --- | --- |
 | ![設定前の自動提案ポップアップ](/images/igorbabko-vscode-setup-2025/ch10-automatic-suggestions-before.webp) | ![設定後の自動提案ポップアップ](/images/igorbabko-vscode-setup-2025/ch10-automatic-suggestions-after.webp) |
-
-左の設定前ではドットの入力時に補完候補一覧が開きますが、右の設定後では候補一覧が閉じられたままになります。
 
 ### Tab 補完・スニペット・Emmet 展開
 提案リストを開かずに Tab キーを押すだけで一致する補完を確定できるよう `editor.tabCompletion: "on"`（既定値 `"off"`）を有効にします。
