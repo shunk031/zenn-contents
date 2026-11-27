@@ -32,12 +32,12 @@ title: "Typography"
 
 | Before | After |
 | --- | --- |
-| ![設定前のフォントと行高](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-before.webp) | ![設定後のフォントと行高](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-after.webp) |
 
-左の設定前に対し、右の設定後は Dank Mono と行高 2.5 を適用し、ゆったりとした行間に整えています。
+左の設定前に対し、右の設定後では大きな文字と広い行間が適用され、同じコードが画面上でより高い領域を占めるようになります。
 
 ### リガチャとコメントのイタリック体表示
-演算子などの連続する記号を合字として美しく結合表示するため、`editor.fontLigatures: true`（既定値 `false`）を有効にします。さらに、コードとコメントを視覚的に区別しやすくします。TextMate ルール `editor.tokenColorCustomizations.textMateRules` を使い、`comment` スコープのフォントスタイルを `fontStyle: "italic"`（イタリック体）に設定します。フォールバック環境のフォントは合字に対応せず、Aura テーマも標準でコメントを斜体表示するため、画像上の変化が見られず比較画像から除外しています。
+演算子などの連続する記号を合字として美しく結合表示するため、`editor.fontLigatures: true`（既定値 `false`）を有効にします。さらに、コードとコメントを視覚的に区別しやすくします。TextMate ルール `editor.tokenColorCustomizations.textMateRules` を使い、`comment` スコープのフォントスタイルを `fontStyle: "italic"`（イタリック体）に設定します。表示されているコードとイタリック体のコメントに変化が見られないため、比較画像から除外しています。
 
 ## 設定項目の一覧
 

@@ -48,10 +48,16 @@ title: "Sidebar"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch02-tree-layout-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-tree-layout-after.webp) |
 
-左の設定前に対し、右の設定後ではコンパクト表示されていた階層が個別行に展開されます（インデントガイド線の有無や 8px 幅の差分は画像から直接判別できません）。
+左の設定前にあったツリーのインデントガイドが右の設定後では非表示になり、表示されるフォルダー階層の深さは変わりません。
 
 ### 操作確認ダイアログと装飾の抑制
-エクスプローラー内でのドラッグ＆ドロップ移動時の確認ダイアログ（`explorer.confirmDragAndDrop: false`、既定値 `true`）を非表示にします。アイテム削除時の確認ダイアログ（`explorer.confirmDelete: false`、既定値 `true`）も非表示にします。VS Code 1.101.1 においてエクスプローラー上のドラッグ操作で移動確認が発生しないため、これら確認ダイアログの比較画像は省略しています。
+エクスプローラー内でのドラッグ＆ドロップ移動時の確認ダイアログ（`explorer.confirmDragAndDrop: false`、既定値 `true`）を非表示にします。アイテム削除時の確認ダイアログ（`explorer.confirmDelete: false`、既定値 `true`）も非表示にします。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch02-operation-confirmations-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-operation-confirmations-after.webp) |
+
+左の設定前に見られた移動確認ダイアログに対し、右の設定後では delete-me.txt が components 内へ入りダイアログも表示されません。
 
 さらに、エラー件数のバッジ（`explorer.decorations.badges: false`、既定値 `true`）を非表示にします。変更ファイルの Git ステータス装飾（`git.decorations.enabled: false`、既定値 `true`）も非表示にして、ファイル一覧の視覚的なノイズを最小化します。
 
@@ -59,7 +65,7 @@ title: "Sidebar"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-after.webp) |
 
-設定前と比べて、設定後は Git の変更色や M マーカーが消え、diagnostics.ts の数字バッジ 1 や src の赤ドットも非表示になります（diagnostics.ts の赤文字自体は残ります）。
+左の設定前と比べて、右の設定後では変更ファイルから M バッジと琥珀色の表示が消え、diagnostics.ts のファイル名が赤いまま 1 の数字バッジが非表示になります。
 
 ## 設定項目の一覧
 

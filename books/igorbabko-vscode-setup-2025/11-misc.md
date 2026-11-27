@@ -29,18 +29,26 @@ title: "Misc"
 
 | Before | After |
 | --- | --- |
-| ![設定前のタブ余白とサイドバー背景色](/images/igorbabko-vscode-setup-2025/ch11-sidebar-and-title-before.webp) | ![設定後のタブ余白とサイドバー背景色](/images/igorbabko-vscode-setup-2025/ch11-sidebar-and-title-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch11-sidebar-and-title-direct-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch11-sidebar-and-title-direct-after.webp) |
 
-設定前と比べて、設定後はタブアイコンの余白を広げて重なりを防ぎ、サイドバー背景色もエディタと同色にそろえています。
+左の設定前にエディタタイトルへ収まっていた長いファイル名が、右の設定後では 60px の余白により「demo…」のように省略表示されます。
 
 ### 自動保存と拡張機能通知の抑制
-ファイル編集後の保存忘れを防ぐため、`files.autoSave: "afterDelay"`（既定値 `"off"`）を設定します。入力後一定時間（既定の待機時間）が経過すると自動で保存されます。待機時間経過後も両画像に未保存マークが残って自動保存の視覚差を確認できなかったため、本項の比較画像は除外しています。また、作業中のポップアップ通知を減らすため、`extensions.ignoreRecommendations: true`（既定値 `false`）を設定して拡張機能のおすすめ通知を非表示にします。
+ファイル編集後の保存忘れを防ぐため、`files.autoSave: "afterDelay"`（既定値 `"off"`）を設定します。入力後一定時間（既定の待機時間）が経過すると自動で保存されます。
 
 | Before | After |
 | --- | --- |
-| ![設定前のおすすめ通知](/images/igorbabko-vscode-setup-2025/ch11-recommendation-notifications-before.webp) | ![設定後のおすすめ通知](/images/igorbabko-vscode-setup-2025/ch11-recommendation-notifications-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch11-autosave-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch11-autosave-after.webp) |
 
-設定前と比べて、設定後は拡張機能のおすすめトースト通知が表示されなくなります。
+左の設定前ではエディタに未保存を示すドットが表示されていますが、右の設定後では閉じるボタンに置き換わり、編集内容が保存された状態を示します。
+
+また、作業中のポップアップ通知を減らすため、`extensions.ignoreRecommendations: true`（既定値 `false`）を設定して拡張機能のおすすめ通知を非表示にします。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch11-recommendation-notifications-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch11-recommendation-notifications-after.webp) |
+
+左の設定前では Python 拡張機能のおすすめ通知トーストが表示されますが、右の設定後ではトーストが表示されなくなります。
 
 ### VS Code 本体の自動更新停止
 VS Code の自動更新モードを `update.mode: "none"`（既定値 `"default"`）に設定し、自動アップデートを無効化します。動画では、VS Code の自動更新によって Custom UI Style などの拡張機能との互換性が崩れるリスクを避けるため、手動でタイミングを選んで更新する方針をとっています。

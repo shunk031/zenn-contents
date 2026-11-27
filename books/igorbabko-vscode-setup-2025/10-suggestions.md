@@ -32,19 +32,41 @@ title: "Suggestions"
 | --- | --- |
 | ![設定前の自動提案ポップアップ](/images/igorbabko-vscode-setup-2025/ch10-automatic-suggestions-before.webp) | ![設定後の自動提案ポップアップ](/images/igorbabko-vscode-setup-2025/ch10-automatic-suggestions-after.webp) |
 
-設定前と比べて、設定後は文字入力時の補完ポップアップが自動表示されず、手動呼び出しのみに抑制されています。
+左の設定前ではドットの入力時に補完候補一覧が開きますが、右の設定後では候補一覧が閉じられたままになります。
 
 ### Tab 補完・スニペット・Emmet 展開
-提案リストを開かずに Tab キーを押すだけで一致する補完を確定できるよう `editor.tabCompletion: "on"`（既定値 `"off"`）を有効にします。また、提案リスト内でスニペットを常に最上位に表示する `editor.snippetSuggestions: "top"`（既定値 `"inline"`）を設定し、よく使うコード片を優先的に選べるようにします。さらに、HTML 等の略称を Tab キーで展開できるよう `emmet.triggerExpansionOnTab: true`（既定値 `false`）を有効化します。
+提案リストを開かずに Tab キーを押すだけで一致する補完を確定できるよう `editor.tabCompletion: "on"`（既定値 `"off"`）を有効にします。
 
 | Before | After |
 | --- | --- |
-| ![設定前の補完とスニペット表示](/images/igorbabko-vscode-setup-2025/ch10-tab-completion-before.webp) | ![設定後の補完とスニペット表示](/images/igorbabko-vscode-setup-2025/ch10-tab-completion-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch10-tab-expansion-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch10-tab-expansion-after.webp) |
 
-設定前と比べて、設定後は補完リストの最上位にスニペットを配置し、Tab キー操作で確定や展開が実行できます。
+左の設定前にテキストのまま残っていた shotloop が、右の設定後では Tab キーにより for-of ループへ展開されます。
+
+また、提案リスト内でスニペットを常に最上位に表示する `editor.snippetSuggestions: "top"`（既定値 `"inline"`）を設定し、よく使うコード片を優先的に選べるようにします。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch10-tab-completion-ranking-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch10-tab-completion-ranking-after.webp) |
+
+左の設定前に通常補完 sam の下位にあった Sample card と Sample loop のスニペットが、右の設定後では通常補完より上位に並びます。
+
+さらに、HTML 等の略称を Tab キーで展開できるよう `emmet.triggerExpansionOnTab: true`（既定値 `false`）を有効化します。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch10-tab-completion-emmet-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch10-tab-completion-emmet-after.webp) |
+
+左の設定前にプレーンテキストだった ul>li.item*3 が、右の設定後では Tab キーによって 3 つの li.item を含む ul 要素へ展開されます。
 
 ### 選択中補完アイテムの配色
-提案リストで現在選択されている項目の背景色を紫色（`#3A334B`）に変更します。`workbench.colorCustomizations` にテーマ名 `[Aura Dracula Spirit (Soft)]` のブロックを定義し、特定テーマに限定して適用します。この設定も、第 05 章や第 09 章で追加した `workbench.colorCustomizations` の中へ併記して記述します。指定した背景色（#3A334B）は Aura テーマ標準の補完選択色とほぼ同一であり、画像上の変化を確認できないため比較画像から除外しています。
+提案リストで現在選択されている項目の背景色を紫色（`#3A334B`）に変更します。`workbench.colorCustomizations` にテーマ名 `[Aura Dracula Spirit (Soft)]` のブロックを定義し、特定テーマに限定して適用します。この設定も、第 05 章や第 09 章で追加した `workbench.colorCustomizations` の中へ併記して記述します。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch10-selected-suggestion-color-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch10-selected-suggestion-color-after.webp) |
+
+選択中のアクティブな候補行の背景色が、左の設定前の灰色から右の設定後では濃い紫色（#3A334B）へ変化します。
 
 ## 設定項目の一覧
 

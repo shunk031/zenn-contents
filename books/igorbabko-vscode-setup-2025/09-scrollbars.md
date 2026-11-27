@@ -39,12 +39,18 @@ title: "Scrollbars"
 | --- | --- |
 | ![設定前のスクロールバーと概要ルーラー](/images/igorbabko-vscode-setup-2025/ch09-scrollbars-and-ruler-before.webp) | ![設定後のスクロールバーと概要ルーラー](/images/igorbabko-vscode-setup-2025/ch09-scrollbars-and-ruler-after.webp) |
 
-設定前と比べて、設定後はエディタ右端のスクロールバーや概要ルーラーの境界線、カーソル表示を除去しています。
+左の設定前にあったエディタ垂直スクロールバーのつまみと下部の水平つまみが、右の設定後ではどちらも非表示になります（ルーラー枠線の明確な変化を確認できません）。
 
 ### 概要ルーラーマーカー色の透明化
 概要ルーラーには、エラーや警告、検索一致、単語ハイライト、Git の変更行などの位置を示すマーカーが描画されます。マーカーが消えるとエラー位置を俯瞰できなくなります。動画ではエラーへのジャンプをショートカットで行い、エラー総数はタイトル横で確認できるため、この非表示化を受け入れています。VS Code の診断ジャンプショートカットの既定値は、次の問題へ移動が `F8`、前の問題へ移動が `Shift+F8` です。
 
-これらのマーカーを非表示にするため、テーマカラーカスタマイズ `workbench.colorCustomizations` を使います。`workbench.colorCustomizations` は、第 05 章でカーソル色を設定したオブジェクトと同じ設定項目です。第 05 章で設定した `editorCursor.background` を残したまま、本章の 13 種類の `editorOverviewRuler.*` を同じオブジェクト内に追加します。概要ルーラーに関連する 13 種類のカラー設定すべてに透明色 `#0000` を指定し、マーカーを透明化して非表示にしています。診断下線と概要ルーラー上のマーカーに関して、VS Code 1.101.1 環境では透明化設定による明確な色変化を識別できなかったため、比較画像から除外しています。
+これらのマーカーを非表示にするため、テーマカラーカスタマイズ `workbench.colorCustomizations` を使います。`workbench.colorCustomizations` は、第 05 章でカーソル色を設定したオブジェクトと同じ設定項目です。第 05 章で設定した `editorCursor.background` を残したまま、本章の 13 種類の `editorOverviewRuler.*` を同じオブジェクト内に追加します。概要ルーラーに関連する 13 種類のカラー設定すべてに透明色 `#0000` を指定し、マーカーを透明化して非表示にしています。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch09-marker-colors-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch09-marker-colors-after.webp) |
+
+左の設定前と比べて、右の設定後ではエディタの概要ルーラー端にあった赤いエラーブロックが消え、診断の赤波線は残ります。
 
 ## 設定項目の一覧
 

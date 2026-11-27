@@ -28,7 +28,7 @@ title: "User interface"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch01-theme-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-theme-after.webp) |
 
-左の設定前に対し、右の設定後ではワークベンチの配色が既定のダークテーマから紫基調の Aura Dracula Spirit パレットへ変化します。
+左の設定前の明るい配色に対し、右の設定後ではワークベンチが紫基調の Aura Dracula Spirit パレットへ変化します。
 
 ### ワークベンチ UI の最小化
 キーボードショートカットによる画面操作を前提とし、不要なナビゲーション UI を非表示にします。アクティビティバーは `workbench.activityBar.location: "hidden"`（既定値 `"default"`）で画面から取り除きます。エディタタブは `workbench.editor.showTabs: "single"`（既定値 `"multiple"`）を指定し、単一タブ表示に切り替えます。画面下部のステータスバーも `workbench.statusBar.visible: false`（既定値 `true`）で非表示にします。
@@ -37,7 +37,7 @@ title: "User interface"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-after.webp) |
 
-左の設定前に対し、右の設定後ではアクティビティバーとステータスバーが消去されます（両画像とも開いているタブが 1 つのため、単一タブ化の視覚効果は画面上からは確認できません）。
+左の設定前には複数のタブと周辺 UI が表示されていますが、右の設定後では 1 つのタイトル行だけが残り、アクティビティバーとステータスバーが非表示になります。
 
 ### 起動画面とエディタ補助機能の整理
 ファイルを開いていないときの画面表示をシンプルにします。起動時の画面は `workbench.startupEditor: "none"`（既定値 `"welcomePage"`）に設定し、「ようこそ」画面を表示しないようにします。また、空画面に表示されるショートカット案内などのヒントも `workbench.tips.enabled: false`（既定値 `true`）で非表示にします。さらに、エディタ右側のコード縮小表示であるミニマップ（`editor.minimap.enabled: false`、既定値 `true`）を非表示にします。上部のパンくずリスト（`breadcrumbs.enabled: false`、既定値 `true`）も非表示にして、作業領域を広く確保します。
@@ -46,7 +46,7 @@ title: "User interface"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch01-editor-aids-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-editor-aids-after.webp) |
 
-左の設定前に対し、右の設定後ではエディタ右端のミニマップと上部のパンくずリストが非表示になります。
+左の設定前にあったミニマップとパンくずリストの行が、右の設定後ではどちらも非表示になります。
 
 ## 設定項目の一覧
 

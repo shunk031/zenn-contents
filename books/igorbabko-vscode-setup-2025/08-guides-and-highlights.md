@@ -27,18 +27,18 @@ title: "Guides and Highlights"
 
 | Before | After |
 | --- | --- |
-| ![設定前の行番号とインデント](/images/igorbabko-vscode-setup-2025/ch08-line-numbers-and-indent-before.webp) | ![設定後の行番号とインデント](/images/igorbabko-vscode-setup-2025/ch08-line-numbers-and-indent-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch08-line-numbers-and-indent-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch08-line-numbers-and-indent-after.webp) |
 
-設定前と比べて、設定後は現在行からの相対行番号と 2 スペースのインデント幅に変更されています。
+左の設定前と比べて、右の設定後では行番号が相対表示に変わり、タブインデントが 4 列から 2 列へ狭まることでネストされた return の行が左へ移動します。
 
 ### ガイドラインとハイライトの排除
 コード折りたたみ用の矢印コントロール（`editor.showFoldingControls: "never"`、既定値 `"mouseover"`）を常に非表示にします。コード折りたたみの操作は、キーボードショートカットで行います。VS Code の既定値は、折りたたみが macOS で `⌥⌘[`、Windows や Linux で `Ctrl+Shift+[` です。展開は macOS で `⌥⌘]`、Windows や Linux で `Ctrl+Shift+]` です。さらに、インデントの垂直ガイド線（`editor.guides.indentation: false`、既定値 `true`）を非表示にします。空白・タブの記号表示（`editor.renderWhitespace: "none"`、既定値 `"selection"`）を非表示にします。あわせて、現在行のハイライト（`editor.renderLineHighlight: "none"`、既定値 `"line"`）も非表示にします。加えて、シンボルの一致強調（`editor.occurrencesHighlight: "off"`、既定値 `"singleFile"`）をオフにします。選択文字列と一致する箇所の強調（`editor.selectionHighlight: false`、既定値 `true`）もオフにし、エディタ内のハイライト装飾を徹底して削ぎ落とします。
 
 | Before | After |
 | --- | --- |
-| ![設定前のガイドとハイライト](/images/igorbabko-vscode-setup-2025/ch08-folding-and-guides-before.webp) | ![設定後のガイドとハイライト](/images/igorbabko-vscode-setup-2025/ch08-folding-and-guides-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch08-folding-and-guides-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch08-folding-and-guides-after.webp) |
 
-設定前と比べて、設定後は折りたたみ矢印やインデントガイド、空白文字記号、現在行枠線などの視覚的装飾を非表示にしています。
+左の設定前には折りたたみ矢印と空白の矢印記号が表示されていますが、右の設定後では非表示になり、選択行のハイライトのみが残ります。
 
 ## 設定項目の一覧
 

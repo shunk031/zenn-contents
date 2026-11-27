@@ -34,7 +34,7 @@ title: "Window"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-after.webp) |
 
-左の設定前に対し、右の設定後ではタイトルバーがコンパクト化され、ズーム設定によってエディタ全体の文字や UI が大きく表示されます。
+左の設定前にあったワークスペースタイトルと検索バーが消え、右の設定後では macOS の操作ボタンがエディタタイトル行に配置されてエディタの文字が大きく表示されます。
 
 ### Custom UI Style によるウィンドウ操作ボタンと余白の調整
 ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。スタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。Dank Mono は有料フォントであり、[作者の公式販売ページ](https://philpl.gumroad.com/l/dank-mono)からライセンスを購入して入手できます。
@@ -43,7 +43,7 @@ title: "Window"
 | --- | --- |
 | ![設定前](/images/igorbabko-vscode-setup-2025/ch03-title-spacing-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch03-title-spacing-after.webp) |
 
-左の設定前に対し、右の設定後ではウィンドウ操作ボタン右側のエディタタイトルラベルに左余白が追加されます。
+左の設定前では TS アイコンが操作ボタンの領域と重なっていますが、右の設定後ではアイコンと main.ts のタイトルが右へ移動してボタンとの重なりが解消されます。
 
 ## 設定項目の一覧
 

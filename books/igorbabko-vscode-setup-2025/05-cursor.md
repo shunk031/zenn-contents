@@ -25,17 +25,29 @@ title: "Cursor"
 ### カーソル形状と点滅の無効化
 カーソルの形状を既定の縦線（`"line"`）からブロック型（`editor.cursorStyle: "block"`）に変更します。点滅アニメーションは `editor.cursorBlinking: "solid"`（既定値 `"blink"`）で無効化し、常に点灯している状態にします。これにより、文字入力やコード参照中にカーソルを見失いにくくします。
 
-### マルチカーソルの修飾キー
-マウスクリックによるマルチカーソル追加の修飾キーを `editor.multiCursorModifier: "ctrlCmd"`（既定値 `"alt"`）に変更します。macOS では Command キー、Windows および Linux では Control キーを押しながらのクリックで複数カーソルを追加できます。これにより、一般的なテキスト選択操作との衝突を避けます。この設定はカーソルを追加するキーを変更するもので、画面上の見た目には変化がないため、比較画像から除外しています。
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch05-cursor-appearance-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch05-cursor-appearance-after.webp) |
 
-### グラデーションと配色の調整
-Custom UI Style のスタイルシート設定を用い、カーソル要素（`.monaco-editor .cursors-layer .cursor`）にグラデーションを適用します。具体的にはピンクから紫への線形グラデーション（`linear-gradient(135deg, #ffaffc 10%, #DA70D6 100%)`）を指定します。このカーソルのスタイル設定は、第 3 章および第 4 章で設定した `custom-ui-style.stylesheet` オブジェクトの内側に新しいキーとして追加します。グラデーションの適用に伴い、重なる文字の視認性（コントラスト）を確保する必要があります。そのため、テーマの配色を調整する `workbench.colorCustomizations` オブジェクトを新しく作成し、`editorCursor.background` を `#000000` に設定します。Custom UI Style のグラデーション設定が優先され、文字反転色単独での視覚差を画像上で確認できないため、本項の比較画像は除外しています。
+左の設定前では閉じ括弧の近くに細いカーソルが表示されていますが、右の設定後では name の内側に赤紫色の太いブロックカーソルが表示されます。
+
+### マルチカーソルの修飾キー
+マウスクリックによるマルチカーソル追加の修飾キーを `editor.multiCursorModifier: "ctrlCmd"`（既定値 `"alt"`）に変更します。macOS では Command キー、Windows および Linux では Control キーを押しながらのクリックで複数カーソルを追加できます。これにより、一般的なテキスト選択操作との衝突を避けます。
 
 | Before | After |
 | --- | --- |
-| ![設定前のカーソル外観](/images/igorbabko-vscode-setup-2025/ch05-cursor-appearance-before.webp) | ![設定後のカーソル外観](/images/igorbabko-vscode-setup-2025/ch05-cursor-appearance-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch05-multi-cursor-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch05-multi-cursor-after.webp) |
 
-設定前の縦線カーソルに対し、設定後はピンクから紫へ変化するブロックカーソルが常時点灯します。
+同じ Option クリック操作において、左の設定前に 3 つ追加されていたカーソルが、右の設定後では 1 つのみ追加されます。
+
+### グラデーションと配色の調整
+Custom UI Style のスタイルシート設定を用い、カーソル要素（`.monaco-editor .cursors-layer .cursor`）にグラデーションを適用します。具体的にはピンクから紫への線形グラデーション（`linear-gradient(135deg, #ffaffc 10%, #DA70D6 100%)`）を指定します。このカーソルのスタイル設定は、第 3 章および第 4 章で設定した `custom-ui-style.stylesheet` オブジェクトの内側に新しいキーとして追加します。グラデーションの適用に伴い、重なる文字の視認性（コントラスト）を確保する必要があります。そのため、テーマの配色を調整する `workbench.colorCustomizations` オブジェクトを新しく作成し、`editorCursor.background` を `#000000` に設定します。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch05-cursor-colors-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch05-cursor-colors-after.webp) |
+
+グラデーションはそのままで、ブロックカーソル下にある文字 M が左の設定前の緑色から右の設定後の黒色へ変化します。
 
 ## 設定項目の一覧
 

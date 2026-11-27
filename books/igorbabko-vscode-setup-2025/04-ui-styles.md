@@ -42,10 +42,16 @@ Custom UI Style のスタイル設定は、設定を変更するたびに再読�
 | --- | --- |
 | ![設定前のクイック入力とウィジェット](/images/igorbabko-vscode-setup-2025/ch04-overlays-before.webp) | ![設定後のクイック入力とウィジェット](/images/igorbabko-vscode-setup-2025/ch04-overlays-after.webp) |
 
-左の設定前に対し、右の設定後ではクイック入力の影が消えて表示位置が下がり、検索ウィジェットの影も除去されています。
+両画像でコマンドパレットを開いており、右の設定後ではパレットの表示位置が下がり、影も表示されます。
 
 ### サイドバーとエディタ境界のフラット化
-エディタタイトル下部の境界線（`title.title-border-bottom:after`）や上部のスクロールシャドウ（`.monaco-scrollable-element > .shadow.top`）を非表示にします。エディタ内のスクロール装飾（`.monaco-editor .scroll-decoration`）も非表示にします。サイドバーの境界線（`.sidebar`）を非表示にし、パディング（`.sidebar .title-label`）をなくします。さらにリストのフォーカス枠線（`.monaco-list:not(.element-focused):focus:before`、`.monaco-list-row.focused`）も非表示にしてフラットにします。エディタ上部のタブアクションボタン（`.title-actions`）を非表示にし、タイトルラベル（`.title.show-file-icons ...`）を中央揃えにして末尾余白を詰めます。スクロールしたエディタとフォーカスしたエクスプローラーにおいて、VS Code 1.101.1 では Custom UI Style の注入スタイルによる視覚差が画像上で確認できなかったため、本項の比較画像は除外しています。
+エディタタイトル下部の境界線（`title.title-border-bottom:after`）や上部のスクロールシャドウ（`.monaco-scrollable-element > .shadow.top`）を非表示にします。エディタ内のスクロール装飾（`.monaco-editor .scroll-decoration`）も非表示にします。サイドバーの境界線（`.sidebar`）を非表示にし、パディング（`.sidebar .title-label`）をなくします。さらにリストのフォーカス枠線（`.monaco-list:not(.element-focused):focus:before`、`.monaco-list-row.focused`）も非表示にしてフラットにします。エディタ上部のタブアクションボタン（`.title-actions`）を非表示にし、タイトルラベル（`.title.show-file-icons ...`）を中央揃えにして末尾余白を詰めます。
+
+| Before | After |
+| --- | --- |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch04-surface-boundaries-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch04-surface-boundaries-after.webp) |
+
+左の設定前と比べて、右の設定後では選択されたエクスプローラー行の青いフォーカス枠線が消え、エディタタイトルが左揃えから中央揃えに移動します。
 
 ## 設定項目の一覧
 

@@ -29,27 +29,27 @@ title: "Decorations and Hints"
 
 | Before | After |
 | --- | --- |
-| ![設定前のコード装飾](/images/igorbabko-vscode-setup-2025/ch07-code-decorations-before.webp) | ![設定後のコード装飾](/images/igorbabko-vscode-setup-2025/ch07-code-decorations-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch07-code-decorations-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch07-code-decorations-after.webp) |
 
-設定前と比べて、設定後はスティッキースクロール見出しやカラープレビュー、対応する括弧の枠線などの装飾を非表示にしています。
+左の設定前ではネストされた CSS ブロックの 1〜3 行目が 36〜39 行目の上に固定表示され色プレビューも表示されますが、右の設定後では固定見出しや色プレビューなしで 33〜39 行目が表示されます。
 
 ### ヒント表示とポップアップの抑制
 引数入力時に自動表示されるシグネチャヒント（`editor.parameterHints.enabled: false`、既定値 `true`）を非表示にします。コードアクション用の電球マーク（`editor.lightbulb.enabled: "off"`、既定値 `"onCode"`）を非表示にします。あわせて、マウスホバー時の説明ポップアップ（`editor.hover.enabled: false`、既定値 `true`）も非表示にします。パラメーター情報やコードアクションが必要な場合は、キーボードショートカットから手動で呼び出します。VS Code の既定のショートカットは、パラメーターヒントが macOS で `⌘⇧Space`、Windows や Linux で `Ctrl+Shift+Space` です。コードアクションは macOS で `⌘.`、Windows や Linux で `Ctrl+.` です。
 
 | Before | After |
 | --- | --- |
-| ![設定前のヒントとポップアップ](/images/igorbabko-vscode-setup-2025/ch07-editor-hints-before.webp) | ![設定後のヒントとポップアップ](/images/igorbabko-vscode-setup-2025/ch07-editor-hints-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch07-editor-hints-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch07-editor-hints-after.webp) |
 
-設定前と比べて、設定後は引数ヒントや電球マーク、マウスホバー時の情報ポップアップを非表示にしています。
+左の設定前では呼び出し箇所に関数のシグネチャツールチップと黄色い電球マークが表示されますが、右の設定後では引数 42 の赤波線が残ったまま両方とも非表示になります。
 
 ### ファイル保存設定と Git 差分表示の整理
 ファイル保存時に行末の不要な空白を自動削除する `files.trimTrailingWhitespace: true`（既定値 `false`）を設定します。あわせて保存時にファイル末尾が改行で終わるよう、`files.insertFinalNewline: true`（既定値 `false`）を設定します。これによりコーディング規約に沿った形で保存できます。また、エディタ左側のガター（行番号の横）に表示される Git 変更マークを `scm.diffDecorations: "none"`（既定値 `"all"`）で非表示にします。動画では Git の差分確認を GitHub Desktop などの外部ツールで行うため、エディタ内の差分表示を不要としています。
 
 | Before | After |
 | --- | --- |
-| ![設定前の保存挙動と差分表示](/images/igorbabko-vscode-setup-2025/ch07-save-and-diff-before.webp) | ![設定後の保存挙動と差分表示](/images/igorbabko-vscode-setup-2025/ch07-save-and-diff-after.webp) |
+| ![設定前](/images/igorbabko-vscode-setup-2025/ch07-save-and-diff-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch07-save-and-diff-after.webp) |
 
-設定前と比べて、設定後はガターの Git 変更差分マーカーが消え、末尾の空白や改行を保存時に自動で整えています。
+左の設定前ではガターの青いバーと末尾空白のドットが表示されますが、右の設定後ではどちらも非表示になります。
 
 ## 設定項目の一覧
 
