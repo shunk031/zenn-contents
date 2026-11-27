@@ -5,7 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
-import { VSCodeControl, visibleGeometry } from './cdp.mjs';
+import { VSCodeControl, findSearchFieldSelector, visibleGeometry } from './cdp.mjs';
+import { identifyCompletionRows, pairFailureMessage, selectionCopyPass, tabCompletionPass } from './completion.mjs';
 import { extensionPins, groupSpecs } from './groups.mjs';
 import { installMarketplaceExtension } from './install-extension.mjs';
 import * as planner from './planner.mjs';
@@ -95,6 +96,13 @@ const recommendationsByChapter = Object.fromEntries(chapters.map((chapter) => [c
 const settingsPlan = planner.buildChronologicalPlan(chapters, settingsByChapter, groupSpecs, pairRegistry);
 const fullPlan = planner.addPairRequirements(settingsPlan, chapters, recommendationsByChapter, extensionPins);
 const selectedPlan = planner.selectPlan(fullPlan, runOptions.only);
+const rankingDiagnosticEnabled = runOptions.only && selectedPlan.length === 1
+  && selectedPlan[0].canonical === 'ch10-tab-completion';
+const startupGeometryEnabled = runOptions.only && selectedPlan.length === 1
+  && selectedPlan[0].canonical === 'ch11-sidebar-and-title';
+const rankingDiagnosticExtensionDir = path.join(outputDir, 'ranking-diagnostic-extension');
+const rankingDiagnosticExtensionOutput = path.join(outputDir, 'evidence', 'ranking-diagnostic-extension.json');
+const rankingDiagnosticBundle = path.join(outputDir, 'evidence', 'tab-completion-ranking-diagnostic.json');
 const requiredExtensions = planner.requiredExtensionsThrough(chapters, selectedPlan, recommendationsByChapter, extensionPins);
 if (pairRegistry.length !== 33 || 1 + chapters.length + pairRegistry.length * 2 !== 78) {
   throw new Error(`Full capture contract changed: ${pairRegistry.length} pairs`);
@@ -104,18 +112,20 @@ if (runOptions.only) {
   const manifest = { runId, pairs };
   await writeFile(path.join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 }
-
 const userSettingsPath = path.join(profileDir, 'User', 'settings.json');
 await mkdir(path.dirname(userSettingsPath), { recursive: true });
 let appliedSettings = {};
 let windowControl;
 let appChild;
-let targetHeight;
 let activeFile;
 let plannedSettings = {};
 let autosaveSentinel;
 let indentationSource;
 let placeholderWitness;
+let rankingDiagnosticCaptured = false;
+let startupGeometryCount = 0;
+const rankingDiagnosticPaths = [];
+const startupGeometryRecords = [];
 const saveWitness = [];
 const installedExtensions = new Set();
 const indexRows = [];
@@ -125,14 +135,12 @@ const failedPairs = [];
 function run(command, args, options = {}) {
   return execFileSync(command, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'], ...options }).trim();
 }
-
 function frontmostApplication() {
   const [pidText, bundleId, name] = run(frontmostBinary, []).split('\t');
   const pid = Number(pidText);
   if (!Number.isInteger(pid) || pid < 1 || !bundleId || !name) throw new Error('Could not identify the macOS frontmost application.');
   return { pid, bundleId, name };
 }
-
 function assertOwnerAway(stage) {
   const started = process.hrtime.bigint();
   const output = execFileSync('ioreg', ['-c', 'IOHIDSystem'], { encoding: 'utf8' });
@@ -148,16 +156,15 @@ function assertOwnerAway(stage) {
   }
   ownerIdleSample = sample;
 }
-
 function logFrontmost(stage) {
   const current = frontmostApplication();
   console.log(`Frontmost ${stage}: ${current.name} (PID ${current.pid}).`);
   return current;
 }
-
 async function writeSettings(settings) {
   appliedSettings = structuredClone(settings);
   const runtimeSettings = structuredClone(settings);
+  if (rankingDiagnosticEnabled) runtimeSettings['typescript.tsserver.log'] = 'verbose';
   if (installedExtensions.has(customUIStyleId)) {
     runtimeSettings['custom-ui-style.watch'] = false;
     runtimeSettings['custom-ui-style.reloadWithoutPrompting'] = false;
@@ -165,9 +172,9 @@ async function writeSettings(settings) {
   await writeFile(userSettingsPath, `${JSON.stringify(runtimeSettings, null, 2)}\n`, { mode: 0o600 });
   await delay(600);
 }
-
 async function writeTransientSettings(settings) {
   const nextSettings = planner.deepMerge(structuredClone(appliedSettings), settings);
+  if (rankingDiagnosticEnabled) nextSettings['typescript.tsserver.log'] = 'verbose';
   if (installedExtensions.has(customUIStyleId)) {
     nextSettings['custom-ui-style.watch'] = false;
     nextSettings['custom-ui-style.reloadWithoutPrompting'] = false;
@@ -175,7 +182,6 @@ async function writeTransientSettings(settings) {
   await writeFile(userSettingsPath, `${JSON.stringify(nextSettings, null, 2)}\n`, { mode: 0o600 });
   await delay(600);
 }
-
 async function assertThemeReady() {
   if (!/Aura Dracula Spirit/i.test(appliedSettings['workbench.colorTheme'] || '')) return;
   const overrides = appliedSettings['workbench.colorCustomizations'] || {};
@@ -184,15 +190,12 @@ async function assertThemeReady() {
   const actual = await windowControl.waitFor("getComputedStyle(document.querySelector('.sidebar')).backgroundColor", (color) => color === expected);
   if (actual !== expected) throw new Error(`Aura theme did not become ready: expected sidebar ${expected}, found ${actual}`);
 }
-
 function sourceFile(chapterNumber, filename) {
   return path.join(sourceDir, `ch${String(chapterNumber).padStart(2, '0')}`, filename);
 }
-
 function readChapterSettings(chapter) {
   return settingsByChapter[chapter.chapter];
 }
-
 async function installRecommendations(chapter) {
   const recommendationFile = JSON.parse(await readFile(sourceFile(chapter.chapter, 'extensions.json'), 'utf8'));
   const packages = [];
@@ -218,7 +221,6 @@ async function installRecommendations(chapter) {
   }
   if (installedExtensions.has(customUIStyleId)) await writeSettings(appliedSettings);
 }
-
 async function installRequiredExtensions() {
   const packages = [];
   for (const { id, version } of requiredExtensions) {
@@ -234,9 +236,8 @@ async function installRequiredExtensions() {
     installedExtensions.add(id);
   }
 }
-
 function launchArgs() {
-  return [
+  const args = [
     '--user-data-dir', profileDir,
     '--extensions-dir', extensionsDir,
     '--disable-workspace-trust',
@@ -247,8 +248,46 @@ function launchArgs() {
     '--skip-welcome',
     workspaceDir,
   ];
+  if (rankingDiagnosticEnabled) args.push(`--extensionDevelopmentPath=${rankingDiagnosticExtensionDir}`);
+  return args;
 }
-
+async function prepareRankingDiagnosticExtension() {
+  await mkdir(rankingDiagnosticExtensionDir, { recursive: true });
+  await copyFile(path.join(here, 'ranking-diagnostic-extension.js'), path.join(rankingDiagnosticExtensionDir, 'extension.js'));
+  await writeFile(path.join(rankingDiagnosticExtensionDir, 'package.json'), JSON.stringify({
+    name: 'vss-ranking-diagnostic', publisher: 'vss', version: '1.0.0', engines: { vscode: '^1.101.0' },
+    main: './extension.js', activationEvents: ['onCommand:vssRanking.captureDiagnostics'],
+    contributes: { commands: [{ command: 'vssRanking.captureDiagnostics', title: 'VSS: Capture Ranking Diagnostics' }] },
+  }, null, 2));
+}
+async function recordStartupGeometry(stage) {
+  const viewport = await windowControl.evaluate(
+    `({inner:[innerWidth,innerHeight],outer:[outerWidth,outerHeight],devicePixelRatio,cssZoom:getComputedStyle(document.documentElement).zoom})`,
+  );
+  const [windowId, x, y, width, height] = run(finderBinary, [appPath, String(appChild.pid)]).split(/\s+/).map(Number);
+  startupGeometryRecords.push({
+    stage, app: { path: appPath, bundleId: 'com.microsoft.VSCode', pid: appChild.pid },
+    desiredStyle: appliedSettings['custom-ui-style.stylesheet'],
+    appliedStyleWitness: await windowControl.evaluate(styleWitnessExpression(appliedSettings)),
+    nativeTitle: Object.fromEntries(
+      ['window.titleBarStyle', 'window.customTitleBarVisibility', 'custom-ui-style.electron']
+        .map((key) => [key, appliedSettings[key]]),
+    ),
+    zoom: { setting: appliedSettings['window.zoomLevel'], css: viewport.cssZoom }, viewport, nativeWindow: { id: windowId, x, y, width, height },
+  });
+  await mkdir(path.join(outputDir, 'evidence'), { recursive: true });
+  await writeFile(path.join(outputDir, 'evidence', 'startup-geometry.json'), `${JSON.stringify(startupGeometryRecords, null, 2)}\n`);
+}
+function styleWitnessExpression(settings) {
+  const witness = Object.entries(settings['custom-ui-style.stylesheet'] || {}).find(([, value]) => value.includes(':'));
+  return `(()=>{const [s,d]=${JSON.stringify(witness)},[p,v]=d.split(';')[0].split(':').map(x=>x.trim());
+    const rules=[];const visit=list=>{for(const r of list){if(r.cssRules)visit(r.cssRules);else rules.push(r)}};
+    for(const sheet of document.styleSheets){try{visit(sheet.cssRules)}catch{}}
+    return rules.some(r=>r.selectorText===s&&r.style.getPropertyValue(p)===v.replace(/\\s*!important$/,''))})()`;
+}
+async function assertCustomStyleReady(settings) {
+  await windowControl.waitFor(styleWitnessExpression(settings), Boolean, 10_000, 'installed Custom UI Style stylesheet witness');
+}
 const fixedFiles = [
     'src/styles.css',
     'src/multi-cursor.ts',
@@ -264,7 +303,6 @@ const fixedFiles = [
 async function openFixedFiles() {
   for (const file of fixedFiles) await open(file);
 }
-
 function childIsRunning(child) {
   if (!child?.pid) return false;
   try {
@@ -276,11 +314,9 @@ function childIsRunning(child) {
     throw error;
   }
 }
-
 function appCopyRunning() {
   return execFileSync('/bin/ps', ['-axo', 'command='], { encoding: 'utf8' }).split('\n').some((line) => line.includes(appExecutable) && line.includes(`--user-data-dir ${profileDir}`));
 }
-
 async function waitForDevToolsPort(child) {
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
@@ -296,19 +332,20 @@ async function waitForDevToolsPort(child) {
   }
   throw new Error(`VS Code did not create a valid DevTools port file at ${activePortFile}`);
 }
-
 async function waitForChildExit(child, timeout) {
   const deadline = Date.now() + timeout;
   while (childIsRunning(child) && Date.now() < deadline) await delay(100);
   return !childIsRunning(child);
 }
-
 async function startApp({ clearNotifications = true } = {}) {
   if (appChild) return;
   assertOwnerAway('VS Code launch');
   logFrontmost('before VS Code launch');
   await rm(activePortFile, { force: true });
-  const child = spawn(appExecutable, launchArgs(), { detached: true, stdio: 'ignore' });
+  const env = rankingDiagnosticEnabled
+    ? { ...process.env, VSS_RANKING_DIAGNOSTIC_PATH: rankingDiagnosticExtensionOutput }
+    : process.env;
+  const child = spawn(appExecutable, launchArgs(), { detached: true, stdio: 'ignore', env });
   child.unref();
   appChild = child;
   devtoolsPort = await waitForDevToolsPort(child);
@@ -320,16 +357,14 @@ async function startApp({ clearNotifications = true } = {}) {
     await windowControl.clickNotificationAction('first time use', 'No', 250);
   }
   if (clearNotifications) await windowControl.clearNotifications();
-  await delay(800); const height = await windowControl.evaluate('innerHeight');
-  targetHeight ??= height;
-  if (height !== targetHeight) {
-    const { windowId: id, bounds: b } = await windowControl.send('Browser.getWindowForTarget');
-    await windowControl.send('Browser.setWindowBounds',{windowId:id,bounds:{...b,height:b.height+targetHeight-height}});
-    await windowControl.waitFor(`innerHeight===${targetHeight}`);
+  await delay(800);
+  if (startupGeometryEnabled) {
+    const stage = ['subset-startup-before-style-reload', 'subset-startup-after-style-reload', 'subset-pair-restart'][startupGeometryCount];
+    await recordStartupGeometry(stage || `subset-restart-${startupGeometryCount + 1}`);
+    startupGeometryCount++;
   }
   logFrontmost('after VS Code became ready');
 }
-
 async function quitApp() {
   const child = appChild;
   windowControl?.close();
@@ -380,6 +415,7 @@ async function applyCustomUIStyleAndRestart() {
   }
   await quitApp();
   await startApp();
+  if (startupGeometryEnabled) await assertCustomStyleReady(appliedSettings);
 }
 
 async function open(file, line, column = 1) {
@@ -422,7 +458,23 @@ async function copyEditorBuffer() {
   await windowControl.key('A', 'KeyA', 4); await windowControl.key('C', 'KeyC', 4); await delay(100);
   return execFileSync('pbpaste', [], { encoding: 'utf8' }).replaceAll('\r\n', '\n');
 }
-function selectedText(){return windowControl.evaluate("document.querySelector('.focused .selected-text').textContent")}
+async function copySelectedText(expected) {
+  const state = {
+    focused: await windowControl.evaluate("document.querySelector('.monaco-editor.focused')?.contains(document.activeElement)"),
+    painted: await windowControl.elementPainted('.monaco-editor.focused .cslr.selected-text'),
+  };
+  if (!state.focused || !state.painted) throw new Error('Expanded snippet placeholder has no focused, painted selection.');
+  const sentinel=`vss-selection-${runId}-${process.pid}-${Date.now()}`;
+  execFileSync('pbcopy', [], { input: sentinel });
+  if (execFileSync('pbpaste', [], { encoding: 'utf8' }) !== sentinel) throw new Error('Could not seed the selection-copy sentinel.');
+  await windowControl.key('C', 'KeyC', 4);
+  await delay(100);
+  const clipboard=execFileSync('pbpaste', [], { encoding: 'utf8' }).replaceAll('\r\n','\n');
+  if (!selectionCopyPass({ ...state, clipboard, sentinel, expected })) {
+    throw new Error('Copying the painted snippet placeholder did not replace the sentinel with the exact text.');
+  }
+  placeholderWitness=clipboard;
+}
 
 async function replaceToken(relativePath, token, replacement) {
   const target = fixtureLine(relativePath, token, true);
@@ -478,7 +530,12 @@ async function measureGroup(key, imageName, override) {
     const identify=(n)=>n.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||n.innerText.trim().split('\\n')[0];
     const rowData=(n)=>{
       const r=n.getBoundingClientRect();
-      return {label:identify(n),detail:n.innerText.trim(),snippet:!!n.querySelector('.codicon-symbol-snippet'),visible:visible(n),
+      const displayLabel=n.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||n.innerText.trim().split('\\n')[0];
+      const detail=n.querySelector('.details-label')?.textContent.trim()||'';
+      const icon=n.querySelector('[class*="codicon-symbol-"]');
+      const kind=[...(icon?.classList||[])].find(name=>name.startsWith('codicon-symbol-'))||'unknown';
+      const snippet=kind==='codicon-symbol-snippet';
+      return {label:displayLabel,displayLabel,detail,snippet,snippetName:detail.split('\\n').at(-1)?.trim()||'',kind,visible:visible(n),
         inViewport:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight};
     };
     const selected=rows.find(n=>n.matches('.focused,.selected,[aria-selected="true"]'));
@@ -520,9 +577,10 @@ async function measureGroup(key, imageName, override) {
     const sidebarBox=visible(sidebar)?rect(sidebar):null;
     const sidebarPatch=sidebarBox?{left:sidebarBox.left+8,right:sidebarBox.left+32,top:sidebarBox.bottom-40,bottom:sidebarBox.bottom-16}:null;
     const findWidget=document.querySelector('.editor-widget.find-widget');
-    const findInput=findWidget?.querySelector('input');
+    const findInput=findWidget?.querySelector(${JSON.stringify(findSearchFieldSelector)});
     const findState=findWidget?{
       rect:rect(findWidget),query:findInput?.value??null,shadow:getComputedStyle(findWidget).boxShadow,
+      fieldFocused:document.activeElement===findInput,fieldVisible:visible(findInput),
       toggles:[...findWidget.querySelectorAll('button,[role="button"]')].map(n=>[
         n.getAttribute('aria-pressed'),n.getAttribute('aria-checked'),n.getAttribute('aria-label'),n.getAttribute('title')])
     }:null;
@@ -595,6 +653,7 @@ async function measureGroup(key, imageName, override) {
   if (!observed || !visibleGeometry(observed.visibility)) {
     throw new Error(`No painted DOM target for ${key}: ${selector}`);
   }
+  if (key === 'tab-completion') observed.metric.rows = identifyCompletionRows(observed.metric.rows);
   const fullPath=path.join(outputDir,'evidence',`${imageName.replace(/\.png$/,'')}.full.png`);
   await mkdir(path.dirname(fullPath),{recursive:true});
   await writeFile(fullPath,await windowControl.captureFullScreenshot());
@@ -616,13 +675,18 @@ async function completionState(expectedLine) {
     const candidates=[...document.querySelectorAll('.suggest-widget')].filter(node=>editor&&(editor.contains(node)||node.closest('.monaco-editor')===editor));
     const widgets=candidates.filter(visible);
     const widget=widgets[0];
-    const rows=[...(widget?.querySelectorAll('.monaco-list-row')||[])].map(node=>({
-      label:node.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||node.innerText.trim().split('\\n')[0],
-      detail:node.innerText.trim(),
-      snippet:!!node.querySelector('.codicon-symbol-snippet'),
-      visible:visible(node),
-      inViewport:(()=>{const r=node.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;})(),
-    }));
+    const rows=[...(widget?.querySelectorAll('.monaco-list-row')||[])].map(node=>{
+      const displayLabel=node.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||node.innerText.trim().split('\\n')[0];
+      const detail=node.querySelector('.details-label')?.textContent.trim()||'';
+      const icon=node.querySelector('[class*="codicon-symbol-"]');
+      const kind=[...(icon?.classList||[])].find(name=>name.startsWith('codicon-symbol-'))||'unknown';
+      const snippet=kind==='codicon-symbol-snippet';
+      const snippetName=detail.split('\\n').at(-1)?.trim()||'';
+      const identity=snippet?'snippet:'+kind+':'+snippetName:'item:'+kind+':'+displayLabel;
+      const r=node.getBoundingClientRect();
+      return {label:displayLabel,displayLabel,detail,snippet,snippetName,kind,identity,
+        visible:visible(node),inViewport:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight};
+    });
     const active=document.activeElement;
     const selected=[...(widget?.querySelectorAll('.monaco-list-row')||[])].find(node=>node.matches('.focused,.selected,[aria-selected="true"]'));
     const label=(node)=>node?.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||node?.innerText.trim().split('\\n')[0]||null;
@@ -644,49 +708,90 @@ async function completionState(expectedLine) {
   })()`);
 }
 async function saveCompletionDiagnostics(filename) {
-  const diagnostics = await windowControl.evaluate(`(() => {
-    const visible=(node)=>{
-      if(!node)return false;
-      for(let item=node;item instanceof Element;item=item.parentElement){
-        const style=getComputedStyle(item);
-        if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0)return false;
-      }
-      const rects=[node,...node.querySelectorAll('*')].map(item=>item.getBoundingClientRect());
-      return rects.some(r=>r.width>0&&r.height>0&&r.right>0&&r.bottom>0&&r.left<innerWidth&&r.top<innerHeight);
-    };
-    const editor=document.querySelector('.monaco-editor.focused'), active=document.activeElement;
-    return [...document.querySelectorAll('.suggest-widget')].map(widget=>({
-      visible:visible(widget),
-      editorIdentity:widget.closest('.editor-group-container')?.querySelector('.title-label')?.textContent.trim()||null,
-      activeEditor:!!editor&&(editor.contains(widget)||widget.closest('.monaco-editor')===editor),
-      caret:(()=>{const r=editor?.querySelector('.cursors-layer .cursor')?.getBoundingClientRect();return r?{x:r.x,y:r.y,width:r.width,height:r.height}:null;})(),
-      activeElement:active?.className||active?.tagName||null,
-      rows:[...widget.querySelectorAll('.monaco-list-row')].filter(visible).map(row=>({
-        label:row.querySelector('.label-name,.monaco-highlighted-label')?.textContent.trim()||row.innerText.trim(),
-        detail:row.innerText.trim(),snippet:!!row.querySelector('.codicon-symbol-snippet'),
-      })),
-    }));
-  })()`);
+  const diagnostics = await completionState('sam');
+  const destination = path.join(outputDir, 'evidence', `${filename}.completion-diagnostic.json`);
+  await mkdir(path.dirname(destination), { recursive: true });
+  await writeFile(destination, JSON.stringify({ activeFile, diagnostics }, null, 2));
+  rankingDiagnosticPaths.push(destination);
+  return diagnostics;
+}
+
+async function preserveRankingArtifacts() {
   const directory = path.join(outputDir, 'evidence');
   await mkdir(directory, { recursive: true });
-  await writeFile(path.join(directory, `${filename}.completion-diagnostic.json`), JSON.stringify({ activeFile, diagnostics }, null, 2));
+  const settings = JSON.parse(await readFile(userSettingsPath, 'utf8'));
+  const names = ['editor.suggest', 'editor.wordBasedSuggestions', 'editor.quickSuggestions',
+    'editor.suggestOnTriggerCharacters', 'editor.tabCompletion', 'typescript.suggest.enabled',
+    'typescript.suggest.autoImports', 'typescript.tsdk', 'typescript.tsserver.log'];
+  const savedSettings = Object.fromEntries(names.filter((name) => name in settings).map((name) => [name, settings[name]]));
+  const settingsPath = path.join(directory, 'ranking-profile-settings.json');
+  await writeFile(settingsPath, `${JSON.stringify(savedSettings, null, 2)}\n`);
+  rankingDiagnosticPaths.push(settingsPath);
+  const logsPath = path.join(profileDir, 'logs');
+  try {
+    const copy = path.join(directory, 'typescript-profile-logs');
+    await cp(logsPath, copy, { recursive: true, force: true });
+    rankingDiagnosticPaths.push(copy);
+  } catch (error) {
+    const status = path.join(directory, 'typescript-profile-logs-unavailable.json');
+    await writeFile(status, `${JSON.stringify({ error: error.message }, null, 2)}\n`);
+    rankingDiagnosticPaths.push(status);
+  }
 }
+
+async function captureRankingDiagnostic(stage, renderer, error) {
+  if (!rankingDiagnosticEnabled || rankingDiagnosticCaptured) return;
+  rankingDiagnosticCaptured = true;
+  await rm(rankingDiagnosticExtensionOutput, { force: true });
+  rankingDiagnosticPaths.push(rankingDiagnosticExtensionOutput);
+  let extension = null, captureError;
+  try {
+    await windowControl.command('VSS: Capture Ranking Diagnostics');
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      try { await access(rankingDiagnosticExtensionOutput); break; } catch { await delay(100); }
+    }
+    await access(rankingDiagnosticExtensionOutput);
+    extension = JSON.parse(await readFile(rankingDiagnosticExtensionOutput, 'utf8'));
+  } catch (failure) {
+    captureError = failure.message || String(failure);
+  }
+  try { await preserveRankingArtifacts(); } catch (failure) { captureError ||= failure.message || String(failure); }
+  const bundle = { failure: { stage, primary: String(error.message || error) }, activeFile, renderer, extension, captureError };
+  await writeFile(rankingDiagnosticBundle, `${JSON.stringify(bundle, null, 2)}\n`);
+  rankingDiagnosticPaths.push(rankingDiagnosticBundle);
+  if (captureError) throw new Error(`Ranking diagnostic bundle was incomplete: ${captureError}`);
+}
+
+async function preserveCompletionFailure(error, stage, filename, state) {
+  try {
+    const diagnostics = await saveCompletionDiagnostics(filename);
+    if (rankingDiagnosticEnabled) await captureRankingDiagnostic(stage, { diagnostics, state }, error);
+  } catch (secondary) {
+    error.secondaryCauses ||= [];
+    error.secondaryCauses.push(`diagnostic capture: ${secondary.message || secondary}`);
+  }
+}
+
 async function waitForCompletion(labels, filename, expectedLine) {
   const deadline = Date.now() + 25_000;
   let retryAt = Date.now() + 1000, last, previous, stable = 0;
   while (Date.now() < deadline) {
     last = await completionState(expectedLine);
+    const hasLabel = (rows, label) => rows.some((row) => label === 'sampleNames'
+      ? !row.snippet && row.displayLabel === label && row.identity.startsWith('item:')
+      : row.identity === `snippet:codicon-symbol-snippet:${label}`);
     const ready = last.widgetCount === 1 && last.visible && last.editorFocused && !last.loading
       && last.editorIdentity === path.basename(activeFile) && last.caret?.line === expectedLine && last.caret.atEnd
       && last.rows.every((row) => row.visible && row.inViewport)
-      && labels.every((label) => last.rows.some((row) => row.label === label));
+      && labels.every((label) => hasLabel(last.rows, label));
     if (ready) {
       await windowControl.waitForPaint();
       const painted = await completionState(expectedLine);
-      const identity = JSON.stringify(painted.rows.map(({ label, detail, snippet }) => [label, detail, snippet]));
+      const identity = JSON.stringify(painted.rows.map((row) => row.identity));
       if (painted.widgetCount === 1 && painted.visible && painted.editorFocused && !painted.loading
         && painted.editorIdentity === path.basename(activeFile) && painted.caret?.line === expectedLine && painted.caret.atEnd
-        && painted.rows.every((row) => row.visible && row.inViewport) && labels.every((label) => painted.rows.some((row) => row.label === label))
+        && painted.rows.every((row) => row.visible && row.inViewport) && labels.every((label) => hasLabel(painted.rows, label))
         && identity === previous) stable += 1;
       else stable = 0;
       previous = identity;
@@ -695,13 +800,14 @@ async function waitForCompletion(labels, filename, expectedLine) {
       previous = undefined;
       stable = 0;
     }
-    if(labels[0]==='sampleNames'&&Date.now()>=retryAt&&!last.rows.some(r=>r.label==='sampleNames')){
+    if(labels[0]==='sampleNames'&&Date.now()>=retryAt&&!last.rows.some(r=>!r.snippet&&r.displayLabel==='sampleNames')){
       await windowControl.key('Escape','Escape');await windowControl.key(' ','Space',2);retryAt=Date.now()+1000;
     }
     await delay(100);
   }
-  await saveCompletionDiagnostics(filename);
-  throw new Error(`Active-editor completion did not stabilize with ${labels.join(', ')}: ${JSON.stringify(last)}`);
+  const error = new Error(`Active-editor completion did not stabilize with ${labels.join(', ')}: ${JSON.stringify(last)}`);
+  await preserveCompletionFailure(error, 'completion-readiness-timeout', filename, last);
+  throw error;
 }
 async function assertNoActiveCompletion(filename) {
   const state = await completionState();
@@ -799,18 +905,7 @@ async function setPairDescription(group, before, after, rows) {
   if(group==='marker-colors'&&(!a.squiggles||a.squiggles!==b.squiggles)) fail('The diagnostic squiggle was not preserved for marker-color comparison.');
   if(group==='automatic-suggestions'&&(!a.suggestVisible||b.suggestVisible)) fail('Automatic suggestion visibility did not change.');
   if(group==='tab-completion'){
-    const required=['sampleNames','Sample loop','Sample card'];
-    const rank=(metric)=>required.map((label)=>metric.rows.findIndex((row)=>row.label===label));
-    const beforeRank=rank(a),afterRank=rank(b);
-    const identities=(metric)=>metric.rows.map(({label,snippet})=>[label,snippet]);
-    const snippets=['Sample loop','Sample card'].map((label)=>a.rows.find((row)=>row.label===label)?.snippet);
-    if(a.suggestWidgetCount!==1||b.suggestWidgetCount!==1||!same(identities(a),identities(b))
-      ||a.rows.find((row)=>row.label==='sampleNames')?.snippet||snippets.some((isSnippet)=>!isSnippet)
-      ||beforeRank.some((index)=>index<0)||afterRank.some((index)=>index<0)
-      ||!(beforeRank[0]<beforeRank[1]&&beforeRank[0]<beforeRank[2])
-      ||!(afterRank[1]<afterRank[0]&&afterRank[2]<afterRank[0])) {
-      fail(`The same ordinary completion and two snippets did not reorder: ${JSON.stringify([beforeRank,afterRank,a.rows,b.rows])}`);
-    }
+    if(!tabCompletionPass(a,b)) fail(`The same ordinary completion and two snippets did not reorder: ${JSON.stringify([a.rows,b.rows])}`);
   }
   if(group==='selected-suggestion-color'&&(a.suggestWidgetCount!==1||b.suggestWidgetCount!==1||a.selectedSuggestion!=='active'||a.selectedSuggestion!==b.selectedSuggestion
     ||a.selectedBg!=='rgb(77, 77, 77)'||b.selectedBg!=='rgb(58, 51, 75)'||same(a.selectedRect,b.selectedRect)===false)) {
@@ -880,9 +975,15 @@ async function runInteraction(name, phase, chapterSettings) {
     case 'find-widget':
       await open('src/main.ts');
       await windowControl.command('Find with Arguments');
-      await windowControl.waitFor("!!document.querySelector('.editor-widget.find-widget input')", Boolean, 10_000, 'Find widget input visible');
+      const searchField=JSON.stringify(findSearchFieldSelector);
+      await windowControl.waitForPainted(findSearchFieldSelector);
+      await windowControl.waitFor(`document.activeElement===document.querySelector(${searchField})`, Boolean, 10_000, 'focused Find textarea');
+      await windowControl.key('A', 'KeyA', 4);
       await windowControl.type('vss-find-no-match-9zq');
-      await windowControl.waitFor("document.querySelector('.editor-widget.find-widget input')?.value==='vss-find-no-match-9zq'", Boolean, 10_000, 'Find query entered');
+      await windowControl.waitFor(
+        `(()=>{const field=document.querySelector(${searchField});return field?.value==='vss-find-no-match-9zq'&&document.activeElement===field;})()`,
+        Boolean, 10_000, 'Find query entered',
+      );
       if (await readFile(path.join(workspaceDir, activeFile), 'utf8').then((text) => text.includes('vss-find-no-match-9zq'))) {
         throw new Error('The fixed Find query unexpectedly occurs in the fixture file.');
       }
@@ -914,7 +1015,7 @@ async function runInteraction(name, phase, chapterSettings) {
       try {
         await windowControl.waitFor("(()=>{const e=document.querySelector('.monaco-editor.focused');return e?.contains(document.activeElement)&&e.innerText.includes('sam')})()");
       }
-      catch (error) { await saveCompletionDiagnostics('tab-completion-editor-focus'); throw error; }
+      catch (error) { await preserveCompletionFailure(error, 'editor-focus-barrier', 'tab-completion-editor-focus', null); throw error; }
       await assertNoActiveCompletion('tab-completion-before-trigger');
       await windowControl.command('TypeScript: Restart TS Server');
       await windowControl.key(' ', 'Space', 2);
@@ -931,7 +1032,7 @@ async function runInteraction(name, phase, chapterSettings) {
       await windowControl.waitForPaint();
       if (!await windowControl.evaluate("!!document.querySelector('.monaco-editor.focused')?.contains(document.activeElement)")) throw new Error('Tab lost editor focus.');
       placeholderWitness = null;
-      if (phase === 'after') placeholderWitness = await selectedText();
+      if (phase === 'after') await copySelectedText('items');
       break;
     }
     case 'emmet-expansion': {
@@ -1134,7 +1235,7 @@ async function capture(name, chapter, group, description, captureState = 'none',
   await rm(captureDestination, { force: true });
   if (!childIsRunning(appChild)) throw new Error('Refusing to capture without the VS Code process started by this run.');
   const finderArgs = [appPath, String(appChild.pid)];
-  const [windowId, width, height] = run(finderBinary, finderArgs).split(/\s+/);
+  const [windowId, , , width, height] = run(finderBinary, finderArgs).split(/\s+/);
   if (width !== '1200' || height !== '800') {
     throw new Error(`Expected a 1200x800 point window, found ${width}x${height}`);
   }
@@ -1196,30 +1297,37 @@ async function compareMean(pathname) {
 }
 async function recordPairFailure(descriptor, names, error, cleanup) {
   if (error.code === 'OWNER_RETURNED') throw error;
-  let message = String(error.message || error).replace(/\s+/g, ' ').trim();
-  try {
-    await cleanup();
-  } catch (failure) {
-    message += `; cleanup: ${failure.message}`;
-  }
+  const primary = String(error.message || error).replace(/\s+/g, ' ').trim();
+  const secondary = [...(error.secondaryCauses || [])];
+  const failurePath = path.join(outputDir, 'evidence', `${descriptor.filename}-failure.json`);
+  await mkdir(path.dirname(failurePath), { recursive: true });
+  await writeFile(failurePath, `${JSON.stringify({ primary, diagnostics: [...rankingDiagnosticPaths] }, null, 2)}\n`);
+  failedPairs.push(`${descriptor.canonical}: ${primary}`);
+  const attempt = async (label, action) => {
+    try { await action(); } catch (failure) { secondary.push(`${label}: ${failure.message || failure}`); }
+  };
+  await attempt('cleanup', cleanup);
   if (JSON.stringify(appliedSettings) !== JSON.stringify(descriptor.after)) {
-    await applyPairSettings(descriptor.after, descriptor.spec);
+    await attempt('settings restoration', () => applyPairSettings(descriptor.after, descriptor.spec));
   }
-  if (descriptor.spec.previewSettings) await writeSettings(descriptor.after);
+  if (descriptor.spec.previewSettings) await attempt('preview settings restoration', () => writeSettings(descriptor.after));
+  const message = pairFailureMessage(primary, secondary);
   const failedDir = path.join(outputDir, 'failed');
-  await mkdir(failedDir, { recursive: true });
+  await attempt('failed image directory', () => mkdir(failedDir, { recursive: true }));
   for (const name of names) {
-    const staged = `${path.join(imageDir, name)}.${process.pid}.capture.png`;
-    const image = path.join(imageDir, name);
-    const failed = path.join(failedDir, name);
-    const source = await access(staged).then(() => staged, () => access(image).then(() => image, () => null));
-    if (source) {
-      await rename(source, failed);
-      indexRows.push({ chapter: descriptor.chapter, group: descriptor.groupKey, file: path.relative(outputDir, failed), description: `failed: ${message}` });
-    }
+    await attempt(`preserve ${name}`, async () => {
+      const staged = `${path.join(imageDir, name)}.${process.pid}.capture.png`;
+      const image = path.join(imageDir, name);
+      const failed = path.join(failedDir, name);
+      const source = await access(staged).then(() => staged, () => access(image).then(() => image, () => null));
+      if (source) {
+        await rename(source, failed);
+        indexRows.push({ chapter: descriptor.chapter, group: descriptor.groupKey, file: path.relative(outputDir, failed), description: `failed: ${message}` });
+      }
+    });
   }
-  failedPairs.push(`${descriptor.canonical}: ${message}`);
-  await persistIndex();
+  failedPairs[failedPairs.length - 1] = `${descriptor.canonical}: ${message}`;
+  await attempt('image index persistence', persistIndex);
   console.error(`Failed pair ${descriptor.canonical}: ${message}`);
   if (runOptions.only) throw new Error(`Selected pair failed: ${descriptor.canonical}: ${message}`);
 }
@@ -1284,7 +1392,8 @@ async function captureExtraPair(descriptor) {
     if (kind === 'find') {
       const a = before.metric.findState;
       const b = after.metric.findState;
-      if (!a || !b || a.query !== 'vss-find-no-match-9zq' || a.query !== b.query
+      if (!a || !b || !a.fieldVisible || !b.fieldVisible || !a.fieldFocused || !b.fieldFocused
+        || a.query !== 'vss-find-no-match-9zq' || a.query !== b.query
         || JSON.stringify(a.toggles) !== JSON.stringify(b.toggles)
         || JSON.stringify(a.rect) !== JSON.stringify(b.rect)
         || !a.shadow.includes('0px 0px 8px 2px') || b.shadow !== 'none') {
@@ -1410,8 +1519,10 @@ try {
   logFrontmost('before the run');
   if (runOptions.only) {
     await installRequiredExtensions();
+    if (rankingDiagnosticEnabled) await prepareRankingDiagnosticExtension();
     await writeSettings(selectedPlan[0].before);
     await startApp();
+    if (installedExtensions.has(customUIStyleId)) await applyCustomUIStyleAndRestart();
     for (const descriptor of selectedPlan) {
       const chapter = chapters.find((item) => item.chapter === descriptor.chapter);
       if (descriptor.kind === 'group') await capturePair(chapter, descriptor.groupKey, settingsByChapter[descriptor.chapter]);

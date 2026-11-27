@@ -1,5 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
+export const findSearchFieldSelector = '.editor-widget.find-widget .find-part textarea.input';
+
 export function intersectsViewport(rect, viewport) {
   return !!rect && rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0
     && rect.left < viewport.width && rect.top < viewport.height;

@@ -47,4 +47,4 @@ guard let window = candidates.max(by: { area($0) < area($1) }),
     exit(5)
 }
 
-print("\(id) \(Int(rect.width)) \(Int(rect.height))")
+print("\(id) \(Int(rect.origin.x)) \(Int(rect.origin.y)) \(Int(rect.width)) \(Int(rect.height))")

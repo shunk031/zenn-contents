@@ -2,10 +2,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { paintedMatch } from './cdp.mjs';
+import { findSearchFieldSelector, paintedMatch } from './cdp.mjs';
+import { completionIdentity, pairFailureMessage, selectionCopyPass, tabCompletionPass } from './completion.mjs';
 import { groupSpecs } from './groups.mjs';
 import { addPairRequirements, buildChronologicalPlan, createPairRegistry, findShadowPixelsPass, findShadowRegions, parseRunArgs, selectPlan } from './planner.mjs';
 const kit = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const runSource = readFileSync(path.join(kit, 'scripts/run.mjs'), 'utf8');
+const extensionSource = readFileSync(path.join(kit, 'scripts/ranking-diagnostic-extension.js'), 'utf8');
+let focusedChecks = 0;
+function focusedCheck(condition, label) { assert.ok(condition, label); focusedChecks += 1; }
 const rendererCall = /(?:windowControl|this)\.(?:evaluate|waitFor)\(\s*(\`(?:\\.|[^\`])*\`|'(?:\\.|[^'])*'|"(?:\\.|[^"])*")/gs;
 for (const file of ['run.mjs', 'cdp.mjs']) for (const [, raw] of readFileSync(path.join(kit, 'scripts', file), 'utf8').matchAll(rendererCall)) {
   const expression = new Function(`return ${raw[0] === '`' ? raw.replace(/\$\{[^{}]*\}/g, 'null') : raw}`)();
@@ -69,4 +74,51 @@ const visible = { display: 'block', visibility: 'visible', opacity: 1, rects: [{
 const hidden = { ...visible, display: 'none' }; assert(paintedMatch([hidden, visible]));
 assert(!paintedMatch([hidden]) && !paintedMatch([{ ...visible, opacity: 0 }]));
 assert(!paintedMatch([{ ...visible, rects: [{ left: 1201, top: 5, right: 1220, bottom: 20, width: 19, height: 15 }] }]));
-console.log('Offline planner, selector, and shadow-mask checks passed.');
+const savedSamRows = [
+  { displayLabel: 'sam', detail: 'sam\nSample card', snippet: true, kind: 'codicon-symbol-snippet' },
+  { displayLabel: 'sam', detail: 'sam\nSample loop', snippet: true, kind: 'codicon-symbol-snippet' },
+].map((row) => ({ ...row, snippetName: row.detail.split('\n').at(-1) }));
+const ordinary = { displayLabel: 'sampleNames', detail: '', snippet: false, kind: 'codicon-symbol-constant' };
+const beforeRows = { suggestWidgetCount: 1, rows: [ordinary, ...savedSamRows] };
+const afterRows = { suggestWidgetCount: 1, rows: [savedSamRows[1], savedSamRows[0], ordinary] };
+const snippetName = { ...ordinary, snippet: true, snippetName: 'sampleNames' };
+const sentinel = 'vss-selection-sentinel';
+const rankFailures = [
+  [{ ...beforeRows, rows: [...beforeRows.rows, ordinary] }, { ...afterRows, rows: [...afterRows.rows, ordinary] }],
+  [beforeRows, { ...afterRows, rows: afterRows.rows.filter((row) => row !== ordinary) }],
+  [{ ...beforeRows, rows: [snippetName, ...savedSamRows] }, { ...afterRows, rows: [snippetName, ...savedSamRows] }],
+  [beforeRows, { ...afterRows, rows: [{ ...savedSamRows[1], kind: 'function' }, savedSamRows[0], ordinary] }],
+  [beforeRows, beforeRows], [{ ...beforeRows, suggestWidgetCount: 2 }, afterRows],
+];
+const includes = (source, ...needles) => needles.every((needle) => source.includes(needle));
+const copied = (text, focused = true, painted = true) => selectionCopyPass({ focused, painted, clipboard: text, sentinel, expected: 'items' });
+const badCopies = [sentinel, '', 'for (const item of items) {', 'item'].every((text) => !copied(text));
+const rankingCheck = completionIdentity(savedSamRows[0]) === 'snippet:codicon-symbol-snippet:Sample card'
+  && tabCompletionPass(beforeRows, afterRows) && rankFailures.every(([a, b]) => !tabCompletionPass(a, b));
+const selectionCheck = copied('items') && badCopies && !copied('items', true, false) && !copied('items', false);
+const findCheck = findSearchFieldSelector === '.editor-widget.find-widget .find-part textarea.input'
+  && includes(runSource, 'waitForPainted(findSearchFieldSelector)', 'document.activeElement===document.querySelector(${searchField})',
+    "await windowControl.key('A', 'KeyA', 4)", 'fieldFocused:document.activeElement===findInput', 'fieldVisible:visible(findInput)', 'vss-find-no-match-9zq')
+  && !runSource.includes('.editor-widget.find-widget input');
+const diagnosticCheck = includes(runSource, "selectedPlan[0].canonical === 'ch10-tab-completion'", '--extensionDevelopmentPath=')
+  && (extensionSource.match(/executeCompletionItemProvider/g) || []).length === 1
+  && includes(extensionSource, "status: 'error'", "status: items.length ? 'items' : 'empty'",
+    'config.inspect(name)', "getExtension('vscode.typescript-language-features')")
+  && !runSource.includes('extension.provider.items');
+const logCheck = includes(runSource, "runtimeSettings['typescript.tsserver.log'] = 'verbose'", "nextSettings['typescript.tsserver.log'] = 'verbose'")
+  && runSource.indexOf('await preserveRankingArtifacts()') < runSource.indexOf('await rm(profileDir,{recursive:true,force:true})');
+const styleCheck = includes(runSource, 'await startApp();\n    if (installedExtensions.has(customUIStyleId)) await applyCustomUIStyleAndRestart();',
+  'appliedStyleWitness', 'nativeWindow: { id: windowId, x, y, width, height }');
+const viewportCheck = !includes(runSource, 'targetHeight', 'Browser.setWindowBounds')
+  && includes(runSource, 'before.viewport.width !== after.viewport.width', 'before.viewport.height !== after.viewport.height');
+const failureCheck = runSource.indexOf('await writeFile(failurePath') < runSource.indexOf("await attempt('cleanup'")
+  && pairFailureMessage('primary', ['cleanup failed', 'restore failed']) === 'primary; secondary: cleanup failed; secondary: restore failed'
+  && runSource.includes("attempt('settings restoration'");
+const sourceChecks = [
+  [rankingCheck, 'ranking positive/negative'], [selectionCheck, 'selection copy and paint/focus'],
+  [findCheck, 'shared Find locator and gates'], [diagnosticCheck, 'diagnostic scope and no pass route'],
+  [logCheck, 'verbose logs preserved before cleanup'], [styleCheck, 'style reload and geometry evidence'],
+  [viewportCheck, 'resize removed; viewport gate retained'], [failureCheck, 'primary first; restoration secondary'],
+];
+for (const [pass, label] of sourceChecks) focusedCheck(pass, label);
+console.log(`Offline planner, selector, shadow-mask, and focused design checks passed (${focusedChecks}/${focusedChecks}).`);
