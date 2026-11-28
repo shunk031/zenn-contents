@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --test scripts/article-style-audit.test.mjs",
+    "test": "node --test scripts/article-style-audit.test.mjs scripts/article-outline.test.mjs",
     "textlint": "textlint \"./{articles,books/*}/*.md\"",
-    "article-style:audit": "node scripts/article-style-audit.mjs"
+    "article-style:audit": "node scripts/article-style-audit.mjs",
+    "article:outline": "node scripts/article-outline.mjs"
   },
   "repository": {
     "type": "git",

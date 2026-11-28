@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { parseProseBlocks } from "./article-outline.mjs";
 
 const require = createRequire(import.meta.url);
 const { parse: parseMarkdown } = require("@textlint/markdown-to-ast");
@@ -340,6 +341,58 @@ function report(file, lineNumber, name, message, line) {
   failed = true;
   console.error(`${file}:${lineNumber}: ${name}: ${message}`);
   console.error(`  ${line}`);
+}
+
+function articleFrontMatter(text) {
+  const lines = text.split(/\r?\n/);
+  if (lines[0] !== "---") return null;
+  const end = lines.findIndex((line, index) => index > 0 && /^(---|\.\.\.)$/.test(line));
+  return end < 0 ? null : lines.slice(1, end).join("\n");
+}
+
+function shouldCheckShortParagraphs(file, text) {
+  if (!path.resolve(file).split(path.sep).includes("articles")) return false;
+  const frontMatter = articleFrontMatter(text);
+  if (frontMatter === null) return false;
+  const published = /^published:\s*(true|false)\b/im.exec(frontMatter)?.[1]?.toLowerCase();
+  if (published !== "true") return true;
+  const publishedAt = /^published_at:\s*["']?(\d{4}-\d{2}-\d{2})/im.exec(frontMatter)?.[1];
+  return publishedAt !== undefined && publishedAt >= "2026-12-01";
+}
+
+function openingPreambleParagraphs(blocks) {
+  const exempt = new Set();
+  for (const block of blocks) {
+    if (block.type === "link-card") continue;
+    if (block.type !== "paragraph") break;
+    if (/^(?:こんにちは|はじめまして|初めまして|おはようございます|こんばんは)(?:\s|[、。.!！]|$)/.test(block.text)
+      || /(?:Advent\s*Calendar|アドベントカレンダー)/i.test(block.text)) {
+      exempt.add(block);
+    } else {
+      break;
+    }
+  }
+  return exempt;
+}
+
+function reportShortParagraphs(file, text, lines) {
+  if (!shouldCheckShortParagraphs(file, text)) return;
+  const blocks = parseProseBlocks(text);
+  const opening = openingPreambleParagraphs(blocks);
+  const leadInExclusions = new Set(["list", "table", "code", "indented-code", "mermaid", "image", "link-card"]);
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index];
+    if (block.type !== "paragraph" || block.sentences.length > 2 || opening.has(block)) continue;
+    const next = blocks[index + 1];
+    if (block.sentences.length === 1 && next && leadInExclusions.has(next.type)) continue;
+    report(
+      file,
+      block.line,
+      "avoid-short-prose-paragraph",
+      "本文段落は 3 文以上で書いてください（記事冒頭の案内や、箇条書き・表・コードブロック・画像・Mermaid・リンクカード直前の 1 文導入を除く）。",
+      lines[block.line - 1],
+    );
+  }
 }
 
 function collectMarkdownNodes(node, output = []) {
@@ -943,6 +996,7 @@ for (const file of files) {
   const lines = text.split(/\r?\n/);
   const markdown = createMarkdownContext(text);
 
+  reportShortParagraphs(file, text, lines);
   reportHeadingImmediatelyFollowedBySubheading(file, text, lines, markdown);
   reportStandaloneTextlintComments(file, text, lines, markdown);
   reportLooseTopicShiftAfterExternalMaterial(file, lines);

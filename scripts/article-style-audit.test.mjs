@@ -184,3 +184,75 @@ test("HTML comments between list items are detected without scanning code fences
   assert.match(result.stderr, /list-comments\.md:2: avoid-html-comment-between-list-items/);
   assert.doesNotMatch(result.stderr, /list-comments\.md:8: avoid-html-comment-between-list-items/);
 });
+
+test("short prose paragraphs are checked only in scoped articles and exclude lead-ins and opening lines", (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "article-style-audit-short-paragraphs-"));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const articles = path.join(directory, "articles");
+  fs.mkdirSync(articles);
+  const scheduledPath = path.join(articles, "scheduled.md");
+  const oldPath = path.join(articles, "old.md");
+  const unpublishedPath = path.join(articles, "unpublished.md");
+  fs.writeFileSync(scheduledPath, [
+    "---",
+    "published: true",
+    "published_at: 2026-12-01",
+    "---",
+    "はじめまして。",
+    "Advent Calendar begins today.",
+    "https://example.com/calendar",
+    "This paragraph has two sentences. It fails the rule.",
+    "",
+    "This lead-in has one sentence.",
+    "- first item",
+    "",
+    "This lead-in has one sentence.",
+    "| header | value |",
+    "| --- | --- |",
+    "",
+    "This lead-in has one sentence.",
+    "```text",
+    "example",
+    "```",
+    "",
+    "This lead-in has one sentence.",
+    "    indented code",
+    "",
+    "This lead-in has one sentence.",
+    "![figure](figure.png)",
+    "",
+    "This lead-in has one sentence.",
+    "```mermaid",
+    "graph TD; A-->B;",
+    "```",
+    "",
+    "This lead-in has one sentence.",
+    "https://example.com/card",
+    "",
+    "This paragraph has three sentences. It passes the rule. It has enough detail.",
+    "",
+  ].join("\n"));
+  fs.writeFileSync(oldPath, [
+    "---",
+    "published: true",
+    "published_at: 2026-11-30",
+    "---",
+    "This published paragraph has one sentence.",
+  ].join("\n"));
+  fs.writeFileSync(unpublishedPath, [
+    "---",
+    "published: false",
+    "---",
+    "This unpublished paragraph has one sentence.",
+  ].join("\n"));
+
+  const result = spawnSync(process.execPath, [scriptPath, scheduledPath, oldPath, unpublishedPath], {
+    cwd: repositoryPath,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /scheduled\.md:8: avoid-short-prose-paragraph/);
+  assert.match(result.stderr, /unpublished\.md:4: avoid-short-prose-paragraph/);
+  assert.equal((result.stderr.match(/avoid-short-prose-paragraph/g) ?? []).length, 2, result.stderr);
+});
