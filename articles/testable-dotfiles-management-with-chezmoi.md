@@ -13,6 +13,8 @@ https://github.com/shunk031/dotfiles
 
 ## はじめに
 
+dotfiles リポジトリに共通するテスト不足の課題を踏まえ、本リポジトリでは chezmoi と自動テストを組み合わせた構成を採用しています。
+
 ### dotfiles と dotfiles リポジトリ
 
 dotfiles とは、`.bashrc`、`.vimrc`、`.gitconfig` などの「`.`」で始まる設定ファイル群のことです。近年、これらを Git リポジトリで管理する [dotfiles リポジトリ](https://awesomeopensource.com/projects/dotfiles) が開発者の間で広く普及しています。
@@ -24,7 +26,7 @@ dotfiles リポジトリは単なる設定ファイルの管理ではなく、�
 
 ### テストされないスクリプトの問題
 
-ほとんどの dotfiles リポジトリに含まれるセットアップスクリプトやインストールスクリプトは、正しく動作するかテストされていません（つらい）。そのため、新しい環境でセットアップを実行すると様々な問題の発生可能性があります。スクリプトのエラー、依存関係の問題による一部ツールのインストール失敗、OS アップデートによるスクリプト動作不具合などが起こっても、実際に実行するまで問題に気づけません。新しいパソコンや環境を手に入れてルンルンでセットアップを始めたのに、途中でエラーが発生して環境構築が完了しない、というのは非常にストレスフルな体験です。
+ほとんどの dotfiles リポジトリに含まれるセットアップスクリプトやインストールスクリプトは、正しく動作するかテストされていません (つらい)。そのため、新しい環境でセットアップを実行すると様々な問題の発生可能性があります。スクリプトのエラー、依存関係の問題による一部ツールのインストール失敗、OS アップデートによるスクリプト動作不具合などが起こっても、実際に実行するまで問題に気づけません。新しいパソコンや環境を手に入れてルンルンでセットアップを始めたのに、途中でエラーが発生して環境構築が完了しない、というのは非常にストレスフルな体験です。
 
 この品質保証の欠如により、本来は自動化されるべき環境構築が、結果として手動での問題解決とデバッグに多くの時間を費やすことになってしまいます。
 
@@ -60,6 +62,8 @@ https://www.chezmoi.io/user-guide/templating/
 このように、テスト可能な構成によりスクリプトの品質保証を実現し、 chezmoi のテンプレート機能により環境固有設定を柔軟に管理することで、信頼性の高い dotfiles 管理の実現を目指しています。
 
 ## アーキテクチャ設計：テスト可能な構成
+
+設定ファイル、セットアップスクリプト、テストコードを 3 つのディレクトリに分離し、それぞれを独立して検証できる構造にしています。
 
 ### レポジトリ構造
 
@@ -121,7 +125,7 @@ https://github.com/bats-core/bats-core
 - [`tests/install/macos/common/brew.bats`](https://github.com/shunk031/dotfiles/blob/master/tests/install/macos/common/brew.bats): Homebrew インストールスクリプトのテスト
 - [`tests/files/common.bats`](https://github.com/shunk031/dotfiles/blob/master/tests/files/common.bats): chezmoi 展開後のファイルの存在確認
 
-各テストファイルはスクリプトの動作を検証し、期待される結果（パッケージのインストール、設定ファイルの生成など）が得られることを確認します。
+各テストファイルはスクリプトの動作を検証し、期待される結果 (パッケージのインストール、設定ファイルの生成など) が得られることを確認します。
 
 ## テスト・ CI/CD 戦略
 
@@ -153,7 +157,7 @@ https://github.com/bats-core/bats-core
 }
 ```
 
-各テストでは、スクリプトの存在確認、実行可能権限の確認、実際の実行、そして期待される結果（コマンドの利用可能性など）を段階的に検証します。
+各テストでは、スクリプトの存在確認、実行可能権限の確認、実際の実行、そして期待される結果 (コマンドの利用可能性など) を段階的に検証します。
 
 ### GitHub Actions による包括的検証
 
@@ -245,7 +249,7 @@ https://github.com/codecov/codecov-action
 
 dotfiles 適用後の shell 起動パフォーマンスを継続的に監視し、設定変更による影響を早期発見するため、ベンチマーク測定も自動化しています。
 
-本実装は [benchmark-action/github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) を使用した以下の記事を参考にしています。shell の初回起動時間と平均起動時間（10 回測定）の両方を計測し、dotfiles による設定が shell 起動に与える影響を定量化しています。
+本実装は [benchmark-action/github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) を使用した以下の記事を参考にしています。shell の初回起動時間と平均起動時間 (10 回測定) の両方を計測し、dotfiles による設定が shell 起動に与える影響を定量化しています。
 
 https://github.com/benchmark-action/github-action-benchmark
 https://zenn.dev/odan/articles/17a86574b724c9
@@ -256,11 +260,13 @@ https://shunk031.me/my-dotfiles-benchmarks/
 
 ## 実装詳細と運用フロー
 
+単体テストしやすいセットアップスクリプトの共通構造と、新規ツールの追加や保守をテスト駆動で進める運用フローを定めています。
+
 ### セットアップスクリプトの構造と実装例
 
 `install/` ディレクトリのスクリプトは、単一責任の原則に従って設計されています。各スクリプトは特定のツールのインストールと設定のみを担当し、独立してテスト可能な構造になっています。
 
-スクリプトの基本構造として、OS 別の処理は別々のファイルに分離されており、各プラットフォーム専用のスクリプトとして実装されています。すべてのインストールスクリプトは以下の共通パターンに従います。 shellscript の書き方については [Minimal safe Bash script template](https://betterdev.blog/minimal-safe-bash-script-template/) が参考になります。
+スクリプトの基本構造として、OS 別の処理は別々のファイルに分離されており、各プラットフォーム専用のスクリプトとして実装されています。すべてのインストールスクリプトは以下の共通パターンに従い、`set -Eeuo pipefail` などの安全な基本構造は [Minimal safe Bash script template](https://betterdev.blog/minimal-safe-bash-script-template/) に倣っています。
 
 https://betterdev.blog/minimal-safe-bash-script-template/
 
@@ -298,11 +304,13 @@ if [["${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 ```
 
-この `if [["${BASH_SOURCE[0]}" == "${0}" ]]; then` の条件文は、スクリプトが直接実行された場合のみ `main` 関数を実行するためのものです。スクリプトが他のファイルから `source` コマンドで読み込まれた場合（例：テストファイルから関数を呼び出す場合）は、関数定義のみが読み込まれ `main` は実行されません[^3]。これにより、同一スクリプトを「実行用」と「ライブラリ用」の両方で使用でき、テスト可能性が大幅に向上します。
+この `if [["${BASH_SOURCE[0]}" == "${0}" ]]; then` の条件文は、スクリプトが直接実行された場合のみ `main` 関数を実行するためのものです。スクリプトが他のファイルから `source` コマンドで読み込まれた場合 (例：テストファイルから関数を呼び出す場合) は、関数定義のみが読み込まれ `main` は実行されません[^3]。これにより、同一スクリプトを「実行用」と「ライブラリ用」の両方で使用でき、テスト可能性が大幅に向上します。
 
 例えば、Homebrew のインストールは `install/macos/common/brew.sh`、chezmoi の Ubuntu 用インストールは `install/ubuntu/common/chezmoi.sh` に分離しています。この構造でプラットフォーム最適化とテスト可能性を実現しています。
 
 ### 開発・保守フロー
+
+新しいツールの追加と既存スクリプトの改善は、テストを先に書いて CI で検証する手順で進めます。
 
 #### 新規アプリケーション追加手順
 
@@ -350,12 +358,10 @@ bats tests/install/macos/common/new_tool.bats
 
 https://github.com/shunk031/dotfiles
 
-<!-- textlint-disable -->
 
-[^1]: [GitHub 上の `$GITHUB_USERNAME/dotfiles` を参照して chezmoi がセットアップを開始してくれます。](https://www.chezmoi.io/quick-start/#start-using-chezmoi-on-your-current-machine:~:text=Create%20a%20new%20repository%20on%20GitHub%20called%20dotfiles%20and%20then%20push%20your%20repo%3A)
+
+[^1]: <!-- textlint-disable -->[GitHub 上の `$GITHUB_USERNAME/dotfiles` を参照して chezmoi がセットアップを開始してくれます。](https://www.chezmoi.io/quick-start/#start-using-chezmoi-on-your-current-machine:~:text=Create%20a%20new%20repository%20on%20GitHub%20called%20dotfiles%20and%20then%20push%20your%20repo%3A)
 
 [^2]: chezmoi のデフォルトでは[リポジトリルートがソースディレクトリ](https://www.chezmoi.io/user-guide/advanced/customize-your-source-directory/)になります。
 
-[^3]: Python の `if __name__ == "__main__"` と同じような仕組みです。
-
-<!-- textlint-enable -->
+[^3]: Python の `if __name__ == "__main__"` と同じような仕組みです。<!-- textlint-enable -->

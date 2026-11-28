@@ -1,5 +1,9 @@
 filters:
   comments: true
+  allowlist:
+    allow:
+      - '/\$\$[\s\S]*?\$\$/m'
+      - '/(?<!\\)\$(?!\$)[^\n$]+(?<!\\)\$(?!\$)/'
 rules:
   preset-ja-technical-writing:
     no-exclamation-question-mark: false
@@ -13,3 +17,8 @@ rules:
     ja-space-between-half-and-full-width:
       space: always
     "@textlint-ja/preset-ai-writing": true
+  prh:
+    checkLink: true
+    checkEmphasis: true
+    rulePaths:
+      - ./prh.yml
