@@ -11,6 +11,7 @@ from pathlib import Path
 
 TAPE_DIR = Path(__file__).resolve().parents[1]
 TAPES = (TAPE_DIR / "demo.tape", TAPE_DIR / "demo-split.tape")
+WAIT_REQUIRED_TAPES = (TAPE_DIR / "demo.tape",)
 TYPE_COMMAND = re.compile(r'^\s*Type\s+("(?:\\.|[^"\\])*")\s*$')
 WAIT_PREFIX = re.compile(r"^\s*Wait(?:\+Screen)?@\d+s\s+(/.*)\s*$")
 
@@ -63,6 +64,9 @@ def main() -> int:
 
         if not type_strings:
             print(f"{tape.name}: no Type strings found", file=sys.stderr)
+            return 2
+        if tape in WAIT_REQUIRED_TAPES and not wait_patterns:
+            print(f"{tape.name}: no Wait regexes found", file=sys.stderr)
             return 2
 
         overlaps: list[tuple[int, int]] = []
