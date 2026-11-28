@@ -31,15 +31,13 @@ https://github.com/creative-graphic-design/huggingface-datasets
 
 [`creative-graphic-design/huggingface-datasets`](https://github.com/creative-graphic-design/huggingface-datasets/commit/f1018f6d41416c71954efb88b2292983b3064560) は、デザイン生成やレイアウト理解を扱う Python のモノレポです。Hugging Face が提供する `datasets` ライブラリ本体ではなく、その仕組みの上でタイポグラフィ、画像編集、審美性評価などのデータセットローダーとデータセットカードを集約して管理するリポジトリです。
 
-リポジトリ直下の [README](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/README.md#L1-L11) に[収録データセットの一覧](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/README.md#L11-L153)があり、各データセットの内容、入力と出力の概要、上流の元データや論文への参照を整理しています。たとえばモバイルのユーザーインターフェース (User Interface; UI) を扱う Rico や、文書レイアウトを扱う PubLayNet などを収録しています。各データセットは独立したパッケージとして管理しつつ、リポジトリ全体で統一された構造を持たせています。
+このリポジトリでは、モバイルのユーザーインターフェース (User Interface; UI) を扱う Rico や、文書レイアウトを扱う PubLayNet などのデータセットを集めています。[収録データセットの一覧](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/README.md#L11-L153)には、各データセットの内容、入力と出力の概要、上流の元データや論文への参照をまとめています。各データセットは独立したパッケージとして管理しつつ、リポジトリ全体で統一された構造を持たせています。
 
 # 揃えている形とデータセットごとの違い
 
 複数のデータセットを共通の基盤で扱うには、揃える部分と元データに合わせて残す部分を明確に切り分ける必要があります。このリポジトリでは、パッケージのディレクトリ構成、ローダークラスの読み込み口、データセットカードの記述形式、検証テストを揃えています。一方、レコードを構成するフィールド構造は、各データセットの元データに合わせて個別に定義します。
 
 各データセットは `datasets/<dataset_name>/` 配下に独立したディレクトリを持ち、Python ローダー、Hub のカード兼用となる `README.md`、`pyproject.toml`、`tests/` を配置します。この構成は[共通のテンプレート](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/create-dataset/SKILL.md#L14-L30)に基づいており、[カード検査テスト](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/tests/test_dataset_cards.py#L316-L328)で必須と定めています。パッケージ管理には [`uv`](https://docs.astral.sh/uv/) のワークスペースを使っており、`datasets/*` をメンバーとして登録しています。[ルートの `pyproject.toml`](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/pyproject.toml#L1-L37) では、ワークスペースと開発用の依存関係グループを定義しています。各データセットパッケージの `pyproject.toml` にはパッケージ固有の依存関係を宣言しており、たとえば `CGLDataset` や `Rico` では `datasets[vision]` を含めています。
-
-https://docs.astral.sh/uv/
 
 ローダークラスの設計も揃えています。各データセットのローダークラスは、Hugging Face の `datasets` ライブラリが提供する基底クラス `datasets.GeneratorBasedBuilder` を継承し、[公式のビルダーパターン](https://huggingface.co/docs/datasets/v3.6.0/en/package_reference/builder_classes)に従います。[新規データセット作成の設計規約](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/create-dataset/SKILL.md#L436-L512)に沿って、メタデータを定義する `_info`、分割やダウンロードを定義する `_split_generators`、レコードを逐次生成する `_generate_examples` の各メソッドを実装します。
 
@@ -68,7 +66,7 @@ Hub 上のデータセットは Parquet 形式で保存されているため、`
 
 パッケージの形と読み込み口を揃えても、エージェントへ実装を任せると、出所が不確かな情報や誤ったスキーマでコードを生成するおそれがあります。
 
-そのため、エージェントの行動を規定する指示書と機械的な検査手順を整備しています。リポジトリルートの[エージェント向け設定ファイル](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/AGENTS.md#L27-L36)では、新しいデータセットを追加する際に[新規データセット作成の手順書](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/create-dataset/SKILL.md)に従うよう指定しています。また、[README の運用方針](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/README.md#L154-L168)に基づき、作業時には使用したスキル名と情報源のリンクを明記します。
+そのため、エージェントの行動を規定する指示書と機械的な検査手順を整備しています。[エージェントの運用ルール](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/AGENTS.md#L27-L36)では、新しいデータセットを追加する際に[新規データセット作成の手順書](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/create-dataset/SKILL.md)に従うことを定めています。また、[運用方針](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/README.md#L154-L168)に基づき、作業時には使用したスキル名と情報源のリンクを明記します。
 
 実装へ入る前には、[一次情報の確認手順](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/create-dataset/SKILL.md#L42-L65)に従って論文、公式プロジェクトページ、上流の README、公開データ、前処理スクリプト、ライセンス表示を精査します。情報が確認できない場合は推測で補わず、取得不可であることを記録します。
 
@@ -76,7 +74,7 @@ Hub 上のデータセットは Parquet 形式で保存されているため、`
 
 データセットの説明を担うデータセットカード（各ディレクトリの `README.md`）も、[カード運用の規約](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/docs/dataset-card-maintenance.md#L19-L36)に従って検査します。[カードテンプレート](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/create-dataset/templates/MyHFDataset/README.md#L58-L250)には Hub 用の YAML フロントマター、概要、構造、分割、出典、制限事項、引用の各節を定義しています。リポジトリ全体で実行するカードテストにより、必須ファイルの有無、メタデータや公開 ID の整合性、引用や同期設定を機械的に検査します。[^hfd_card_tests]
 
-継続的インテグレーション (Continuous Integration; CI) では、プルリクエスト (Pull Request; PR) やプッシュを契機に [CI ワークフロー](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.github/workflows/ci.yml#L3-L36)の pre-commit ジョブを実行します。[pre-commit の設定](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.pre-commit-config.yaml#L1-L34)には、Ruff によるコード整形や構文検査、`uv.lock` の整合性検査、中央のカードテスト、特定データセットのテストフックを定義しています。すべてのデータセットのテストを CI 上で実行する構成ではないため、個別のデータ読み込みテストはローカル環境で実行して確認します。
+継続的インテグレーション (Continuous Integration; CI) では、プルリクエスト (Pull Request; PR) やプッシュを契機に [CI ワークフロー](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.github/workflows/ci.yml#L3-L36)が動きます。このワークフローで、カードテストを含む [pre-commit の検査](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.pre-commit-config.yaml#L1-L34)を実行します。一方、個別のデータセット読み込みテストはローカル環境で実行します。
 
 # 新しいパッケージから Hub まで
 
@@ -106,21 +104,19 @@ sequenceDiagram
 
 ローカル環境でテンプレートの複製、ローダー実装、読み込みテスト、カード作成を終えたら、GitHub 上で PR を作成して CI 検査と人間によるコードレビューを受けます。レビュー前のコードを Hub へ公開することは[カード運用の規約](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/docs/dataset-card-maintenance.md#L19-L36)で禁止しており、マージを経てから[公開手順書](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/publish-dataset/SKILL.md#L8-L53)に沿って公開作業へ進みます。
 
-Hub への公開では、[公開手順書の分離規約](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/publish-dataset/SKILL.md#L104-L109)に従い、データ本体の行データとカードメタデータのアップロード経路を分けています。生成されたレコード行は、[公開手順書の検証規則](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/publish-dataset/SKILL.md#L57-L108)に従って書き込み権限で保護されたテスト環境を通じ、`DatasetDict.push_to_hub()` で Parquet 形式としてアップロードします。
+Hub への公開では、[公開手順書の分離規約](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/publish-dataset/SKILL.md#L104-L109)に従い、データ本体の行データとカードメタデータのアップロード経路を分けています。生成されたレコード行は、[公開手順書](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/publish-dataset/SKILL.md#L57-L108)に従い、`DatasetDict.push_to_hub()` で Parquet 形式としてアップロードします。
 
-一方、データセットカードの `README.md` は専用のカード同期スクリプトを用いて反映します。[^hfd_sync_details] この処理では、Hub 側で自動生成される設定情報（`dataset_info` や `configs`）を保持したままローカルのカード内容とマージします。そのうえで、Hugging Face 公式クライアント API の `HfApi.upload_file()` で送信します。まず事前の動作確認モードで差分を確認する手順を備えており、実際の反映には実行確認のオプションと認証トークンの指定が必要です。
+一方、データセットカードの `README.md` は専用のカード同期スクリプトで Hub へ反映します。[^hfd_sync_details] まずドライランで差分を確認してから反映する手順になっています。
 
 アップロード完了後は、Hub 上に必要なファイルや設定が存在するかを確認し、ストリーミング機能で先頭の 1 行を読み込めることを確かめて公開作業を終えます。データ公開では Parquet 形式のレコード行とカードメタデータだけを独立して送信し、ソースディレクトリ全体は送信しません。
 
 # design-generators とのつながり
 
-データセットの整備を進めても、モデル開発側のリポジトリから実際に読み込めなければ実験の再現にはつながりません。12/7 の記事で紹介した [`design-generators`](https://github.com/creative-graphic-design/design-generators/commit/0275181d890609f70463b02593603e8ab478477f) のモデル実装では、`creative-graphic-design/huggingface-datasets` から公開したデータセットを読み込んでいます。具体的には、レイアウト生成モデルである `layout-dm` と `layout-diffusion` のデータローダーで利用しています。データセット名 `rico25` と `publaynet` は、それぞれ `creative-graphic-design/Rico` と `creative-graphic-design/PubLayNet` にマッピングしています。コード内では `datasets.load_dataset(path, name, split, streaming=False)` を直接呼び出してデータを取得しています。[^dg_model_loaders]
+データセットの整備を進めても、モデル開発側のリポジトリから実際に読み込めなければ実験の再現にはつながりません。12/7 の記事で紹介した [`design-generators`](https://github.com/creative-graphic-design/design-generators) では、レイアウト生成モデルの `layout-dm` と `layout-diffusion` を扱っています。両モデルは、`creative-graphic-design/huggingface-datasets` から公開した Rico と PubLayNet を Hub から直接読み込みます。[^dg_model_loaders]
 
 https://huggingface.co/datasets/creative-graphic-design/Rico
 
-Hub から読み込んだデータは、各モデルのデータローダー内でバウンディングボックスの離散化や前処理を経て学習テンソルに変換します。[^dg_tensor_preps] 現時点で実行時のコードから読み込みを確認できたのは、この Rico と PubLayNet です。
-
-`design-generators` の[データソース一覧ドキュメント](https://github.com/creative-graphic-design/design-generators/blob/0275181d890609f70463b02593603e8ab478477f/docs/data-sources.md#L13-L37)には、`CGL-Dataset`、`CGL-Dataset-v2`、`Magazine`、`PKU-PosterLayout` など複数の公開 ID を記録しています。また、別モデルである RADM の[訓練手順書](https://github.com/creative-graphic-design/design-generators/blob/0275181d890609f70463b02593603e8ab478477f/models/radm/TRAINING.md#L41)からも `creative-graphic-design/huggingface-datasets` の `CGLDatasetV2` を参照しています。ただし、これらについてはドキュメント上の記録や手順書での参照にとどまり、実行コードでの直接読み込みまでは確認していません。
+Hub から取得したデータは、各モデルのデータローダー内でバウンディングボックスの離散化や前処理を経て学習テンソルに変換します。[^dg_tensor_preps]
 
 # まとめ
 
@@ -131,6 +127,6 @@ Hub から読み込んだデータは、各モデルのデータローダー内�
 自身の研究やプロジェクトで複数のデータセットを扱う場合は、まず 1 つのデータセットを選び、一次情報の確認からビルダーパターンの実装、読み込みテスト、データセットカードの作成までを決まった手順で進めてみてください。具体的な作業手順は、`creative-graphic-design/huggingface-datasets` の[新規データセット作成の手順書](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/.agents/skills/create-dataset/SKILL.md)で確認できます。
 
 [^hfd_card_tests]: [ファイルとフロントマターの検査](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/tests/test_dataset_cards.py#L302-L336)、[メタデータと公開 ID の検査](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/tests/test_dataset_cards.py#L419-L529)、[引用と同期設定の検査](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/tests/test_dataset_cards.py#L562-L662)
-[^hfd_sync_details]: [カード同期スクリプトの概要](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/scripts/sync_dataset_cards_to_hub.py#L13-L41)、[マージ処理](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/scripts/sync_dataset_cards_to_hub.py#L76-L96)、[事前確認と公開ガード](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/scripts/sync_dataset_cards_to_hub.py#L115-L174)
+[^hfd_sync_details]: [カード同期スクリプトの概要](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/scripts/sync_dataset_cards_to_hub.py#L13-L41)、[事前確認と公開ガード](https://github.com/creative-graphic-design/huggingface-datasets/blob/f1018f6d41416c71954efb88b2292983b3064560/scripts/sync_dataset_cards_to_hub.py#L115-L174)
 [^dg_model_loaders]: [LayoutDM のデータローダー](https://github.com/creative-graphic-design/design-generators/blob/0275181d890609f70463b02593603e8ab478477f/models/layout-dm/src/layout_dm/training/dataset.py#L48-L52)、[LayoutDiffusion のデータローダー](https://github.com/creative-graphic-design/design-generators/blob/0275181d890609f70463b02593603e8ab478477f/models/layout-diffusion/src/layout_diffusion/training/dataset.py#L37-L41)
 [^dg_tensor_preps]: [LayoutDM のテンソル前処理](https://github.com/creative-graphic-design/design-generators/blob/0275181d890609f70463b02593603e8ab478477f/models/layout-dm/src/layout_dm/training/dataset.py#L103-L123)、[LayoutDiffusion のテンソル前処理](https://github.com/creative-graphic-design/design-generators/blob/0275181d890609f70463b02593603e8ab478477f/models/layout-diffusion/src/layout_diffusion/training/dataset.py#L86-L115)
