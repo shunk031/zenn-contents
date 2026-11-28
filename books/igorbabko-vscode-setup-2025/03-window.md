@@ -4,6 +4,8 @@ title: "Window"
 
 ウィンドウ全体のズーム倍率を調整し、Custom UI Style 拡張機能を使ってタイトルバーや macOS のウィンドウ操作ボタンの位置をカスタマイズします。エディタ上部の表示領域をコンパクトにまとめ、無駄のないすっきりとした外観を実現します。対応する動画のチャプターは [Custom UI Style extension (07:58)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s) です。
 
+https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
+
 ## 設定（settings.json）
 
 ```json
@@ -32,9 +34,15 @@ title: "Window"
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-after.webp) |
+| ![ズーム倍率 0 で表示されたコードとワークベンチ](/images/igorbabko-vscode-setup-2025/ch03-window-zoom-before.webp) | ![ズーム倍率 3 で拡大表示された同じコードとワークベンチ](/images/igorbabko-vscode-setup-2025/ch03-window-zoom-after.webp) |
 
-左の設定前にあったワークスペースタイトルと検索バーが消え、右の設定後では macOS の操作ボタンがエディタタイトル行に配置されてエディタの文字が大きく表示されます。
+同じコードとワークベンチのまま、左のズーム倍率 0 から右のズーム倍率 3 へ画面全体が拡大されます。文字サイズだけでなくサイドバーやタイトル行も含めて拡大される点を確認できます。
+
+| Before | After |
+| --- | --- |
+| ![独立したタイトルバーと検索バーが表示されたウィンドウ上部](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-before.webp) | ![ウィンドウ操作ボタンが統合されたコンパクトなウィンドウ上部](/images/igorbabko-vscode-setup-2025/ch03-window-chrome-after.webp) |
+
+左では独立したタイトルバーと検索バーが上部に並んでいますが、右ではそれらが一体のヘッダーへ統合され、ウィンドウ操作ボタンがエディタ上部に収まります。
 
 ### Custom UI Style によるウィンドウ操作ボタンと余白の調整
 ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。スタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。Dank Mono は有料フォントであり、[作者の公式販売ページ](https://philpl.gumroad.com/l/dank-mono)からライセンスを購入して入手できます。
@@ -73,9 +81,3 @@ Custom UI Style 拡張機能は、VS Code 本体の内部ファイル（CSS や 
 ## 変更コミット
 
 - [`e690ea7`](https://github.com/igorbabko/vscode-setup/commit/e690ea74b3ff47f9050c879e050e82d2c4f7dbb7)
-
-## 本章完了時の状態
-
-本章の設定をすべて反映した完成状態の画面です。
-
-![本章完了時の状態](/images/igorbabko-vscode-setup-2025/ch03-checkpoint.webp)

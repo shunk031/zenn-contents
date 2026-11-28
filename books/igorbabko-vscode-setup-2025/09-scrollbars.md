@@ -4,6 +4,8 @@ title: "Scrollbars"
 
 エディタの水平・垂直スクロールバーを非表示にし、概要ルーラー（Overview Ruler）の境界線やカーソル表示、各種マーカー色をすべて透明化します。エディタの右端をすっきりと整理し、コード表示領域のノイズを完全に排除します。対応する動画のチャプターは [Scrollbars (30:51)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1851s) です。
 
+https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1851s
+
 ## 設定（settings.json）
 
 ```json
@@ -37,9 +39,21 @@ title: "Scrollbars"
 
 | Before | After |
 | --- | --- |
-| ![設定前のスクロールバーと概要ルーラー](/images/igorbabko-vscode-setup-2025/ch09-scrollbars-and-ruler-before.webp) | ![設定後のスクロールバーと概要ルーラー](/images/igorbabko-vscode-setup-2025/ch09-scrollbars-and-ruler-after.webp) |
+| ![水平・垂直スクロールバーが表示されたエディタ](/images/igorbabko-vscode-setup-2025/ch09-scrollbars-before.webp) | ![水平・垂直スクロールバーが非表示になったエディタ](/images/igorbabko-vscode-setup-2025/ch09-scrollbars-after.webp) |
 
-左の設定前にあったエディタ垂直スクロールバーのつまみと下部の水平つまみが、右の設定後ではどちらも非表示になります（ルーラー枠線の明確な変化を確認できません）。
+左では右端の垂直スクロールバーと下部の水平スクロールバーが表示されていますが、右ではどちらも非表示になります。
+
+| Before | After |
+| --- | --- |
+| ![シアン色の概要ルーラー境界線が表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-ruler-border-before.webp) | ![シアン色の概要ルーラー境界線が消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-ruler-border-after.webp) |
+
+概要ルーラーを 3 倍に拡大して比較しています。左で見えていたシアン色のルーラー境界線が、右では消えます。
+
+| Before | After |
+| --- | --- |
+| ![シアン色の境界線とカーソル位置マーカーが表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-cursor-marker-before.webp) | ![シアン色の境界線を保ったままカーソル位置マーカーだけが消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-cursor-marker-after.webp) |
+
+変化を見やすくするためシアン色のルーラー境界線を残した状態で、左にあったカーソル位置マーカーが右では消えます。
 
 ### 概要ルーラーマーカー色の透明化
 概要ルーラーには、エラーや警告、検索一致、単語ハイライト、Git の変更行などの位置を示すマーカーが描画されます。マーカーが消えるとエラー位置を俯瞰できなくなります。動画ではエラーへのジャンプをショートカットで行い、エラー総数はタイトル横で確認できるため、この非表示化を受け入れています。VS Code の診断ジャンプショートカットの既定値は、次の問題へ移動が `F8`、前の問題へ移動が `Shift+F8` です。
@@ -48,9 +62,57 @@ title: "Scrollbars"
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch09-marker-colors-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch09-marker-colors-after.webp) |
+| ![読み取り出現箇所マーカーがピンク色で可視化されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-word-highlight-before.webp) | ![読み取り出現箇所マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-word-highlight-after.webp) |
 
-左の設定前と比べて、右の設定後ではエディタの概要ルーラー端にあった赤いエラーブロックが消え、診断の赤波線は残ります。
+左の読み取り出現箇所マーカーが右では消えます。この比較と続く 5 組の比較に表示しているピンク色は、実際のマーカーを見やすく確認するための一時的な可視化色であり、推奨設定ではありません。
+
+| Before | After |
+| --- | --- |
+| ![書き込み出現箇所マーカーがピンク色で可視化されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-word-highlight-strong-before.webp) | ![書き込み出現箇所マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-word-highlight-strong-after.webp) |
+
+左の書き込み出現箇所マーカーが右では消えます（ピンク色は可視化用の一時色です）。
+
+| Before | After |
+| --- | --- |
+| ![選択文字列と一致する複数マーカーがピンク色で可視化されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-selection-highlight-before.webp) | ![選択文字列の一致マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-selection-highlight-after.webp) |
+
+左に表示されていた選択文字列と一致する複数箇所のマーカーが、右ではすべて消えます（ピンク色は可視化用の一時色です）。
+
+| Before | After |
+| --- | --- |
+| ![Go to Symbol in Editor の範囲マーカーがピンク色で可視化されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-range-highlight-before.webp) | ![Go to Symbol in Editor の範囲マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-range-highlight-after.webp) |
+
+左に表示されていた Go to Symbol in Editor ピッカーの範囲マーカーが、右では透明になって消えます（ピンク色はマーカーを確認するための一時色です）。
+
+| Before | After |
+| --- | --- |
+| ![対応括弧のマーカーがピンク色で可視化されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-bracket-match-before.webp) | ![対応括弧のマーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-bracket-match-after.webp) |
+
+左にあった対応括弧のマーカーが右では消えます（ピンク色は可視化用の一時色です）。
+
+| Before | After |
+| --- | --- |
+| ![検索一致マーカーがピンク色で可視化されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-find-match-before.webp) | ![検索一致マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-find-match-after.webp) |
+
+左に表示されていた検索一致マーカーが右では消えます（ピンク色は可視化用の一時色です）。
+
+| Before | After |
+| --- | --- |
+| ![追加・変更・削除行の Git マーカーが表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-before.webp) | ![追加・変更・削除行の Git マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-after.webp) |
+
+左に表示されていた追加・変更・削除行の Git マーカーが右ではすべて消えます。なお、この比較では確認のため `scm.diffDecorations` を一時的に有効へ戻しており、第 7 章の設定を適用した状態ではこれらの Git マーカーはすでに非表示です。
+
+| Before | After |
+| --- | --- |
+| ![エラー・警告・情報の診断マーカーが色分け表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-diagnostic-markers-before.webp) | ![エラー・警告・情報の診断マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-diagnostic-markers-after.webp) |
+
+左ではタスクマッチャーによるエラー・警告・情報の各マーカーが別々の色で表示されていますが、右ではすべて消えます。
+
+| Before | After |
+| --- | --- |
+| ![editor.overviewRulerBorder を有効にしたままシアン色の境界線が表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-ruler-border-color-before.webp) | ![editor.overviewRulerBorder を有効にしたまま境界線色が透明化されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-ruler-border-color-after.webp) |
+
+`editor.overviewRulerBorder` を `true` に保った状態で、左のシアン色の境界線が右では透明色によって見えなくなります。
 
 ## 設定項目の一覧
 
@@ -77,12 +139,6 @@ title: "Scrollbars"
 ## 注意点
 
 スクロールバーや概要ルーラーマーカーをすべて非表示にすると、ファイル全体における現在のスクロール位置や、エラー・警告・検索一致の発生場所を画面右端で視覚的に把握できなくなります。エラーや警告を確認する場合は、問題パネルや診断へのジャンプショートカット（`F8` または `Shift+F8`）を利用する必要があります。
-
-## 本章完了時の状態
-
-本章の設定をすべて適用すると、エディタは以下の状態になります。
-
-![第 9 章完了時の状態](/images/igorbabko-vscode-setup-2025/ch09-checkpoint.webp)
 
 ## 追加する拡張機能
 

@@ -4,6 +4,8 @@ title: "Sidebar"
 
 サイドバーを画面右側に配置し、フォルダー構造の視認性を高めつつ、不要な確認ダイアログや視覚的ノイズを排除してエクスプローラーを整理します。コード編集エリアの視線移動を安定させ、直感的なファイル操作を可能にする環境を作ります。対応する動画のチャプターは [Sidebar and file explorer (03:29)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=209s) です。
 
+https://www.youtube.com/watch?v=VmFOsK7IhI4&t=209s
+
 ## 設定（settings.json）
 
 ```json
@@ -13,7 +15,6 @@ title: "Sidebar"
   "material-icon-theme.hidesExplorerArrows": true,
   "workbench.tree.enableStickyScroll": false,
   "workbench.tree.renderIndentGuides": "none",
-  "workbench.tree.indent": 8,
   "explorer.compactFolders": false,
   "explorer.confirmDragAndDrop": false,
   "explorer.confirmDelete": false,
@@ -29,43 +30,59 @@ title: "Sidebar"
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch02-sidebar-placement-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-sidebar-placement-after.webp) |
+| ![左側に展開されたエクスプローラー](/images/igorbabko-vscode-setup-2025/ch02-sidebar-placement-before.webp) | ![右側へ移動して展開されたエクスプローラー](/images/igorbabko-vscode-setup-2025/ch02-sidebar-placement-after.webp) |
 
-左の設定前に対し、右の設定後ではエクスプローラーがワークベンチの左端から右端へ移動します。
+左では画面の左端に展開されていたエクスプローラーが、右では右端へ移動します。
 
 アイコンテーマには「Material Icon Theme」（`workbench.iconTheme: "material-icon-theme"`、既定値 `"vs-seti"`）を適用します。フォルダー横の展開矢印は、`material-icon-theme.hidesExplorerArrows: true`（既定値 `false`）で非表示にしてすっきりとした見た目にします。
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch02-explorer-icons-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-explorer-icons-after.webp) |
+| ![Seti アイコンとフォルダーの展開矢印が表示されたエクスプローラー](/images/igorbabko-vscode-setup-2025/ch02-icon-theme-before.webp) | ![Material アイコンへ切り替わり展開矢印が消えたエクスプローラー](/images/igorbabko-vscode-setup-2025/ch02-icon-theme-after.webp) |
 
-左の設定前に対し、右の設定後では標準アイコンが Material アイコンに切り替わり、フォルダー横の展開矢印が非表示になります。
+Aura のカラーテーマを保ったまま、左の Seti アイコンと展開矢印が、右では展開矢印のない Material アイコンへ切り替わります。
 
 ### ツリー表示とフォルダー構造の整理
-ツリーをスクロールする際に親フォルダー名が上部に固定されるスティッキースクロールを `workbench.tree.enableStickyScroll: false`（既定値 `true`）で無効化します。ツリー内の垂直インデントガイドも `workbench.tree.renderIndentGuides: "none"`（既定値 `"onHover"`）で非表示にします。ツリーのインデント幅 `workbench.tree.indent` には `8`（単位: ピクセル）を指定します。また、子フォルダーが 1 つだけの場合に 1 行へまとめるコンパクト表示を `explorer.compactFolders: false`（既定値 `true`）で解除し、すべてのフォルダーを個別の行として展開します。
+ツリーをスクロールする際に親フォルダー名が上部に固定されるスティッキースクロールを `workbench.tree.enableStickyScroll: false`（既定値 `true`）で無効化します。ツリー内の垂直インデントガイドも `workbench.tree.renderIndentGuides: "none"`（既定値 `"onHover"`）で非表示にします。また、子フォルダーが 1 つだけの場合に 1 行へまとめるコンパクト表示を `explorer.compactFolders: false`（既定値 `true`）で解除し、すべてのフォルダーを個別の行として展開します。
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch02-tree-layout-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-tree-layout-after.webp) |
+| ![ツリーをスクロールした際に親フォルダーが上部へ固定された状態](/images/igorbabko-vscode-setup-2025/ch02-sticky-scroll-before.webp) | ![ツリーをスクロールしても親フォルダーが固定されない状態](/images/igorbabko-vscode-setup-2025/ch02-sticky-scroll-after.webp) |
 
-左の設定前にあったツリーのインデントガイドが右の設定後では非表示になり、表示されるフォルダー階層の深さは変わりません。
+深いツリーを下へスクロールしたとき、左では親フォルダーが上部に固定表示されますが、右では固定表示が出ません。
+
+![深いツリーをスクロールした際のスティッキースクロール有効時と無効時の比較アニメーション](/images/igorbabko-vscode-setup-2025/ch02-sticky-scroll.webp)
+
+同じ深いツリーをスクロールすると、有効側の領域にだけ親フォルダーが固定され、無効側では通常のリストのままスクロールします。
+
+| Before | After |
+| --- | --- |
+| ![ホバー時のインデントガイドとコンパクト表示のフォルダー行の拡大](/images/igorbabko-vscode-setup-2025/ch02-tree-layout-before.webp) | ![インデントガイドが消え単一子フォルダーが別行へ展開された拡大](/images/igorbabko-vscode-setup-2025/ch02-tree-layout-after.webp) |
+
+同じホバー中のツリー行を拡大して比較しています。左にあったホバー時のインデントガイドが右では消え、1 行にまとまっていた単一子フォルダーも別々の行に分かれます。
 
 ### 操作確認ダイアログと装飾の抑制
 エクスプローラー内でのドラッグ＆ドロップ移動時の確認ダイアログ（`explorer.confirmDragAndDrop: false`、既定値 `true`）を非表示にします。アイテム削除時の確認ダイアログ（`explorer.confirmDelete: false`、既定値 `true`）も非表示にします。
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch02-operation-confirmations-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-operation-confirmations-after.webp) |
+| ![ファイルをドラッグした際に移動確認ダイアログが表示された状態](/images/igorbabko-vscode-setup-2025/ch02-drag-confirmation-before.webp) | ![確認ダイアログなしでファイルが components 内へ移動した状態](/images/igorbabko-vscode-setup-2025/ch02-drag-confirmation-after.webp) |
 
-左の設定前に見られた移動確認ダイアログに対し、右の設定後では delete-me.txt が components 内へ入りダイアログも表示されません。
+左ではドラッグ操作でネイティブの移動確認ダイアログが開きますが、右では確認なしでファイルが `components` フォルダー内へ移動します。
+
+| Before | After |
+| --- | --- |
+| ![ファイル削除時にネイティブの削除確認ダイアログが表示された状態](/images/igorbabko-vscode-setup-2025/ch02-delete-confirmation-before.webp) | ![確認ダイアログなしで選択ファイルが削除された状態](/images/igorbabko-vscode-setup-2025/ch02-delete-confirmation-after.webp) |
+
+左では削除時にネイティブの確認ダイアログが表示されますが、右ではダイアログが出ず、選択していたファイルがそのままツリーから消えます。
 
 さらに、エラー件数のバッジ（`explorer.decorations.badges: false`、既定値 `true`）を非表示にします。変更ファイルの Git ステータス装飾（`git.decorations.enabled: false`、既定値 `true`）も非表示にして、ファイル一覧の視覚的なノイズを最小化します。
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-after.webp) |
+| ![変更ファイルの M バッジと Git 装飾色が表示されたエクスプローラー](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-before.webp) | ![変更ファイルの M バッジと Git 装飾色が消え TypeScript 診断表示だけが残ったエクスプローラー](/images/igorbabko-vscode-setup-2025/ch02-explorer-decorations-after.webp) |
 
-左の設定前と比べて、右の設定後では変更ファイルから M バッジと琥珀色の表示が消え、diagnostics.ts のファイル名が赤いまま 1 の数字バッジが非表示になります。
+左で変更ファイルに付いていた M バッジと Git の色装飾が、右ではどちらも消えます。一方で TypeScript の診断表示はそのまま残る点を確認できます。
 
 ## 設定項目の一覧
 
@@ -76,7 +93,6 @@ title: "Sidebar"
 | `material-icon-theme.hidesExplorerArrows` | `false` | エクスプローラーのフォルダー横にある展開矢印を非表示にします。 |
 | `workbench.tree.enableStickyScroll` | `true` | ツリービューでのスティッキースクロール（スクロール時の親階層の固定表示）の有効・無効を切り替えます。`false` で無効化します。 |
 | `workbench.tree.renderIndentGuides` | `"onHover"` | ツリービュー内のインデントガイドの表示を制御します。`none` で非表示にします。 |
-| `workbench.tree.indent` | `8` | ツリービューの階層間のインデント幅をピクセル単位で設定します。 |
 | `explorer.compactFolders` | `true` | 単一の子フォルダーを持つフォルダーのコンパクト表示を制御します。`false` で各フォルダーを個別の行に展開します。 |
 | `explorer.confirmDragAndDrop` | `true` | エクスプローラー内でドラッグ＆ドロップ移動する際の確認ダイアログを制御します。`false` で確認ダイアログを非表示にします。 |
 | `explorer.confirmDelete` | `true` | エクスプローラー内でアイテムを削除する際の確認ダイアログを制御します。`false` で確認ダイアログを非表示にします。 |
@@ -96,9 +112,3 @@ Git 装飾を無効化すると、エクスプローラー上でどのファイ�
 ## 変更コミット
 
 - [`3c3ed6b`](https://github.com/igorbabko/vscode-setup/commit/3c3ed6b068b71373066e1b8a1630b8a17cc060d1)
-
-## 本章完了時の状態
-
-本章の設定をすべて反映した完成状態の画面です。
-
-![本章完了時の状態](/images/igorbabko-vscode-setup-2025/ch02-checkpoint.webp)

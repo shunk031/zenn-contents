@@ -15,6 +15,10 @@ title: "はじめに"
 - 動画: [🎨 VS Code Setup | Beautiful minimal look](https://www.youtube.com/watch?v=VmFOsK7IhI4)
 - リポジトリ: [igorbabko/vscode-setup（2025 ブランチ）](https://github.com/igorbabko/vscode-setup/tree/2025)
 
+https://www.youtube.com/watch?v=VmFOsK7IhI4
+
+https://github.com/igorbabko/vscode-setup/tree/2025
+
 ## 設定の進め方と構成
 
 本書で掲載している `settings.json` のコードスニペットは、前の章の設定を残したまま新しい設定を足していく積み上げ式になっています。各章にはそのコミットで追加・変更された差分のみを記載しています。

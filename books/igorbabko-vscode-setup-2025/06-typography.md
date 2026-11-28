@@ -4,6 +4,8 @@ title: "Typography"
 
 エディタのフォントに Dank Mono を指定し、サイズや行間を調整するとともに、リガチャの有効化やコメントのイタリック体描画を設定します。コードの可読性を大幅に向上させ、タイポグラフィ全体を整えます。対応する動画のチャプターは [Typography (19:11)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1151s) です。
 
+https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1151s
+
 ## 設定（settings.json）
 
 ```json

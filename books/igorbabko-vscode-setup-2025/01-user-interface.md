@@ -4,6 +4,8 @@ title: "User interface"
 
 カラーテーマを適用し、アクティビティバーやステータスバー、ミニマップなどの周辺 UI を非表示にして画面を整理します。キーボードショートカット主体の操作を前提に、コードのみに集中できる最小限（= ミニマル）な作業環境を整えることが目的です。対応する動画のチャプターは [Color theme and UI (00:00)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s) です。
 
+https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
+
 ## 設定（settings.json）
 
 ```json
@@ -26,27 +28,39 @@ title: "User interface"
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch01-theme-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-theme-after.webp) |
+| ![Default Dark Modern テーマを適用した TypeScript ファイルの編集画面](/images/igorbabko-vscode-setup-2025/ch01-theme-before.webp) | ![Aura Dracula Spirit (Soft) テーマを適用した TypeScript ファイルの編集画面](/images/igorbabko-vscode-setup-2025/ch01-theme-after.webp) |
 
-左の設定前の明るい配色に対し、右の設定後ではワークベンチが紫基調の Aura Dracula Spirit パレットへ変化します。
+同じ TypeScript ファイルと Seti アイコンのまま、左の `Default Dark Modern` から右の `Aura Dracula Spirit (Soft)` へ配色が切り替わります。背景色とシンタックスハイライトのトーンの変化を確認できます。
 
 ### ワークベンチ UI の最小化
 キーボードショートカットによる画面操作を前提とし、不要なナビゲーション UI を非表示にします。アクティビティバーは `workbench.activityBar.location: "hidden"`（既定値 `"default"`）で画面から取り除きます。エディタタブは `workbench.editor.showTabs: "single"`（既定値 `"multiple"`）を指定し、単一タブ表示に切り替えます。画面下部のステータスバーも `workbench.statusBar.visible: false`（既定値 `true`）で非表示にします。
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-after.webp) |
+| ![複数タブとアクティビティバー・ステータスバーが表示されたワークベンチ](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-before.webp) | ![単一タイトルのみが残りアクティビティバーとステータスバーが非表示になったワークベンチ](/images/igorbabko-vscode-setup-2025/ch01-minimal-chrome-after.webp) |
 
-左の設定前には複数のタブと周辺 UI が表示されていますが、右の設定後では 1 つのタイトル行だけが残り、アクティビティバーとステータスバーが非表示になります。
+左では複数のタブに加えて左端のアクティビティバーと下部のステータスバーが表示されていますが、右では単一のタイトル行だけが残り両方のバーが消えます。画面外周の UI が取り除かれてエディタ領域が広がる点を確認できます。
 
 ### 起動画面とエディタ補助機能の整理
 ファイルを開いていないときの画面表示をシンプルにします。起動時の画面は `workbench.startupEditor: "none"`（既定値 `"welcomePage"`）に設定し、「ようこそ」画面を表示しないようにします。また、空画面に表示されるショートカット案内などのヒントも `workbench.tips.enabled: false`（既定値 `true`）で非表示にします。さらに、エディタ右側のコード縮小表示であるミニマップ（`editor.minimap.enabled: false`、既定値 `true`）を非表示にします。上部のパンくずリスト（`breadcrumbs.enabled: false`、既定値 `true`）も非表示にして、作業領域を広く確保します。
 
 | Before | After |
 | --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch01-editor-aids-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch01-editor-aids-after.webp) |
+| ![起動時に Welcome エディタが表示された画面](/images/igorbabko-vscode-setup-2025/ch01-startup-screen-before.webp) | ![起動時に空のワークベンチが表示された画面](/images/igorbabko-vscode-setup-2025/ch01-startup-screen-after.webp) |
 
-左の設定前にあったミニマップとパンくずリストの行が、右の設定後ではどちらも非表示になります。
+左では起動直後に Welcome エディタが開きますが、右ではタブのない空のワークベンチが表示されます。
+
+| Before | After |
+| --- | --- |
+| ![空のワークベンチにショートカット案内が表示された画面](/images/igorbabko-vscode-setup-2025/ch01-editor-tips-before.webp) | ![ショートカット案内が消え Open File の案内だけが残った空のワークベンチ](/images/igorbabko-vscode-setup-2025/ch01-editor-tips-after.webp) |
+
+左の空画面に並んでいたショートカットのヒントが、右では非表示になります。汎用的な Open File の案内だけが残る点を確認できます。
+
+| Before | After |
+| --- | --- |
+| ![長いファイルで右側のミニマップと上部のパンくずリストが表示されたエディタ](/images/igorbabko-vscode-setup-2025/ch01-minimap-breadcrumbs-before.webp) | ![同じ長いファイルでミニマップとパンくずリストが非表示になったエディタ](/images/igorbabko-vscode-setup-2025/ch01-minimap-breadcrumbs-after.webp) |
+
+同じ長いファイルを開いた状態で、左にあった右端のミニマップと上部のパンくずリスト行が、右ではどちらも消えます。
 
 ## 設定項目の一覧
 
@@ -74,9 +88,3 @@ settings.json の編集内容は、ファイルを保存した時点でエディ
 ## 変更コミット
 
 - [`02b14b5`](https://github.com/igorbabko/vscode-setup/commit/02b14b5421552f337e2d87110412e19050ab6904)
-
-## 本章完了時の状態
-
-本章の設定をすべて反映した完成状態の画面です。
-
-![本章完了時の状態](/images/igorbabko-vscode-setup-2025/ch01-checkpoint.webp)
