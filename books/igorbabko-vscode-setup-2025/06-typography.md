@@ -30,12 +30,19 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1151s
 ## 解説
 
 ### フォントファミリーと行の高さ
-エディタのフォントファミリーを `editor.fontFamily: "Dank Mono"` に変更し、UI 全体とフォントを統一します。文字サイズは `editor.fontSize: 14`（ピクセル単位）に設定します。行の高さは `editor.lineHeight: 2.5`（既定値 `0`、自動計算）に広げます。行間を広く取ることで、コードの行ごとの区切りが明瞭になり、ゆったりとした読みやすいレイアウトになります。
+UI 全体とフォントを統一し、行間を広げて読みやすいレイアウトに整えます。
+
+- `editor.fontFamily: "Dank Mono"`: エディタのフォントファミリーを変更する
+- `editor.fontSize: 14`: 文字サイズを 14 ピクセルに設定する
+- `editor.lineHeight: 2.5`（既定値 `0`、自動計算）: 行の高さを広げ、コードの行ごとの区切りを明瞭にする
 
 Dank Mono は有料フォントのため、本節ではスクリーンショットを省略しています。
 
 ### リガチャとコメントのイタリック体表示
-演算子などの連続する記号を合字として美しく結合表示するため、`editor.fontLigatures: true`（既定値 `false`）を有効にします。さらに、コードとコメントを視覚的に区別しやすくします。TextMate ルール `editor.tokenColorCustomizations.textMateRules` を使い、`comment` スコープのフォントスタイルを `fontStyle: "italic"`（イタリック体）に設定します。
+演算子などの記号を見やすく結合表示し、コードとコメントを視覚的に区別しやすくします。
+
+- `editor.fontLigatures: true`（既定値 `false`）: フォントリガチャ（合字）を有効にする
+- `editor.tokenColorCustomizations.textMateRules`（`scope: "comment"`, `fontStyle: "italic"`）: コメントをイタリック体で表示する
 
 ## 設定項目の一覧
 

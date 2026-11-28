@@ -34,10 +34,24 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=739s
 ## 解説
 
 ### スタイル適用の一括反映
-Custom UI Style のスタイル設定は、設定を変更するたびに再読み込みが必要になります。設定を個別に変更すると何度も再起動が必要になります。そのため、CSS のオーバーライド設定を `custom-ui-style.stylesheet`（既定値 `{}`）へ一括して記述し、一度の再起動でまとめて反映させています。本章で追加するセレクター群は、第 3 章で作成した `custom-ui-style.stylesheet` オブジェクトの中に追記します。第 3 章のエディタタイトルの余白設定を残したまま、本章の各プロパティを並列に追加します。
+一度の再起動で CSS のオーバーライド設定をまとめて反映させます。
+
+- `custom-ui-style.stylesheet`（既定値 `{}`）: CSS のオーバーライド設定を一括して記述する
+
+Custom UI Style のスタイル設定は変更のたびに再読み込みが必要になるため、個別に変更すると何度も再起動が必要になります。本章で追加するセレクター群は、第 03 章で作成した `custom-ui-style.stylesheet` オブジェクトの中に追記します。第 03 章のエディタタイトルの余白設定を残したまま、本章の各プロパティを並列に追加します。
 
 ### ポップアップとウィジェットの装飾整理
-通知トーストの影（`.notification-toast`）を `box-shadow: none !important` で非表示にします。クイック入力・コマンドパレットの影（`.quick-input-widget.show-file-icons`）も同様に非表示にします。コマンドパレット（`.quick-input-widget`）は画面上部から少し下げた `top: 25vh !important` の位置に移動します。パレット内のスクロールバー（`.quick-input-list .scrollbar`）や不要なアクションバー（`.monaco-action-bar.quick-input-inline-action-bar`）も非表示にします。検索ウィジェット（`.editor-widget.find-widget`）も影を消して角丸を 4px に整えます。また、`.quick-input-titlebar` の背景色を `#100B15` に設定していますが、これは VSCode Neovim 拡張機能の `/` 検索バーを開いた際の見た目を整えるための設定です。
+通知トーストやコマンドパレット、検索ウィジェットなどの影や不要な装飾を取り除きます。
+
+- `.notification-toast`: `box-shadow: none !important` で通知トーストの影を非表示にする
+- `.quick-input-widget.show-file-icons`: `box-shadow: none !important` でクイック入力・コマンドパレットの影を非表示にする
+- `.quick-input-widget`: `top: 25vh !important` でコマンドパレットを画面上部から少し下げた位置に移動する
+- `.quick-input-list .scrollbar`: `display: none` でパレット内のスクロールバーを非表示にする
+- `.monaco-action-bar.quick-input-inline-action-bar`: `display: none` で不要なアクションバーを非表示にする
+- `.editor-widget.find-widget`: `box-shadow: none; border-radius: 4px` で検索ウィジェットの影を消し角丸を 4px に整える
+- `.quick-input-titlebar`: `background: #100B15 !important` でタイトルバーの背景色を設定する
+
+`.quick-input-titlebar` の設定は、[VSCode Neovim](https://marketplace.visualstudio.com/items?itemName=asvetliakov.vscode-neovim) 拡張機能の `/` 検索バーを開いた際の見た目を整えるためのものです。
 
 | Before | After |
 | --- | --- |
@@ -70,7 +84,17 @@ Quick Search ビューの行に表示されていたインラインアクショ�
 Neovim の Forward Search タイトルバーが、左の Aura テーマ色から右の指定した暗い背景色へ切り替わります。
 
 ### サイドバーとエディタ境界のフラット化
-上部のスクロールシャドウ（`.monaco-scrollable-element > .shadow.top`）を非表示にします。エディタ内のスクロール装飾（`.monaco-editor .scroll-decoration`）も非表示にします。サイドバーの境界線（`.sidebar`）を非表示にし、パディング（`.sidebar .title-label`）をなくします。さらにリストのフォーカス枠線（`.monaco-list:not(.element-focused):focus:before`、`.monaco-list-row.focused`）も非表示にしてフラットにします。エディタ上部のタブアクションボタン（`.title-actions`）を非表示にし、タイトルラベル（`.title.show-file-icons ...`）を中央揃えにして末尾余白を詰めます。
+スクロールシャドウや境界線、フォーカス枠線を取り除き、サイドバーとエディタ周りをフラットに整えます。
+
+- `.monaco-scrollable-element > .shadow.top`: `display: none` で上部のスクロールシャドウを非表示にする
+- `.monaco-editor .scroll-decoration`: `display: none` でエディタ内のスクロール装飾を非表示にする
+- `.sidebar`: `border: none !important` でサイドバーの境界線を非表示にする
+- `.sidebar .title-label`: `padding: 0 !important` でサイドバーのタイトルラベルのパディングをなくす
+- `.monaco-workbench .monaco-list:not(.element-focused):focus:before`: `outline: none !important` でリストのフォーカス枠線を非表示にする
+- `.monaco-list-row.focused`: `outline: none !important` でフォーカスされたリスト行の枠線を非表示にする
+- `.title-actions`: `display: none !important` でエディタ上部のタブアクションボタンを非表示にする
+- `.title.show-file-icons .label-container .monaco-icon-label.file-icon`: `justify-content: center; padding: 0 !important`。タイトルラベルを中央揃えにしパディングをなくす
+- `.title .monaco-icon-label:after`: `margin-right: 0` でアイコンラベル後の末尾余白を詰める
 
 | Before | After |
 | --- | --- |

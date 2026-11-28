@@ -27,7 +27,12 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 ## 解説
 
 ### UI 余白とサイドバー背景色の調整
-サイドバーを開いた際に、左上のウィンドウ操作ボタンとタブのファイル名表示が重なる問題を防ぎます。Custom UI Style のスタイルシート設定で `.title .monaco-icon-label.file-icon` に左右マージン `margin: 0 60px` を追加します。このセレクタも、第 03 章から第 05 章で追加した `custom-ui-style.stylesheet` に追記します。また、サイドバーの背景色をエディタ背景色と統一します。第 10 章で追加した `workbench.colorCustomizations` の `[Aura Dracula Spirit (Soft)]` 内に `sideBar.background: "#191521"` を追記します。
+サイドバーを開いた際に左上のウィンドウ操作ボタンとタブのファイル名表示が重なる問題を防ぎ、サイドバーの背景色をエディタ背景色と統一します。
+
+- `custom-ui-style.stylesheet[".title .monaco-icon-label.file-icon"]`: `margin: 0 60px` でタブのファイルアイコンラベルに左右マージンを追加する
+- `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].sideBar.background: "#191521"`: サイドバーの背景色を設定する
+
+スタイルシートのセレクターは第 03 章から第 05 章で追加した `custom-ui-style.stylesheet` に追記します。背景色は第 10 章で追加した `workbench.colorCustomizations` の `[Aura Dracula Spirit (Soft)]` 内に追記します。
 
 | Before | After |
 | --- | --- |
@@ -36,7 +41,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 左ではタイトルに収まっていた長いファイル名が、右では 60px の左右マージンにより末尾が省略記号で表示されます。あわせてサイドバーの背景色も `#14111B` から `#191521` へ変わります。
 
 ### 自動保存と拡張機能通知の抑制
-ファイル編集後の保存忘れを防ぐため、`files.autoSave: "afterDelay"`（既定値 `"off"`）を設定します。入力後一定時間（既定の待機時間）が経過すると自動で保存されます。
+ファイル編集後の保存忘れを防ぎます。
+
+- `files.autoSave: "afterDelay"`（既定値 `"off"`）: 入力後一定時間（既定の待機時間）が経過すると自動で保存する
 
 | Before | After |
 | --- | --- |
@@ -48,7 +55,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 
 同じファイルを編集すると、設定前では未保存マーカーが残り続けますが、`afterDelay` を有効にした設定後では 1000 ms の遅延後に保存されてマーカーが消えます。
 
-また、作業中のポップアップ通知を減らすため、`extensions.ignoreRecommendations: true`（既定値 `false`）を設定して拡張機能のおすすめ通知を非表示にします。
+作業中のポップアップ通知を減らします。
+
+- `extensions.ignoreRecommendations: true`（既定値 `false`）: 拡張機能のおすすめ通知を非表示にする
 
 | Before | After |
 | --- | --- |
@@ -57,7 +66,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 左では Python ワークスペース向けの拡張機能おすすめ通知トーストが表示されますが、右では表示されません。
 
 ### VS Code 本体の自動更新停止
-VS Code の自動更新モードを `update.mode: "none"`（既定値 `"default"`）に設定し、自動アップデートを無効化します。動画では、VS Code の自動更新によって Custom UI Style などの拡張機能との互換性が崩れるリスクを避けるため、手動でタイミングを選んで更新する方針をとっています。
+VS Code の自動アップデートを無効化します。
+
+- `update.mode: "none"`（既定値 `"default"`）: 自動更新を停止する
+
+動画では、VS Code の自動更新によって Custom UI Style などの拡張機能との互換性が崩れるリスクを避けるため、手動でタイミングを選んで更新する方針をとっています。
 
 | Before | After |
 | --- | --- |

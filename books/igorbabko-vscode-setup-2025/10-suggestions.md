@@ -2,7 +2,7 @@
 title: "Suggestions"
 ---
 
-自動補完ポップアップの自動表示を抑制し、Tab キーによる補完確定やスニペットの優先表示、Emmet 展開を設定します。補完候補の過剰な割り込みを防ぎ、必要なタイミングで確実に補完を利用できるようにします。対応する動画のチャプターは [Code completions (33:11)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s) です。
+自動補完ポップアップの自動表示を抑制し、Tab キーによる補完確定やスニペットの優先表示、[Emmet](https://docs.emmet.io/) 展開を設定します。補完候補の過剰な割り込みを防ぎ、必要なタイミングで確実に補完を利用できるようにします。対応する動画のチャプターは [Code completions (33:11)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s) です。
 
 https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 
@@ -28,7 +28,12 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 ## 解説
 
 ### 自動提案の抑制と手動呼び出し
-コード入力中に補完リストが自動で頻繁に開くのを防ぎます。通常テキスト入力時のクイック提案を `editor.quickSuggestions.other: "off"`（既定値 `"on"`）で無効化します（コメントや文字列の既定値 `"off"` はそのまま維持されます）。また、`.` などのトリガー文字を入力した際の自動提案も `editor.suggestOnTriggerCharacters: false`（既定値 `true`）でオフにします。動画では、自動表示を使わず必要なときだけショートカットキーで手動表示します。手動呼び出しの既定ショートカットキーは、macOS で `⌃Space`、Windows や Linux で `Ctrl+Space` です。
+コード入力中に補完リストが自動で頻繁に開くのを防ぎます。
+
+- `editor.quickSuggestions.other: "off"`（既定値 `"on"`）: 通常テキスト入力時のクイック提案を無効化する（コメントや文字列の既定値 `"off"` はそのまま維持）
+- `editor.suggestOnTriggerCharacters: false`（既定値 `true`）: `.` などのトリガー文字を入力した際の自動提案をオフにする
+
+動画では、自動表示を使わず必要なときだけショートカットキーで手動表示します。手動呼び出しの既定ショートカットキーは、macOS で `⌃Space`、Windows や Linux で `Ctrl+Space` です。
 
 | Before | After |
 | --- | --- |
@@ -47,7 +52,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 自動提案が有効な設定前と、自動提案をオフにして `Ctrl+Space` で手動補完一覧を呼び出す設定後の挙動を比較しています。
 
 ### Tab 補完・スニペット・Emmet 展開
-提案リストを開かずに Tab キーを押すだけで一致する補完を確定できるよう `editor.tabCompletion: "on"`（既定値 `"off"`）を有効にします。
+提案リストを開かずに Tab キーで補完を確定できるようにします。
+
+- `editor.tabCompletion: "on"`（既定値 `"off"`）: Tab キーを押すだけで一致する補完を確定する
 
 | Before | After |
 | --- | --- |
@@ -55,7 +62,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 
 左ではプレフィックス `eachitem` がそのまま残りますが、Tab 補完を有効にした右ではループ本体へ展開されます。
 
-また、提案リスト内でスニペットを常に最上位に表示する `editor.snippetSuggestions: "top"`（既定値 `"inline"`）を設定し、よく使うコード片を優先的に選べるようにします。
+よく使うコード片を優先的に選べるようにします。
+
+- `editor.snippetSuggestions: "top"`（既定値 `"inline"`）: 提案リスト内でスニペットを常に最上位に表示する
 
 | Before | After |
 | --- | --- |
@@ -63,7 +72,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 
 同じ通常候補と 2 つのスニペットを比べると、左のインライン順から右の最上位表示へ並び順が変わります。
 
-さらに、HTML 等の略称を Tab キーで展開できるよう `emmet.triggerExpansionOnTab: true`（既定値 `false`）を有効化します。
+HTML 等の略称を Tab キーで展開できるようにします。
+
+- `emmet.triggerExpansionOnTab: true`（既定値 `false`）: Tab キー押下時の Emmet 展開を有効化する
 
 | Before | After |
 | --- | --- |
@@ -72,7 +83,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 Emmet の効果だけを切り分けるため左右とも Tab 補完をオフにしています。左では `ul>li.item*3` がそのまま残りますが、右では 3 つのリスト項目へ展開されます。
 
 ### 選択中補完アイテムの配色
-提案リストで現在選択されている項目の背景色を紫色（`#3A334B`）に変更します。`workbench.colorCustomizations` にテーマ名 `[Aura Dracula Spirit (Soft)]` のブロックを定義し、特定テーマに限定して適用します。この設定も、第 05 章や第 09 章で追加した `workbench.colorCustomizations` の中へ併記して記述します。
+提案リストで現在選択されている項目の背景色を紫色に変更します。
+
+- `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].editorSuggestWidget.selectedBackground`: `"#3A334B"`。対象テーマ適用時の選択中補完アイテムの背景色を設定する
+
+この設定も、第 05 章や第 09 章で追加した `workbench.colorCustomizations` の中へ併記して記述します。
 
 | Before | After |
 | --- | --- |

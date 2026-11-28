@@ -2,7 +2,7 @@
 title: "Window"
 ---
 
-ウィンドウ全体のズーム倍率を調整し、Custom UI Style 拡張機能を使ってタイトルバーや macOS のウィンドウ操作ボタンの位置をカスタマイズします。エディタ上部の表示領域をコンパクトにまとめ、無駄のないすっきりとした外観を実現します。対応する動画のチャプターは [Custom UI Style extension (07:58)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s) です。
+ウィンドウ全体のズーム倍率を調整し、[Custom UI Style](https://marketplace.visualstudio.com/items?itemName=subframe7536.custom-ui-style) 拡張機能を使ってタイトルバーや macOS のウィンドウ操作ボタンの位置をカスタマイズします。エディタ上部の表示領域をコンパクトにまとめ、無駄のないすっきりとした外観を実現します。対応する動画のチャプターは [Custom UI Style extension (07:58)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s) です。
 
 https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
 
@@ -30,7 +30,13 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
 ## 解説
 
 ### ウィンドウズームとタイトルバーの構成
-画面全体のズーム倍率を `window.zoomLevel: 3`（既定値 `0`）に設定します（動画では画面収録で見やすくするために倍率を上げています）。タイトルバーにはネイティブスタイルを使用します。そのため、`window.customTitleBarVisibility: "never"`（既定値 `"auto"`）および `window.titleBarStyle: "native"`（既定値 `"custom"`）を指定します。さらに Custom UI Style を通じて Electron のタイトルバースタイルを `custom-ui-style.electron.titleBarStyle: "hiddenInset"` に設定します。macOS のウィンドウ操作ボタン位置は `custom-ui-style.electron.trafficLightPosition` で `x: 20`, `y: 16` に移動します。
+画面全体のズーム倍率を調整し、ネイティブスタイルのタイトルバーとウィンドウ操作ボタンの位置を整えます。
+
+- `window.zoomLevel: 3`（既定値 `0`）: 画面全体のズーム倍率を上げる（動画では画面収録で見やすくするために設定）
+- `window.customTitleBarVisibility: "never"`（既定値 `"auto"`）: カスタムタイトルバーを非表示にする
+- `window.titleBarStyle: "native"`（既定値 `"custom"`）: ネイティブスタイルのタイトルバーを使用する
+- `custom-ui-style.electron.titleBarStyle: "hiddenInset"`: [Electron](https://www.electronjs.org/docs/latest/) のタイトルバースタイルを `hiddenInset` にする
+- `custom-ui-style.electron.trafficLightPosition`（`x: 20`, `y: 16`）: macOS のウィンドウ操作ボタン位置を移動する
 
 | Before | After |
 | --- | --- |
@@ -45,7 +51,12 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
 左では独立したタイトルバーと検索バーが上部に並んでいますが、右ではそれらが一体のヘッダーへ統合され、ウィンドウ操作ボタンがエディタ上部に収まります。
 
 ### Custom UI Style によるウィンドウ操作ボタンと余白の調整
-ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。スタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。Dank Mono は有料フォントであり、[作者の公式販売ページ](https://philpl.gumroad.com/l/dank-mono)からライセンスを購入して入手できます。
+ボタン位置の移動に伴うファイル名との重なりを防ぎ、UI 全体のフォントを統一します。
+
+- `custom-ui-style.stylesheet`（エディタタイトルラベルに `padding-left: 60px`）: ウィンドウ操作ボタンと重ならないよう余白を確保する
+- `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）: 拡張機能全体のサンセリフフォントを指定する
+
+[Dank Mono](https://philpl.gumroad.com/l/dank-mono) は有料フォントであり、作者の公式販売ページからライセンスを購入して入手できます。
 
 Dank Mono は有料フォントのため、本節ではスクリーンショットを省略しています。
 

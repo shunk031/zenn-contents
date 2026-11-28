@@ -24,7 +24,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
 ## 解説
 
 ### カラーテーマの選択
-カラーテーマには Aura Dracula Spirit の Soft バリアント（`Aura Dracula Spirit (Soft)`）を選択します。既定値の `Default Dark Modern` から変更し、落ち着いたトーンの配色を適用します。設定の編集はコマンドパレット（macOS では `⌘⇧P`、Windows では `Ctrl+Shift+P`）から User Settings (JSON) を開いて行います。編集した設定はファイルを保存することでエディタに反映されます。
+落ち着いたトーンの配色を適用します。
+
+- `workbench.colorTheme: "Aura Dracula Spirit (Soft)"`（既定値 `"Default Dark Modern"`）: [Aura Dracula Spirit](https://marketplace.visualstudio.com/items?itemName=josemurilloc.aura-spirit-dracula) の Soft バリアントを適用する
+
+設定の編集はコマンドパレット（macOS では `⌘⇧P`、Windows では `Ctrl+Shift+P`）から User Settings (JSON) を開いて行います。編集した設定はファイルを保存することでエディタに反映されます。
 
 | Before | After |
 | --- | --- |
@@ -33,7 +37,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
 同じ TypeScript ファイルと Seti アイコンのまま、左の `Default Dark Modern` から右の `Aura Dracula Spirit (Soft)` へ配色が切り替わります。背景色とシンタックスハイライトのトーンの変化を確認できます。
 
 ### ワークベンチ UI の最小化
-キーボードショートカットによる画面操作を前提とし、不要なナビゲーション UI を非表示にします。アクティビティバーは `workbench.activityBar.location: "hidden"`（既定値 `"default"`）で画面から取り除きます。エディタタブは `workbench.editor.showTabs: "single"`（既定値 `"multiple"`）を指定し、単一タブ表示に切り替えます。画面下部のステータスバーも `workbench.statusBar.visible: false`（既定値 `true`）で非表示にします。
+キーボードショートカットによる画面操作を前提とし、不要なナビゲーション UI を非表示にします。
+
+- `workbench.activityBar.location: "hidden"`（既定値 `"default"`）: アクティビティバーを画面から取り除く
+- `workbench.editor.showTabs: "single"`（既定値 `"multiple"`）: エディタタブを 1 つだけ表示する
+- `workbench.statusBar.visible: false`（既定値 `true`）: ステータスバーを非表示にする
 
 | Before | After |
 | --- | --- |
@@ -42,7 +50,12 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
 左では複数のタブに加えて左端のアクティビティバーと下部のステータスバーが表示されていますが、右では単一のタイトル行だけが残り両方のバーが消えます。画面外周の UI が取り除かれてエディタ領域が広がる点を確認できます。
 
 ### 起動画面とエディタ補助機能の整理
-ファイルを開いていないときの画面表示をシンプルにします。起動時の画面は `workbench.startupEditor: "none"`（既定値 `"welcomePage"`）に設定し、「ようこそ」画面を表示しないようにします。また、空画面に表示されるショートカット案内などのヒントも `workbench.tips.enabled: false`（既定値 `true`）で非表示にします。さらに、エディタ右側のコード縮小表示であるミニマップ（`editor.minimap.enabled: false`、既定値 `true`）を非表示にします。上部のパンくずリスト（`breadcrumbs.enabled: false`、既定値 `true`）も非表示にして、作業領域を広く確保します。
+ファイルを開いていないときの画面表示をシンプルにし、作業領域を広く確保します。
+
+- `workbench.startupEditor: "none"`（既定値 `"welcomePage"`）: 起動時の「ようこそ」画面を非表示にする
+- `workbench.tips.enabled: false`（既定値 `true`）: 空画面に表示されるショートカット案内などのヒントを非表示にする
+- `editor.minimap.enabled: false`（既定値 `true`）: エディタ右側のコード縮小表示（ミニマップ）を非表示にする
+- `breadcrumbs.enabled: false`（既定値 `true`）: 上部のパンくずリストを非表示にする
 
 | Before | After |
 | --- | --- |
@@ -77,9 +90,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
 
 ## 注意点
 
-ステータスバーを非表示にすると、現在の Git ブランチ名やワークスペースの状態情報などが常時確認できなくなります。ステータスバーを再度表示したい場合は、設定値を `true` に戻すか、メニューバーの「View（表示）」>「Appearance（外観）」>「Status Bar（ステータスバー）」から切り替えます。
+ステータスバーを非表示にすると、現在の [Git](https://git-scm.com/) ブランチ名やワークスペースの状態情報などが常時確認できなくなります。ステータスバーを再度表示したい場合は、設定値を `true` に戻すか、メニューバーの「View（表示）」>「Appearance（外観）」>「Status Bar（ステータスバー）」から切り替えます。
 
-settings.json の編集内容は、ファイルを保存した時点でエディタに反映されます。
+`settings.json` の編集内容は、ファイルを保存した時点でエディタに反映されます。
 
 ## 追加する拡張機能
 
