@@ -7,7 +7,8 @@ VHS uses RobotoMono Nerd Font Mono v3.5.1 as its primary font and Noto Sans Mono
 ## Prerequisites
 
 - Docker with BuildKit and network access for image builds.
-- A working host Codex configuration and valid Claude Code and Codex credentials for the organization's model gateway.
+- A working host Codex configuration for the model service used by the demo.
+- Valid Claude Code and Codex credentials for that service.
 - On Linux, make the runtime files readable by container UID 10001 without making them world-readable. Docker Desktop on macOS maps mounted file permissions for this image user.
 
 ## Runtime files
