@@ -98,9 +98,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1851s
 
 | Before | After |
 | --- | --- |
-| ![追加・変更・削除行の Git マーカーが表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-before.webp) | ![追加・変更・削除行の Git マーカーが透明化されて消えたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-after.webp) |
+| ![右端に黄色のバーと赤色のバーが表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-before.webp) | ![黄色のバーが消え、赤色のバーが残ったルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-after.webp) |
 
-左に表示されていた追加・変更・削除行の Git マーカーが右ではすべて消えます。なお、この比較では確認のため `scm.diffDecorations` を一時的に有効へ戻しており、第 7 章の設定を適用した状態ではこれらの Git マーカーはすでに非表示です。
+左の右端に表示されていた黄色と赤色のバーのうち、右では黄色のバーが消え、赤色のバーは残ります。なお、この比較では確認のため `scm.diffDecorations` を一時的に `all` へ戻しており、第 7 章の設定を適用した状態ではこれらの Git マーカーはすでに非表示です。
 
 | Before | After |
 | --- | --- |
