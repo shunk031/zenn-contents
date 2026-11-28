@@ -11,7 +11,7 @@ from pathlib import Path
 
 TAPE_DIR = Path(__file__).resolve().parents[1]
 TAPES = (TAPE_DIR / "demo.tape", TAPE_DIR / "demo-split.tape")
-WAIT_REQUIRED_TAPES = (TAPE_DIR / "demo.tape",)
+WAIT_REQUIRED_TAPES = (TAPE_DIR / "demo.tape", TAPE_DIR / "demo-split.tape")
 TYPE_COMMAND = re.compile(r'^\s*Type\s+("(?:\\.|[^"\\])*")\s*$')
 WAIT_PREFIX = re.compile(r"^\s*Wait(?:\+Screen)?@\d+s\s+(/.*)\s*$")
 
@@ -40,9 +40,47 @@ def wait_pattern(source_row: str, row_number: int) -> str:
     return literal[1:closing].replace(r"\/", "/")
 
 
+def validate_video_start_marker(tape: Path) -> str | None:
+    """Require the marker to be the last hidden shell command before Show."""
+    rows = tape.read_text(encoding="utf-8").splitlines()
+    marker_rows = [
+        row_number
+        for row_number, source_row in enumerate(rows, 1)
+        if source_row.lstrip().startswith("Type ")
+        and "mark-timing.py video_start " in source_row
+    ]
+    if len(marker_rows) != 1:
+        return f"{tape.name}: expected one video_start marker Type command, found {len(marker_rows)}"
+
+    marker_row = marker_rows[0]
+    if marker_row + 1 >= len(rows):
+        return f"{tape.name}: video_start marker is incomplete"
+    if rows[marker_row].strip() != "Enter" or rows[marker_row + 1].strip() != "Show":
+        return f"{tape.name}: video_start must be entered immediately before Show"
+
+    show_row = marker_row + 2
+    first_herdr_row = next(
+        (
+            row_number
+            for row_number, source_row in enumerate(rows, 1)
+            if source_row.lstrip().startswith("Type ")
+            and "herdr --session demo" in source_row
+        ),
+        None,
+    )
+    if first_herdr_row is None or first_herdr_row <= show_row:
+        return f"{tape.name}: video_start must be recorded before launching the Herdr UI"
+    return None
+
+
 def main() -> int:
     summaries: list[str] = []
     for tape in TAPES:
+        marker_error = validate_video_start_marker(tape)
+        if marker_error:
+            print(marker_error, file=sys.stderr)
+            return 1
+
         type_strings: list[tuple[int, str]] = []
         wait_patterns: list[tuple[int, re.Pattern[str]]] = []
 

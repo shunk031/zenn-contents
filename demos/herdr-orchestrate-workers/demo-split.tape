@@ -11,12 +11,19 @@ Require codex
 
 # Setup and credentials stay out of the recording. The script never prints secret data.
 Hide
-Type "export CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1 && source /opt/demo/prepare-demo.sh && clear && python3 /opt/demo/mark-timing.py capture_started /out/timing-split.log && herdr --session demo"
+Type "export CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1 && source /opt/demo/prepare-demo.sh"
 Enter
-Sleep 30s
+Wait+Screen@180s /DEMO_SETUP_READY/
+Type "clear"
+Enter
+Type "python3 /opt/demo/mark-timing.py capture_started /out/timing-split.log"
+Enter
 Type "python3 /opt/demo/mark-timing.py video_start /out/timing-split.log"
 Enter
 Show
+Type "herdr --session demo"
+Enter
+Sleep 30s
 Type "/shunk031-herdr-orchestrate-workers 今のタブを縦に分けて、右側で Codex worker を model_reasoning_effort=low で起動して hello.txt を作らせて。worker には終わったら親にプロンプトで DONE を報告させて、報告が届いたら右のペインを閉じて"
 Enter
 Sleep 8m

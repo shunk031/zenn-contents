@@ -17,12 +17,12 @@ Type "clear"
 Enter
 Type "python3 /opt/demo/mark-timing.py capture_started /out/timing.log"
 Enter
-Type "herdr --session demo"
-Enter
-Wait+Screen@90s /Claude Code v[0-9.]+/
 Type "python3 /opt/demo/mark-timing.py video_start /out/timing.log"
 Enter
 Show
+Type "herdr --session demo"
+Enter
+Wait+Screen@90s /Claude Code v[0-9.]+/
 Type "/shunk031-herdr-orchestrate-workers Codex worker を model_reasoning_effort=low で起動して hello.txt を作らせて"
 Enter
 Sleep 8m
