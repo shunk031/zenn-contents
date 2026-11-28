@@ -29,11 +29,13 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1253s
 ### コード装飾とコンテキスト表示の無効化
 画面のノイズを減らすため、コード周辺の補助的な装飾やコンテキスト表示を無効化します。
 
-- `editor.stickyScroll.enabled: false`（既定値 `true`）: スクロール時に関数宣言などを上部に固定表示するスティッキースクロールを無効化する
-- `editor.colorDecorators: false`（既定値 `true`）: カラー値のプレビューを非表示にする
-- `editor.codeLens: false`（既定値 `true`）: 関数上部にアクションを表示する CodeLens を非表示にする
-- `editor.links: false`（既定値 `true`）: エディタ内のリンク検出をオフにする
-- `editor.matchBrackets: "never"`（既定値 `"always"`）: 対応する括弧の強調ハイライトをオフにする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.stickyScroll.enabled` | `false` | `true` | スクロール時に関数宣言などを上部に固定表示するスティッキースクロールを無効化する |
+| `editor.colorDecorators` | `false` | `true` | カラー値のプレビューを非表示にする |
+| `editor.codeLens` | `false` | `true` | 関数上部にアクションを表示する CodeLens を非表示にする |
+| `editor.links` | `false` | `true` | エディタ内のリンク検出をオフにする |
+| `editor.matchBrackets` | `"never"` | `"always"` | 対応する括弧の強調ハイライトをオフにする |
 
 | Before | After |
 | --- | --- |
@@ -50,9 +52,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1253s
 ### ヒント表示とポップアップの抑制
 入力中やマウス操作時に自動で開くヒントやポップアップを非表示にします。
 
-- `editor.parameterHints.enabled: false`（既定値 `true`）: 引数入力時に自動表示されるシグネチャヒントを非表示にする
-- `editor.lightbulb.enabled: "off"`（既定値 `"onCode"`）: コードアクション用の電球マークを非表示にする
-- `editor.hover.enabled: false`（既定値 `true`）: マウスホバー時の説明ポップアップを非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.parameterHints.enabled` | `false` | `true` | 引数入力時に自動表示されるシグネチャヒントを非表示にする |
+| `editor.lightbulb.enabled` | `"off"` | `"onCode"` | コードアクション用の電球マークを非表示にする |
+| `editor.hover.enabled` | `false` | `true` | マウスホバー時の説明ポップアップを非表示にする |
 
 パラメーター情報やコードアクションが必要な場合は、キーボードショートカットから手動で呼び出します。VS Code の既定のショートカットは、パラメーターヒントが macOS で `⌘⇧Space`、Windows や Linux で `Ctrl+Shift+Space` です。コードアクションは macOS で `⌘.`、Windows や Linux で `Ctrl+.` です。
 
@@ -75,9 +79,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1253s
 ### ファイル保存設定と Git 差分表示の整理
 コーディング規約に沿った保存動作を整え、エディタ内の Git 差分表示を非表示にします。
 
-- `files.trimTrailingWhitespace: true`（既定値 `false`）: ファイル保存時に行末の不要な空白を自動削除する
-- `files.insertFinalNewline: true`（既定値 `false`）: 保存時にファイル末尾が改行で終わるよう自動調整する
-- `scm.diffDecorations: "none"`（既定値 `"all"`）: エディタ左側のガター（行番号の横）に表示される Git 変更マークを非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `files.trimTrailingWhitespace` | `true` | `false` | ファイル保存時に行末の不要な空白を自動削除する |
+| `files.insertFinalNewline` | `true` | `false` | 保存時にファイル末尾が改行で終わるよう自動調整する |
+| `scm.diffDecorations` | `"none"` | `"all"` | エディタ左側のガター（行番号の横）に表示される Git 変更マークを非表示にする |
 
 動画では Git の差分確認を [GitHub Desktop](https://desktop.github.com/) などの外部ツールで行うため、エディタ内の差分表示を不要としています。
 

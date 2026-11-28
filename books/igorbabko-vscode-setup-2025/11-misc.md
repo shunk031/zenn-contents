@@ -29,8 +29,10 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 ### UI 余白とサイドバー背景色の調整
 サイドバーを開いた際に左上のウィンドウ操作ボタンとタブのファイル名表示が重なる問題を防ぎ、サイドバーの背景色をエディタ背景色と統一します。
 
-- `custom-ui-style.stylesheet[".title .monaco-icon-label.file-icon"]`: `margin: 0 60px` でタブのファイルアイコンラベルに左右マージンを追加する
-- `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].sideBar.background: "#191521"`: サイドバーの背景色を設定する
+| 設定 | 値 | 効果 |
+| --- | --- | --- |
+| `custom-ui-style.stylesheet[".title .monaco-icon-label.file-icon"]` | `margin: 0 60px` | タブのファイルアイコンラベルに左右マージンを追加する |
+| `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].sideBar.background` | `"#191521"` | サイドバーの背景色を設定する |
 
 スタイルシートのセレクターは第 03 章から第 05 章で追加した `custom-ui-style.stylesheet` に追記します。背景色は第 10 章で追加した `workbench.colorCustomizations` の `[Aura Dracula Spirit (Soft)]` 内に追記します。
 
@@ -43,7 +45,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 ### 自動保存と拡張機能通知の抑制
 ファイル編集後の保存忘れを防ぎます。
 
-- `files.autoSave: "afterDelay"`（既定値 `"off"`）: 入力後一定時間（既定の待機時間）が経過すると自動で保存する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `files.autoSave` | `"afterDelay"` | `"off"` | 入力後一定時間（既定の待機時間）が経過すると自動で保存する |
 
 | Before | After |
 | --- | --- |
@@ -57,7 +61,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 
 作業中のポップアップ通知を減らします。
 
-- `extensions.ignoreRecommendations: true`（既定値 `false`）: 拡張機能のおすすめ通知を非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `extensions.ignoreRecommendations` | `true` | `false` | 拡張機能のおすすめ通知を非表示にする |
 
 | Before | After |
 | --- | --- |
@@ -68,7 +74,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=2214s
 ### VS Code 本体の自動更新停止
 VS Code の自動アップデートを無効化します。
 
-- `update.mode: "none"`（既定値 `"default"`）: 自動更新を停止する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `update.mode` | `"none"` | `"default"` | 自動更新を停止する |
 
 動画では、VS Code の自動更新によって Custom UI Style などの拡張機能との互換性が崩れるリスクを避けるため、手動でタイミングを選んで更新する方針をとっています。
 

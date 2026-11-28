@@ -27,8 +27,10 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1025s
 ### カーソル形状と点滅の無効化
 文字入力やコード参照中にカーソルを見失いにくくするため、形状と点滅動作を変更します。
 
-- `editor.cursorStyle: "block"`（既定値 `"line"`）: カーソル形状を縦線からブロック型に変更する
-- `editor.cursorBlinking: "solid"`（既定値 `"blink"`）: 点滅アニメーションを無効化し常時点灯させる
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.cursorStyle` | `"block"` | `"line"` | カーソル形状を縦線からブロック型に変更する |
+| `editor.cursorBlinking` | `"solid"` | `"blink"` | 点滅アニメーションを無効化し常時点灯させる |
 
 | Before | After |
 | --- | --- |
@@ -43,7 +45,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1025s
 ### マルチカーソルの修飾キー
 一般的なテキスト選択操作との衝突を避けるため、マウスクリックによるマルチカーソル追加の修飾キーを変更します。
 
-- `editor.multiCursorModifier: "ctrlCmd"`（既定値 `"alt"`）: macOS は Command、Windows / Linux は Control を押しながらのクリックで複数カーソルを追加する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.multiCursorModifier` | `"ctrlCmd"` | `"alt"` | macOS は Command、Windows / Linux は Control を押しながらのクリックで複数カーソルを追加する |
 
 | Before | After |
 | --- | --- |
@@ -58,8 +62,10 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1025s
 ### グラデーションと配色の調整
 カーソルにグラデーション背景を適用し、重なる文字の視認性（コントラスト）を確保します。
 
-- `.monaco-editor .cursors-layer .cursor`: `background-image: linear-gradient(135deg, #ffaffc 10%, #DA70D6 100%)`。ピンクから紫への線形グラデーションを適用する
-- `workbench.colorCustomizations["editorCursor.background"]: "#000000"`: ブロックカーソルに重なる文字色を黒色にする
+| 設定 | 値 | 効果 |
+| --- | --- | --- |
+| `.monaco-editor .cursors-layer .cursor` | `background-image: linear-gradient(135deg, #ffaffc 10%, #DA70D6 100%)` | ピンクから紫への線形グラデーションを適用する |
+| `workbench.colorCustomizations["editorCursor.background"]` | `"#000000"` | ブロックカーソルに重なる文字色を黒色にする |
 
 カーソルのスタイル設定は第 03 章および第 04 章で設定した `custom-ui-style.stylesheet` オブジェクトの内側に新しいキーとして追加します。`workbench.colorCustomizations` オブジェクトは新しく作成します。
 

@@ -27,9 +27,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1565s
 ### 相対行番号とインデント幅の統一
 行番号を現在行からの相対表示に切り替え、インデント幅をスペース 2 文字に統一します。
 
-- `editor.lineNumbers: "relative"`（既定値 `"on"`）: 行番号を現在行からの行間距離で表示する
-- `editor.tabSize: 2`（既定値 `4`）: タブ幅をスペース 2 文字にする
-- `editor.detectIndentation: false`（既定値 `true`）: ファイルごとのインデント自動推測を無効化し、設定したインデント幅を一律に適用する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.lineNumbers` | `"relative"` | `"on"` | 行番号を現在行からの行間距離で表示する |
+| `editor.tabSize` | `2` | `4` | タブ幅をスペース 2 文字にする |
+| `editor.detectIndentation` | `false` | `true` | ファイルごとのインデント自動推測を無効化し、設定したインデント幅を一律に適用する |
 
 動画では Vim キーバインドにおける上下移動（方向と行数の指定）をスムーズに行うために相対行番号を採用しています。
 
@@ -48,12 +50,14 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1565s
 ### ガイドラインとハイライトの排除
 エディタ内の折りたたみ矢印やガイド線、ハイライト装飾を削ぎ落とします。
 
-- `editor.showFoldingControls: "never"`（既定値 `"mouseover"`）: コード折りたたみ用の矢印コントロールを常に非表示にする
-- `editor.guides.indentation: false`（既定値 `true`）: インデントの垂直ガイド線を非表示にする
-- `editor.renderWhitespace: "none"`（既定値 `"selection"`）: 空白・タブの記号表示を非表示にする
-- `editor.renderLineHighlight: "none"`（既定値 `"line"`）: 現在行のハイライトを非表示にする
-- `editor.occurrencesHighlight: "off"`（既定値 `"singleFile"`）: シンボルの一致強調をオフにする
-- `editor.selectionHighlight: false`（既定値 `true`）: 選択文字列と一致する箇所の強調をオフにする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.showFoldingControls` | `"never"` | `"mouseover"` | コード折りたたみ用の矢印コントロールを常に非表示にする |
+| `editor.guides.indentation` | `false` | `true` | インデントの垂直ガイド線を非表示にする |
+| `editor.renderWhitespace` | `"none"` | `"selection"` | 空白・タブの記号表示を非表示にする |
+| `editor.renderLineHighlight` | `"none"` | `"line"` | 現在行のハイライトを非表示にする |
+| `editor.occurrencesHighlight` | `"off"` | `"singleFile"` | シンボルの一致強調をオフにする |
+| `editor.selectionHighlight` | `false` | `true` | 選択文字列と一致する箇所の強調をオフにする |
 
 コード折りたたみの操作は、キーボードショートカットで行います。VS Code の既定値は、折りたたみが macOS で `⌥⌘[`、Windows や Linux で `Ctrl+Shift+[` です。展開は macOS で `⌥⌘]`、Windows や Linux で `Ctrl+Shift+]` です。
 

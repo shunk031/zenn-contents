@@ -30,8 +30,10 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 ### 自動提案の抑制と手動呼び出し
 コード入力中に補完リストが自動で頻繁に開くのを防ぎます。
 
-- `editor.quickSuggestions.other: "off"`（既定値 `"on"`）: 通常テキスト入力時のクイック提案を無効化する（コメントや文字列の既定値 `"off"` はそのまま維持）
-- `editor.suggestOnTriggerCharacters: false`（既定値 `true`）: `.` などのトリガー文字を入力した際の自動提案をオフにする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.quickSuggestions.other` | `"off"` | `"on"` | 通常テキスト入力時のクイック提案を無効化する（コメントや文字列の既定値 `"off"` はそのまま維持） |
+| `editor.suggestOnTriggerCharacters` | `false` | `true` | `.` などのトリガー文字を入力した際の自動提案をオフにする |
 
 動画では、自動表示を使わず必要なときだけショートカットキーで手動表示します。手動呼び出しの既定ショートカットキーは、macOS で `⌃Space`、Windows や Linux で `Ctrl+Space` です。
 
@@ -54,7 +56,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 ### Tab 補完・スニペット・Emmet 展開
 提案リストを開かずに Tab キーで補完を確定できるようにします。
 
-- `editor.tabCompletion: "on"`（既定値 `"off"`）: Tab キーを押すだけで一致する補完を確定する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.tabCompletion` | `"on"` | `"off"` | Tab キーを押すだけで一致する補完を確定する |
 
 | Before | After |
 | --- | --- |
@@ -64,7 +68,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 
 よく使うコード片を優先的に選べるようにします。
 
-- `editor.snippetSuggestions: "top"`（既定値 `"inline"`）: 提案リスト内でスニペットを常に最上位に表示する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.snippetSuggestions` | `"top"` | `"inline"` | 提案リスト内でスニペットを常に最上位に表示する |
 
 | Before | After |
 | --- | --- |
@@ -74,7 +80,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 
 HTML 等の略称を Tab キーで展開できるようにします。
 
-- `emmet.triggerExpansionOnTab: true`（既定値 `false`）: Tab キー押下時の Emmet 展開を有効化する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `emmet.triggerExpansionOnTab` | `true` | `false` | Tab キー押下時の Emmet 展開を有効化する |
 
 | Before | After |
 | --- | --- |
@@ -85,7 +93,9 @@ Emmet の効果だけを切り分けるため左右とも Tab 補完をオフに
 ### 選択中補完アイテムの配色
 提案リストで現在選択されている項目の背景色を紫色に変更します。
 
-- `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].editorSuggestWidget.selectedBackground`: `"#3A334B"`。対象テーマ適用時の選択中補完アイテムの背景色を設定する
+| 設定 | 値 | 効果 |
+| --- | --- | --- |
+| `workbench.colorCustomizations["[Aura Dracula Spirit (Soft)]"].editorSuggestWidget.selectedBackground` | `"#3A334B"` | 対象テーマ適用時の選択中補完アイテムの背景色を設定する |
 
 この設定も、第 05 章や第 09 章で追加した `workbench.colorCustomizations` の中へ併記して記述します。
 

@@ -26,7 +26,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
 ### カラーテーマの選択
 落ち着いたトーンの配色を適用します。
 
-- `workbench.colorTheme: "Aura Dracula Spirit (Soft)"`（既定値 `"Default Dark Modern"`）: [Aura Dracula Spirit](https://marketplace.visualstudio.com/items?itemName=josemurilloc.aura-spirit-dracula) の Soft バリアントを適用する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `workbench.colorTheme` | `"Aura Dracula Spirit (Soft)"` | `"Default Dark Modern"` | [Aura Dracula Spirit](https://marketplace.visualstudio.com/items?itemName=josemurilloc.aura-spirit-dracula) の Soft バリアントを適用する |
 
 設定の編集はコマンドパレット（macOS では `⌘⇧P`、Windows では `Ctrl+Shift+P`）から User Settings (JSON) を開いて行います。編集した設定はファイルを保存することでエディタに反映されます。
 
@@ -39,9 +41,11 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
 ### ワークベンチ UI の最小化
 キーボードショートカットによる画面操作を前提とし、不要なナビゲーション UI を非表示にします。
 
-- `workbench.activityBar.location: "hidden"`（既定値 `"default"`）: アクティビティバーを画面から取り除く
-- `workbench.editor.showTabs: "single"`（既定値 `"multiple"`）: エディタタブを 1 つだけ表示する
-- `workbench.statusBar.visible: false`（既定値 `true`）: ステータスバーを非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `workbench.activityBar.location` | `"hidden"` | `"default"` | アクティビティバーを画面から取り除く |
+| `workbench.editor.showTabs` | `"single"` | `"multiple"` | エディタタブを 1 つだけ表示する |
+| `workbench.statusBar.visible` | `false` | `true` | ステータスバーを非表示にする |
 
 | Before | After |
 | --- | --- |
@@ -52,10 +56,12 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=0s
 ### 起動画面とエディタ補助機能の整理
 ファイルを開いていないときの画面表示をシンプルにし、作業領域を広く確保します。
 
-- `workbench.startupEditor: "none"`（既定値 `"welcomePage"`）: 起動時の「ようこそ」画面を非表示にする
-- `workbench.tips.enabled: false`（既定値 `true`）: 空画面に表示されるショートカット案内などのヒントを非表示にする
-- `editor.minimap.enabled: false`（既定値 `true`）: エディタ右側のコード縮小表示（ミニマップ）を非表示にする
-- `breadcrumbs.enabled: false`（既定値 `true`）: 上部のパンくずリストを非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `workbench.startupEditor` | `"none"` | `"welcomePage"` | 起動時の「ようこそ」画面を非表示にする |
+| `workbench.tips.enabled` | `false` | `true` | 空画面に表示されるショートカット案内などのヒントを非表示にする |
+| `editor.minimap.enabled` | `false` | `true` | エディタ右側のコード縮小表示（ミニマップ）を非表示にする |
+| `breadcrumbs.enabled` | `false` | `true` | 上部のパンくずリストを非表示にする |
 
 | Before | After |
 | --- | --- |

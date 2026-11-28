@@ -37,20 +37,24 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=739s
 ### スタイル適用の一括反映
 一度の再起動で CSS のオーバーライド設定をまとめて反映させます。
 
-- `custom-ui-style.stylesheet`（既定値 `{}`）: CSS のオーバーライド設定を一括して記述する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `custom-ui-style.stylesheet` | — | `{}` | CSS のオーバーライド設定を一括して記述する |
 
 Custom UI Style のスタイル設定は変更のたびに再読み込みが必要になるため、個別に変更すると何度も再起動が必要になります。本章で追加するセレクター群は、第 03 章で作成した `custom-ui-style.stylesheet` オブジェクトの中に追記します。第 03 章のエディタタイトルの余白設定を残したまま、本章の各プロパティを並列に追加します。
 
 ### ポップアップとウィジェットの装飾整理
 通知トーストやコマンドパレット、検索ウィジェットなどの影や不要な装飾を取り除きます。
 
-- `.notification-toast`: `box-shadow: none !important` で通知トーストの影を非表示にする
-- `.quick-input-widget.show-file-icons`: `box-shadow: none !important` でクイック入力・コマンドパレットの影を非表示にする
-- `.quick-input-widget`: `top: 25vh !important` でコマンドパレットを画面上部から少し下げた位置に移動する
-- `.quick-input-list .scrollbar`: `display: none` でパレット内のスクロールバーを非表示にする
-- `.monaco-action-bar.quick-input-inline-action-bar`: `display: none` で不要なアクションバーを非表示にする
-- `.editor-widget.find-widget`: `box-shadow: none; border-radius: 4px` で検索ウィジェットの影を消し角丸を 4px に整える
-- `.quick-input-titlebar`: `background: #100B15 !important` でタイトルバーの背景色を設定する
+| セレクター | スタイル | 効果 |
+| --- | --- | --- |
+| `.notification-toast` | `box-shadow: none !important` | 通知トーストの影を非表示にする |
+| `.quick-input-widget.show-file-icons` | `box-shadow: none !important` | クイック入力・コマンドパレットの影を非表示にする |
+| `.quick-input-widget` | `top: 25vh !important` | コマンドパレットを画面上部から少し下げた位置に移動する |
+| `.quick-input-list .scrollbar` | `display: none` | パレット内のスクロールバーを非表示にする |
+| `.monaco-action-bar.quick-input-inline-action-bar` | `display: none` | 不要なアクションバーを非表示にする |
+| `.editor-widget.find-widget` | `box-shadow: none; border-radius: 4px` | 検索ウィジェットの影を消し角丸を 4px に整える |
+| `.quick-input-titlebar` | `background: #100B15 !important` | タイトルバーの背景色を設定する |
 
 `.quick-input-titlebar` の設定は、[VSCode Neovim](https://marketplace.visualstudio.com/items?itemName=asvetliakov.vscode-neovim) 拡張機能の `/` 検索バーを開いた際の見た目を整えるためのものです。
 
@@ -87,16 +91,18 @@ Neovim の Forward Search タイトルバーが、左の Aura テーマ色から
 ### サイドバーとエディタ境界のフラット化
 スクロールシャドウや境界線、フォーカス枠線を取り除き、サイドバーとエディタ周りをフラットに整えます。
 
-- `.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after`: `display: none`。エディタグループ下部のタイトルボーダー装飾を非表示にする（本書で使うテーマではこの枠線が表示されないため見た目の変化はない）
-- `.monaco-scrollable-element > .shadow.top`: `display: none` で上部のスクロールシャドウを非表示にする
-- `.monaco-editor .scroll-decoration`: `display: none` でエディタ内のスクロール装飾を非表示にする
-- `.sidebar`: `border: none !important` でサイドバーの境界線を非表示にする
-- `.sidebar .title-label`: `padding: 0 !important` でサイドバーのタイトルラベルのパディングをなくす
-- `.monaco-workbench .monaco-list:not(.element-focused):focus:before`: `outline: none !important` でリストのフォーカス枠線を非表示にする
-- `.monaco-list-row.focused`: `outline: none !important` でフォーカスされたリスト行の枠線を非表示にする
-- `.title-actions`: `display: none !important` でエディタ上部のタブアクションボタンを非表示にする
-- `.title.show-file-icons .label-container .monaco-icon-label.file-icon`: `justify-content: center; padding: 0 !important`。タイトルラベルを中央揃えにしパディングをなくす
-- `.title .monaco-icon-label:after`: `margin-right: 0` でアイコンラベル後の末尾余白を詰める
+| セレクター | スタイル | 効果 |
+| --- | --- | --- |
+| `.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after` | `display: none` | エディタグループ下部のタイトルボーダー装飾を非表示にする（本書で使うテーマではこの枠線が表示されないため見た目の変化はない） |
+| `.monaco-scrollable-element > .shadow.top` | `display: none` | 上部のスクロールシャドウを非表示にする |
+| `.monaco-editor .scroll-decoration` | `display: none` | エディタ内のスクロール装飾を非表示にする |
+| `.sidebar` | `border: none !important` | サイドバーの境界線を非表示にする |
+| `.sidebar .title-label` | `padding: 0 !important` | サイドバーのタイトルラベルのパディングをなくす |
+| `.monaco-workbench .monaco-list:not(.element-focused):focus:before` | `outline: none !important` | リストのフォーカス枠線を非表示にする |
+| `.monaco-list-row.focused` | `outline: none !important` | フォーカスされたリスト行の枠線を非表示にする |
+| `.title-actions` | `display: none !important` | エディタ上部のタブアクションボタンを非表示にする |
+| `.title.show-file-icons .label-container .monaco-icon-label.file-icon` | `justify-content: center; padding: 0 !important` | タイトルラベルを中央揃えにしパディングをなくす |
+| `.title .monaco-icon-label:after` | `margin-right: 0` | アイコンラベル後の末尾余白を詰める |
 
 | Before | After |
 | --- | --- |

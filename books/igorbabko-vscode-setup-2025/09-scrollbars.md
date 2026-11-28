@@ -37,10 +37,12 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1851s
 ### スクロールバーと概要ルーラー枠線の非表示
 スクロールバーと概要ルーラーの境界・カーソル表示を取り除き、エディタ右端をすっきりさせます。
 
-- `editor.scrollbar.horizontal: "hidden"`（既定値 `"auto"`）: 水平スクロールバーを非表示にする
-- `editor.scrollbar.vertical: "hidden"`（既定値 `"auto"`）: 垂直スクロールバーを非表示にする
-- `editor.overviewRulerBorder: false`（既定値 `true`）: 概要ルーラー周囲の境界線を非表示にする
-- `editor.hideCursorInOverviewRuler: true`（既定値 `false`）: 概要ルーラー内のカーソル位置マーカーを非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.scrollbar.horizontal` | `"hidden"` | `"auto"` | 水平スクロールバーを非表示にする |
+| `editor.scrollbar.vertical` | `"hidden"` | `"auto"` | 垂直スクロールバーを非表示にする |
+| `editor.overviewRulerBorder` | `false` | `true` | 概要ルーラー周囲の境界線を非表示にする |
+| `editor.hideCursorInOverviewRuler` | `true` | `false` | 概要ルーラー内のカーソル位置マーカーを非表示にする |
 
 | Before | After |
 | --- | --- |
@@ -63,19 +65,21 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1851s
 ### 概要ルーラーマーカー色の透明化
 概要ルーラーに描画されるエラーや警告、検索一致、単語ハイライト、Git の変更行などのマーカーを非表示にします。
 
-- `editorOverviewRuler.wordHighlightStrongForeground: "#0000"`: 強力な単語ハイライトマーカーを透明化して非表示にする
-- `editorOverviewRuler.selectionHighlightForeground: "#0000"`: 選択ハイライトマーカーを透明化して非表示にする
-- `editorOverviewRuler.rangeHighlightForeground: "#0000"`: 範囲ハイライトマーカーを透明化して非表示にする
-- `editorOverviewRuler.wordHighlightForeground: "#0000"`: 単語ハイライトマーカーを透明化して非表示にする
-- `editorOverviewRuler.bracketMatchForeground: "#0000"`: 括弧一致マーカーを透明化して非表示にする
-- `editorOverviewRuler.findMatchForeground: "#0000"`: 検索一致マーカーを透明化して非表示にする
-- `editorOverviewRuler.modifiedForeground: "#0000"`: 変更行マーカーを透明化して非表示にする
-- `editorOverviewRuler.deletedForeground: "#0000"`: 削除行マーカーを透明化して非表示にする
-- `editorOverviewRuler.warningForeground: "#0000"`: 警告マーカーを透明化して非表示にする
-- `editorOverviewRuler.addedForeground: "#0000"`: 追加行マーカーを透明化して非表示にする
-- `editorOverviewRuler.errorForeground: "#0000"`: エラーマーカーを透明化して非表示にする
-- `editorOverviewRuler.infoForeground: "#0000"`: 情報マーカーを透明化して非表示にする
-- `editorOverviewRuler.border: "#0000"`: 概要ルーラー周囲の境界線を透明化して非表示にする
+| 設定 | 値 | 効果 |
+| --- | --- | --- |
+| `editorOverviewRuler.wordHighlightStrongForeground` | `"#0000"` | 強力な単語ハイライトマーカーを透明化して非表示にする |
+| `editorOverviewRuler.selectionHighlightForeground` | `"#0000"` | 選択ハイライトマーカーを透明化して非表示にする |
+| `editorOverviewRuler.rangeHighlightForeground` | `"#0000"` | 範囲ハイライトマーカーを透明化して非表示にする |
+| `editorOverviewRuler.wordHighlightForeground` | `"#0000"` | 単語ハイライトマーカーを透明化して非表示にする |
+| `editorOverviewRuler.bracketMatchForeground` | `"#0000"` | 括弧一致マーカーを透明化して非表示にする |
+| `editorOverviewRuler.findMatchForeground` | `"#0000"` | 検索一致マーカーを透明化して非表示にする |
+| `editorOverviewRuler.modifiedForeground` | `"#0000"` | 変更行マーカーを透明化して非表示にする |
+| `editorOverviewRuler.deletedForeground` | `"#0000"` | 削除行マーカーを透明化して非表示にする |
+| `editorOverviewRuler.warningForeground` | `"#0000"` | 警告マーカーを透明化して非表示にする |
+| `editorOverviewRuler.addedForeground` | `"#0000"` | 追加行マーカーを透明化して非表示にする |
+| `editorOverviewRuler.errorForeground` | `"#0000"` | エラーマーカーを透明化して非表示にする |
+| `editorOverviewRuler.infoForeground` | `"#0000"` | 情報マーカーを透明化して非表示にする |
+| `editorOverviewRuler.border` | `"#0000"` | 概要ルーラー周囲の境界線を透明化して非表示にする |
 
 マーカーが消えるとエラー位置を俯瞰できなくなりますが、動画ではエラーへのジャンプをショートカットで行い、エラー総数はタイトル横で確認できるため、この非表示化を受け入れています。VS Code の診断ジャンプショートカットの既定値は、次の問題へ移動が `F8`、前の問題へ移動が `Shift+F8` です。`workbench.colorCustomizations` は第 05 章でカーソル色を設定したオブジェクトと同じ設定項目です。第 05 章で設定した `editorCursor.background` を残したまま、本章の 13 種類の `editorOverviewRuler.*` を同じオブジェクト内に追加します。
 

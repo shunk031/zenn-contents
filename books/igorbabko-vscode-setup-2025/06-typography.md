@@ -32,17 +32,21 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1151s
 ### フォントファミリーと行の高さ
 UI 全体とフォントを統一し、行間を広げて読みやすいレイアウトに整えます。
 
-- `editor.fontFamily: "Dank Mono"`: エディタのフォントファミリーを変更する
-- `editor.fontSize: 14`: 文字サイズを 14 ピクセルに設定する
-- `editor.lineHeight: 2.5`（既定値 `0`、自動計算）: 行の高さを広げ、コードの行ごとの区切りを明瞭にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.fontFamily` | `"Dank Mono"` | — | エディタのフォントファミリーを変更する |
+| `editor.fontSize` | `14` | — | 文字サイズを 14 ピクセルに設定する |
+| `editor.lineHeight` | `2.5` | `0`、自動計算 | 行の高さを広げ、コードの行ごとの区切りを明瞭にする |
 
 Dank Mono は有料フォントのため、本節ではスクリーンショットを省略しています。
 
 ### リガチャとコメントのイタリック体表示
 演算子などの記号を見やすく結合表示し、コードとコメントを視覚的に区別しやすくします。
 
-- `editor.fontLigatures: true`（既定値 `false`）: フォントリガチャ（合字）を有効にする
-- `editor.tokenColorCustomizations.textMateRules`（`scope: "comment"`, `fontStyle: "italic"`）: コメントをイタリック体で表示する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `editor.fontLigatures` | `true` | `false` | フォントリガチャ（合字）を有効にする |
+| `editor.tokenColorCustomizations.textMateRules` | `scope: "comment"`, `fontStyle: "italic"` | — | コメントをイタリック体で表示する |
 
 ## 設定項目の一覧
 

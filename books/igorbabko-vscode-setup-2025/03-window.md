@@ -32,11 +32,13 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
 ### ウィンドウズームとタイトルバーの構成
 画面全体のズーム倍率を調整し、ネイティブスタイルのタイトルバーとウィンドウ操作ボタンの位置を整えます。
 
-- `window.zoomLevel: 3`（既定値 `0`）: 画面全体のズーム倍率を上げる（動画では画面収録で見やすくするために設定）
-- `window.customTitleBarVisibility: "never"`（既定値 `"auto"`）: カスタムタイトルバーを非表示にする
-- `window.titleBarStyle: "native"`（既定値 `"custom"`）: ネイティブスタイルのタイトルバーを使用する
-- `custom-ui-style.electron.titleBarStyle: "hiddenInset"`: [Electron](https://www.electronjs.org/docs/latest/) のタイトルバースタイルを `hiddenInset` にする
-- `custom-ui-style.electron.trafficLightPosition`（`x: 20`, `y: 16`）: macOS のウィンドウ操作ボタン位置を移動する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `window.zoomLevel` | `3` | `0` | 画面全体のズーム倍率を上げる（動画では画面収録で見やすくするために設定） |
+| `window.customTitleBarVisibility` | `"never"` | `"auto"` | カスタムタイトルバーを非表示にする |
+| `window.titleBarStyle` | `"native"` | `"custom"` | ネイティブスタイルのタイトルバーを使用する |
+| `custom-ui-style.electron.titleBarStyle` | `"hiddenInset"` | — | [Electron](https://www.electronjs.org/docs/latest/) のタイトルバースタイルを `hiddenInset` にする |
+| `custom-ui-style.electron.trafficLightPosition` | `x: 20`, `y: 16` | — | macOS のウィンドウ操作ボタン位置を移動する |
 
 | Before | After |
 | --- | --- |
@@ -53,8 +55,10 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
 ### Custom UI Style によるウィンドウ操作ボタンと余白の調整
 ボタン位置の移動に伴うファイル名との重なりを防ぎ、UI 全体のフォントを統一します。
 
-- `custom-ui-style.stylesheet`（エディタタイトルラベルに `padding-left: 60px`）: ウィンドウ操作ボタンと重ならないよう余白を確保する
-- `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）: 拡張機能全体のサンセリフフォントを指定する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `custom-ui-style.stylesheet` | エディタタイトルラベルに `padding-left: 60px` | — | ウィンドウ操作ボタンと重ならないよう余白を確保する |
+| `custom-ui-style.font.sansSerif` | `"Dank Mono"` | `""` | 拡張機能全体のサンセリフフォントを指定する |
 
 [Dank Mono](https://philpl.gumroad.com/l/dank-mono) は有料フォントであり、作者の公式販売ページからライセンスを購入して入手できます。
 

@@ -29,7 +29,9 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=209s
 ### サイドバーの配置とアイコンテーマ
 プライマリサイドバーの配置を右側に変更します。
 
-- `workbench.sideBar.location: "right"`（既定値 `"left"`）: プライマリサイドバーを右側へ移動する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `workbench.sideBar.location` | `"right"` | `"left"` | プライマリサイドバーを右側へ移動する |
 
 | Before | After |
 | --- | --- |
@@ -39,8 +41,10 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=209s
 
 アイコンテーマを変更し、すっきりとした見た目にします。
 
-- `workbench.iconTheme: "material-icon-theme"`（既定値 `"vs-seti"`）: アイコンテーマに [Material Icon Theme](https://marketplace.visualstudio.com/items?itemName=PKief.material-icon-theme) を適用する
-- `material-icon-theme.hidesExplorerArrows: true`（既定値 `false`）: フォルダー横の展開矢印を非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `workbench.iconTheme` | `"material-icon-theme"` | `"vs-seti"` | アイコンテーマに [Material Icon Theme](https://marketplace.visualstudio.com/items?itemName=PKief.material-icon-theme) を適用する |
+| `material-icon-theme.hidesExplorerArrows` | `true` | `false` | フォルダー横の展開矢印を非表示にする |
 
 | Before | After |
 | --- | --- |
@@ -51,10 +55,12 @@ Aura のカラーテーマを保ったまま、左の Seti アイコンと展開
 ### ツリー表示とフォルダー構造の整理
 ツリーの補助表示を整理し、すべてのフォルダーを個別の行として展開します。
 
-- `workbench.tree.enableStickyScroll: false`（既定値 `true`）: スクロール時に親フォルダー名を上部に固定するスティッキースクロールを無効化する
-- `workbench.tree.renderIndentGuides: "none"`（既定値 `"onHover"`）: ツリー内の垂直インデントガイドを非表示にする
-- `workbench.tree.indent: 8`（既定値 `8`）: ツリービューの階層間のインデント幅をピクセル単位で設定する（既定値と同じため見た目の変化はない）
-- `explorer.compactFolders: false`（既定値 `true`）: 子フォルダーが 1 つだけの場合のコンパクト表示を解除する
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `workbench.tree.enableStickyScroll` | `false` | `true` | スクロール時に親フォルダー名を上部に固定するスティッキースクロールを無効化する |
+| `workbench.tree.renderIndentGuides` | `"none"` | `"onHover"` | ツリー内の垂直インデントガイドを非表示にする |
+| `workbench.tree.indent` | `8` | `8` | ツリービューの階層間のインデント幅をピクセル単位で設定する（既定値と同じため見た目の変化はない） |
+| `explorer.compactFolders` | `false` | `true` | 子フォルダーが 1 つだけの場合のコンパクト表示を解除する |
 
 | Before | After |
 | --- | --- |
@@ -75,8 +81,10 @@ Aura のカラーテーマを保ったまま、左の Seti アイコンと展開
 ### 操作確認ダイアログと装飾の抑制
 エクスプローラー内でのファイル操作時の確認ダイアログを非表示にします。
 
-- `explorer.confirmDragAndDrop: false`（既定値 `true`）: ドラッグ＆ドロップ移動時の確認ダイアログを非表示にする
-- `explorer.confirmDelete: false`（既定値 `true`）: アイテム削除時の確認ダイアログを非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `explorer.confirmDragAndDrop` | `false` | `true` | ドラッグ＆ドロップ移動時の確認ダイアログを非表示にする |
+| `explorer.confirmDelete` | `false` | `true` | アイテム削除時の確認ダイアログを非表示にする |
 
 | Before | After |
 | --- | --- |
@@ -92,8 +100,10 @@ Aura のカラーテーマを保ったまま、左の Seti アイコンと展開
 
 さらに、ファイル一覧の視覚的なノイズを最小化します。
 
-- `explorer.decorations.badges: false`（既定値 `true`）: エラー件数のバッジを非表示にする
-- `git.decorations.enabled: false`（既定値 `true`）: 変更ファイルの Git ステータス装飾を非表示にする
+| 設定 | 値 | 既定値 | 効果 |
+| --- | --- | --- | --- |
+| `explorer.decorations.badges` | `false` | `true` | エラー件数のバッジを非表示にする |
+| `git.decorations.enabled` | `false` | `true` | 変更ファイルの Git ステータス装飾を非表示にする |
 
 | Before | After |
 | --- | --- |
