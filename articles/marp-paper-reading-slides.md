@@ -11,7 +11,7 @@ published_at: "2026-12-03 09:00"
 
 https://adventar.org/calendars/13106
 
-このアドベントカレンダーでは、12/1 から 12/3 まで 3 日連続で記事を投稿します。コーディングエージェントの運用に関する続き物です。全体の予定は次の通りです。
+このアドベントカレンダーでは、最近流行りのコーディングエージェントに関する内容を 12/1 から 12/3 まで 3 日連続で投稿します。全体の予定は次の通りです。
 
 - 12/1: [Herdr で複数のエージェントを対話させるシンプルなスキルの紹介](https://zenn.dev/shunk031/articles/herdr-orchestrate-workers-skill)
 - 12/2: [AI 臭い日本語を agy gemini スキルで一掃するゾォ〜](https://zenn.dev/shunk031/articles/agy-gemini-japanese-skill)
@@ -21,7 +21,7 @@ https://adventar.org/calendars/13106
 
 PowerPoint や Keynote などの GUI ツールでは、フォントや余白、数式の配置を手作業で調整する手間が発生します。一方で Marp は、原稿がテキストなのでコーディングエージェントでも扱いやすく、CSS でスタイルを一括調整できます。HTML で出力すれば、CSS のアニメーションも宣言的に書ける点も気に入っています。
 
-筆者のスライド用リポジトリ [shunk031/slides](https://github.com/shunk031/slides) では、この Marp を基盤に据え、コーディングエージェントがスライドの原稿を主に執筆し、人間が微調整する運用を整えています。専用の CSS テーマ、数式注釈の記法ルール、Headless Chrome（= 画面を表示せずに動かす Chrome）によるレイアウト自動検査を備えています。本記事では、このリポジトリの構成と、エージェントと協調して論文紹介スライドを見やすく仕上げる工夫を解説します。
+筆者のスライド用リポジトリ [shunk031/slides](https://github.com/shunk031/slides) では、この Marp を基盤に据え、コーディングエージェントがスライドの原稿を主に執筆し、人間が微調整する運用を整えています。専用の CSS テーマ、数式注釈の記法ルール、Headless Chrome によるレイアウト自動検査を備え、文字のはみ出しやテキスト同士の重なり、単語の途中改行などが見つかったスライドの PDF 出力を自動で止めます。本記事では、このリポジトリの構成と、エージェントと協調して論文紹介スライドを見やすく仕上げる工夫を解説します。
 
 https://github.com/shunk031/slides
 
@@ -60,7 +60,7 @@ Marp は CSS によるテーマ拡張機構を備えています。独自のク�
 
 本節では、筆者のスライド用リポジトリ [shunk031/slides](https://github.com/shunk031/slides) に含まれるファイル群の役割と、原稿の執筆から PDF 出力までを動かす手順を説明します。
 
-リポジトリでは、開発ツールのバージョンと実行タスクをまとめて管理するツールとして [mise](https://mise.jdx.dev/getting-started.html)[^mise_doc] を採用しています。依存ツールのバージョン管理や、スライドのプレビュー・ビルドタスクの定義をすべて `mise.toml` に集約しています。
+このスライドプロジェクトは複数のツールに依存するため、それらをまとめて手軽に管理できるよう [mise](https://mise.jdx.dev/getting-started.html)[^mise_doc] を採用しています。Node 24.18.0 や Marp CLI 4.5.1 のバージョン固定、プレビューや PDF 出力といったタスク定義をすべて `mise.toml` に集約しています。
 
 リポジトリのディレクトリ構成は次のとおりです。
 
@@ -77,9 +77,9 @@ Marp は CSS によるテーマ拡張機構を備えています。独自のク�
 └── mise.toml           # 依存ツールと実行タスクの定義
 ```
 
-スライドのプレビューは `mise run preview` コマンドで起動します。ローカルサーバーが立ち上がり、ブラウザで指定の URL を開くとスライドが表示されます。Markdown ファイルを保存すると表示が自動更新されます。なお、VS Code 拡張機能の「Marp for VS Code」はリポジトリ独自のプラグインが動作しないため、レイアウトの確認にはこのブラウザプレビューを使います。
+スライドのプレビューは `mise run preview` コマンドで起動します。ローカルサーバーが立ち上がり、ブラウザで指定の URL を開くとスライドが表示されます。Markdown ファイルを保存すると表示が自動更新されます。
 
-PDF 出力は `mise run pdf` コマンドで実行します。このタスクは、スライドの文字のはみ出しや重なりを検査するレイアウト検査タスク `check-layout` の通過を前提条件としています。内部では Marp CLI で全資料を一括変換し、手元の画像を読み込む `--allow-local-files` オプションを付けて `dist/<発表名>/slides.pdf` に出力します。
+PDF 出力は `mise run pdf` コマンドで実行します。このタスクは、スライドの文字のはみ出しや重なりを検査するレイアウト検査タスク `check-layout` の通過を前提条件としています。
 
 ```toml
 [tasks.pdf]
@@ -107,8 +107,7 @@ run = "marp --server ."
 ```markdown
 ---
 marp: true
-theme: ly
-class: classification-public
+theme: uec-haralab
 size: 16:9
 lang: ja
 paginate: true
@@ -126,20 +125,17 @@ paginate: true
 論文紹介スライドでは、図版がどの論文から引用されたものかを明確に示す必要があります。リポジトリの執筆ガイドでは、図の直下に出典と説明を配置するルールを定めています。
 
 ```markdown
-> ![Figure 2: 入出力の対応](assets/figure.png)
+> ![Figure 1: 提案する分類システム](assets/figure.png)
 >
-> Figure from [[Huang+ ECCV’26](https://arxiv.org/html/2608.26716v1#S3.F2)]: 画像・メタデータ・質問・回答の対応
+> Figure from [[Kitada+ arXiv’18](https://arxiv.org/abs/1809.02568)]: 提案する分類システム
 ```
-
-角括弧 `[[Huang+ ...](URL)]` をリンクの外側に配置します。これにより、表示上の角括弧を維持しながらリンクとして機能させています。
 
 スライドの原稿を次のように書くと、図の直後へ出典と説明が配置されます。
 
 ```markdown
 ---
 marp: true
-theme: ly
-class: classification-public
+theme: uec-haralab
 size: 16:9
 lang: ja
 paginate: true
@@ -151,39 +147,6 @@ paginate: true
 ```
 
 ![](/images/marp-paper-reading-slides/figure-source.png)
-
-### 数式の注釈と mathclap による幅の抑制
-
-論文の数式解説では、各項の役割を説明するために下括弧 `\underbrace` を使う場面が多くあります。しかし、通常の LaTeX 記法では注釈テキストの幅に応じて数式全体の横幅が広がります。その結果、数式がスライド幅からはみ出す原因になります。この問題を解決するため、注釈部分を `\mathclap`（= 注釈の幅を 0 として扱い、式の横幅が広がらないようにする命令）で包む記法を必須としています。
-
-```latex
-$$
-\underbrace{m\vphantom{y}}_{\mathclap{\text{平均}}} = \bigl(\underbrace{x\vphantom{y}}_{\mathclap{\text{条件 A}}}\;+\;\underbrace{y}_{\mathclap{\text{条件 B}}}\bigr)/2
-$$
-```
-
-数式例の `\vphantom{y}` は、高さをそろえるための見えない文字です。Marp プラグイン `scripts/check-math.cjs` が数式トークンを走査します。`\underbrace` に `\mathclap` が適用されていない場合は、エラーを発生させてビルドを停止します。
-
-スライドの原稿を次のように書くと、横幅を抑えた数式の注釈が表示されます。
-
-```markdown
----
-marp: true
-theme: ly
-class: classification-public
-size: 16:9
-lang: ja
-paginate: true
----
-
-## 数式の注釈 **|** _幅を抑える_
-
-$$
-\underbrace{x+y}_{\mathclap{\text{合計}}} = z
-$$
-```
-
-![](/images/marp-paper-reading-slides/math-mathclap.png)
 
 ### Headless Chrome によるレイアウト検査
 
@@ -207,8 +170,8 @@ $$
 ```markdown
 ---
 marp: true
-theme: ly
-class: debug-layout classification-public
+theme: uec-haralab
+class: debug-layout
 size: 16:9
 lang: ja
 paginate: true
@@ -229,39 +192,15 @@ section.debug-layout > blockquote img { width: 1284px; max-width: none; }
 
 ## 代表的な作例
 
-本節では、本リポジトリで作成・管理しているスライドの作例を紹介します。レイアウト見本デッキ、実際の国際会議論文の紹介スライド、研究室向けテーマの作例を順に取り上げます。
+本節では、本リポジトリで作成・管理しているスライドの作例を紹介します。レイアウト見本デッキ、実際の国際会議論文の紹介スライドを順に取り上げます。
 
 ### レイアウト見本デッキ
 
 リポジトリにはレイアウト見本デッキとして [slides/example/slides.md](https://github.com/shunk031/slides/blob/aed6a32210d645a9b13f0f3b46eff96df0200dac/slides/example/slides.md) が用意されています。このデッキには、テーマに含まれる各種レイアウトの実例が含まれています。新しいスライドを作成する際は、この見本デッキを複製して原稿を作成します。
 
-見本デッキを Marp で描画したスライドは次のとおりです。
-
-![論文の表紙レイアウト](/images/marp-paper-reading-slides/ly-cover.png)
-*論文の表紙のレイアウト*
-
-![左右の比較レイアウト](/images/marp-paper-reading-slides/ly-comparison.png)
-*左右の比較（同じ観点を同じ順番で並べる）*
-
-![数式の注釈レイアウト](/images/marp-paper-reading-slides/ly-math.png)
-*数式の注釈（下括弧で記号の意味を式の近くに示す）*
-
-![手法の配置レイアウト](/images/marp-paper-reading-slides/ly-method.png)
-*手法の配置（上に図、下に 2 列で手順）*
-
 ### 実際の論文紹介スライド
 
 実践的な作例として、コンピュータビジョンの国際会議 ECCV 2026 採択論文の解説スライドを管理しています。対象論文は「Beyond Atomic Layouts: Compositional Design Understanding with Vision-Language Models」で、[論文紹介スライド](https://github.com/shunk031/slides/blob/aed6a32210d645a9b13f0f3b46eff96df0200dac/slides/2026-10-19-beyond-atomic-layouts/slides.md) として格納されています。表紙のメタデータ配置から背景や課題、定性比較まで専用レイアウトを活用し、マルチモーダル研究の論点を整理したスライドです。
-
-### 研究室向けテーマの作例
-
-筆者が電気通信大学原研究室でのスライド作成用に作成したテーマ [`uec-haralab`](https://github.com/shunk031/slides/pull/3) のスライド例は次のとおりです。
-
-![研究室向けテーマの表紙](/images/marp-paper-reading-slides/uec-cover.png)
-*表紙*
-
-![研究の概要スライド](/images/marp-paper-reading-slides/uec-overview.png)
-*研究の概要（背景と課題、提案手法、検証結果）*
 
 ## コーディングエージェントとの協調運用
 
