@@ -37,7 +37,7 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
 | `window.zoomLevel` | `3` | `0` | 画面全体のズーム倍率を上げる（動画では画面収録で見やすくするために設定） |
 | `window.customTitleBarVisibility` | `"never"` | `"auto"` | カスタムタイトルバーを非表示にする |
 | `window.titleBarStyle` | `"native"` | `"custom"` | ネイティブスタイルのタイトルバーを使用する |
-| `custom-ui-style.electron.titleBarStyle` | `"hiddenInset"` | — | [Electron](https://www.electronjs.org/docs/latest/) のタイトルバースタイルを `hiddenInset` にする |
+| `custom-ui-style.electron.titleBarStyle` | `"hiddenInset"` | — | Electron のタイトルバースタイルを `hiddenInset` にする |
 | `custom-ui-style.electron.trafficLightPosition` | `x: 20`, `y: 16` | — | macOS のウィンドウ操作ボタン位置を移動する |
 
 | Before | After |

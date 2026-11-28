@@ -85,7 +85,7 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1253s
 | `files.insertFinalNewline` | `true` | `false` | 保存時にファイル末尾が改行で終わるよう自動調整する |
 | `scm.diffDecorations` | `"none"` | `"all"` | エディタ左側のガター（行番号の横）に表示される Git 変更マークを非表示にする |
 
-動画では Git の差分確認を [GitHub Desktop](https://desktop.github.com/) などの外部ツールで行うため、エディタ内の差分表示を不要としています。
+動画では Git の差分確認を GitHub Desktop などの外部ツールで行うため、エディタ内の差分表示を不要としています。
 
 | Before | After |
 | --- | --- |

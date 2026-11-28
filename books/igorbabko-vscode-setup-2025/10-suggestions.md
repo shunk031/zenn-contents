@@ -2,7 +2,7 @@
 title: "Suggestions"
 ---
 
-自動補完ポップアップの自動表示を抑制し、Tab キーによる補完確定やスニペットの優先表示、[Emmet](https://docs.emmet.io/) 展開を設定します。補完候補の過剰な割り込みを防ぎ、必要なタイミングで確実に補完を利用できるようにします。対応する動画のチャプターは [Code completions (33:11)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s) です。
+自動補完ポップアップの自動表示を抑制し、Tab キーによる補完確定やスニペットの優先表示、Emmet 展開を設定します。補完候補の過剰な割り込みを防ぎ、必要なタイミングで確実に補完を利用できるようにします。対応する動画のチャプターは [Code completions (33:11)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s) です。
 
 https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1991s
 

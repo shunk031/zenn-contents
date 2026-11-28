@@ -2,7 +2,7 @@
 title: "Guides and Highlights"
 ---
 
-行番号を現在行からの相対表示に変更し、インデントガイドや空白文字、現在行や選択箇所のハイライトを無効化します。[Vim](https://www.vim.org/) などのキーバインドでの移動効率を高めつつ、画面上の不要な描画ラインを最小限に抑えます。対応する動画のチャプターは [Guides and highlights (26:05)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1565s) です。
+行番号を現在行からの相対表示に変更し、インデントガイドや空白文字、現在行や選択箇所のハイライトを無効化します。Vim などのキーバインドでの移動効率を高めつつ、画面上の不要な描画ラインを最小限に抑えます。対応する動画のチャプターは [Guides and highlights (26:05)](https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1565s) です。
 
 https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1565s
 

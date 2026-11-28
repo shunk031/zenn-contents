@@ -2,7 +2,7 @@
 title: "はじめに"
 ---
 
-本書は、[Igor Babko 氏の動画「VS Code Setup | Beautiful minimal look」](https://www.youtube.com/watch?v=VmFOsK7IhI4)に基づき、[VS Code](https://code.visualstudio.com/) の外観を極限までシンプルかつ美しく整える設定手順を解説したガイドブックです。
+本書は、[Igor Babko 氏の動画「VS Code Setup | Beautiful minimal look」](https://www.youtube.com/watch?v=VmFOsK7IhI4)に基づき、VS Code の外観を極限までシンプルかつ美しく整える設定手順を解説したガイドブックです。
 
 ## 本書の対象読者
 
