@@ -2,7 +2,9 @@ pre-commit:
   parallel: true
   commands:
     textlint-articles:
-      glob: "articles/*.md"
+      glob:
+        - "articles/*.md"
+        - "books/*/*.md"
       run: npx textlint {staged_files}
 
     textlint-docs:
@@ -10,7 +12,9 @@ pre-commit:
       run: npx textlint {staged_files}
 
     article-style-audit:
-      glob: "articles/*.md"
+      glob:
+        - "articles/*.md"
+        - "books/*/*.md"
       run: npm run article-style:audit -- {staged_files}
 
     article-style-audit-syntax:
