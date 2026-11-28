@@ -1,0 +1,46 @@
+version: 1
+rules:
+  - expected: "("
+    pattern: "（"
+    specs:
+      - from: "（"
+        to: "("
+  - expected: ")"
+    pattern: "）"
+    specs:
+      - from: "）"
+        to: ")"
+  - expected: "$1 $3"
+    pattern: '/([^\s])([ \t\u3000]*)([(])/g'
+    specs:
+      - from: "事後学習(post-training)"
+        to: "事後学習 (post-training)"
+  - expected: "$1"
+    pattern: '/([(])[ \t\u3000]+/g'
+    specs:
+      - from: "( post-training"
+        to: "(post-training"
+  - expected: "$1"
+    pattern: '/[ \t\u3000]+([)])/g'
+    specs:
+      - from: "post-training )"
+        to: "post-training)"
+  - expected: "$1 $3"
+    pattern: '/([)])([ \t\u3000]*)([^\s、。，．：！？)\]}>］｝」』】〕〉》〗〙〛〟])/g'
+    specs:
+      - from: "(post-training)する"
+        to: "(post-training) する"
+      - from: "(post-training)  する"
+        to: "(post-training) する"
+  - expected: "$1$3"
+    pattern: '/([)])([ \t\u3000]+)([、。，．：！？)\]}>］｝」』】〕〉》〗〙〛〟])/g'
+    specs:
+      - from: "(post-training) 、"
+        to: "(post-training)、"
+      - from: "(post-training)」"
+        to: "(post-training)」"
+  - expected: "$1"
+    pattern: '/([)])[ \t\u3000]+$/g'
+    specs:
+      - from: "(post-training)  "
+        to: "(post-training)"

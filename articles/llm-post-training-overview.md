@@ -72,17 +72,17 @@ $$
 
 回答形式、文体、基本的な解き方を入れるには、入力と模範応答の組を使います。応答を採点したり比較したりする前に、まず望ましい出力の形をまねさせる段階です。
 
-教師ありファインチューニング (Supervised Fine-Tuning; SFT)[^instructgpt] は、入力 $x$ と模範応答 $y^\ast$ の組を使って、模範応答の尤度を上げます。目的関数は、次の負の対数尤度です。
+教師ありファインチューニング (Supervised Fine-Tuning; SFT)[^instructgpt] は、入力 $x$ と模範応答 $y^\ast$ の組を使って、模範応答の尤度を上げます。目的関数は、次の負の対数尤度です。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \mathcal{L}_{\mathrm{SFT}}(\theta) = - \mathbb{E}_{(x, y^\ast) \sim \mathcal{D}_{\mathrm{SFT}}} \left[ \sum_{t=1}^{T} \log \pi_\theta(y_t^\ast \mid x, y_{\lt t}^\ast) \right]
 $$
 
-<!-- textlint-enable -->
 
-この損失は、模範応答をどれだけ高い確率で再現できるかを評価します。学習では $\pi_\theta(y^\ast \mid x)$ を最大化します。
+
+<!-- textlint-enable -->この損失は、模範応答をどれだけ高い確率で再現できるかを評価します。学習では $\pi_\theta(y^\ast \mid x)$ を最大化します。
 
 入力と模範応答の組があれば、指示形式、文体、出力フォーマット、基本的なタスク解法を SFT で学習できます。InstructGPT[^instructgpt] でも、人が書いた模範応答で教師ありファインチューニングした後に、人間の比較を使っています。
 
@@ -92,27 +92,27 @@ SFT の信号は、基本的に模範応答上の文脈に限られます。訓�
 
 応答に点数をつけ、その点が高くなるように方策を更新する系列です。人間のフィードバックからの強化学習 (Reinforcement Learning from Human Feedback; RLHF)[^christiano] は、人間の評価から報酬を作る枠組みです。近接方策最適化 (Proximal Policy Optimization; PPO)[^ppo] は、その報酬で方策を更新する方法として扱います。
 
-強化学習では、モデルが自分で応答を生成し、その応答に点数をつけます。その点数が高くなるようにモデルを更新します。もっとも単純には、期待報酬 $J(\theta)$ を最大化します。
+強化学習では、モデルが自分で応答を生成し、その応答に点数をつけます。その点数が高くなるようにモデルを更新します。もっとも単純には、期待報酬 $J(\theta)$ を最大化します。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 J(\theta) = \mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi_\theta(\cdot \mid x)} \left[ r(x, y) \right]
 $$
 
-<!-- textlint-enable -->
 
-強化学習で上げたいのは、モデルが自分で生成した応答の期待報酬です。ただし報酬だけを見ると、基準モデルから大きく外れた応答も選ばれやすくなります。期待報酬を上げつつ基準モデルからのずれを抑えるために、Kullback-Leibler (KL) 正則化を入れることが多いです。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->強化学習で上げたいのは、モデルが自分で生成した応答の期待報酬です。ただし報酬だけを見ると、基準モデルから大きく外れた応答も選ばれやすくなります。期待報酬を上げつつ基準モデルからのずれを抑えるために、Kullback-Leibler (KL) 正則化を入れることが多いです。<!-- textlint-disable -->
+
+
 
 $$
 \max_\theta \mathbb{E}_{x \sim \mathcal{D}} \left( \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)} \left[ r(x, y) \right] - \beta \mathrm{KL} \left( \pi_\theta(\cdot \mid x) \| \pi_{\mathrm{ref}}(\cdot \mid x) \right) \right)
 $$
 
-<!-- textlint-enable -->
 
-後半の KL 項は、現在のモデルが基準モデルからどれくらい離れたかを表します。$\beta$ は、その離れ具合をどれくらい強く抑えるかを決める係数です。
+
+<!-- textlint-enable -->後半の KL 項は、現在のモデルが基準モデルからどれくらい離れたかを表します。$\beta$ は、その離れ具合をどれくらい強く抑えるかを決める係数です。
 
 InstructGPT[^instructgpt] で使われたような RLHF 構成では、この報酬 $r(x, y)$ を人間の好みから作ります[^ziegler][^stiennon]。代表的には、次の構成を取ります。
 
@@ -120,51 +120,51 @@ InstructGPT[^instructgpt] で使われたような RLHF 構成では、この報
 2. 人間の比較データから報酬モデルを作る。
 3. PPO などの強化学習でモデルを更新する。
 
-同じ問いに対する複数の応答を人間に比べてもらい、勝ち応答 $y_w$ と負け応答 $y_l$ の組を作ります。報酬モデル $r_\phi(x, y)$ は、勝ち応答に高い点をつけるように学習します。
+同じ問いに対する複数の応答を人間に比べてもらい、勝ち応答 $y_w$ と負け応答 $y_l$ の組を作ります。報酬モデル $r_\phi(x, y)$ は、勝ち応答に高い点をつけるように学習します。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 P(y_w \succ y_l \mid x) = \sigma \left( r_\phi(x, y_w) - r_\phi(x, y_l) \right)
 $$
 
-<!-- textlint-enable -->
 
-ここで $\sigma$ は、報酬差を勝ち応答の確率として読める値に写す活性化関数です。
 
-報酬モデルの損失関数は、たとえば次のように書けます。
+<!-- textlint-enable -->ここで $\sigma$ は、報酬差を勝ち応答の確率として読める値に写す活性化関数です。
 
-<!-- textlint-disable -->
+報酬モデルの損失関数は、たとえば次のように書けます。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{RM}}(\phi) = - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}} \left[ \log \sigma \left( r_\phi(x, y_w) - r_\phi(x, y_l) \right) \right]
 $$
 
-<!-- textlint-enable -->
 
-この式は、$r_\phi(x, y_w) \gt r_\phi(x, y_l)$ となるように報酬モデルを学習している、と読めます。
 
-PPO は、この方策更新を安定させるための代表的な手法です。古い方策 $\pi_{\mathrm{old}}$ と新しく更新したい方策 $\pi_\theta$ の確率比を、次のように定義します。
+<!-- textlint-enable -->この式は、$r_\phi(x, y_w) \gt r_\phi(x, y_l)$ となるように報酬モデルを学習している、と読めます。
 
-<!-- textlint-disable -->
+PPO は、この方策更新を安定させるための代表的な手法です。古い方策 $\pi_{\mathrm{old}}$ と新しく更新したい方策 $\pi_\theta$ の確率比を、次のように定義します。<!-- textlint-disable -->
+
+
 
 $$
 \rho_t(\theta) = \frac{\pi_\theta(y_t \mid x, y_{\lt t})} {\pi_{\mathrm{old}}(y_t \mid x, y_{\lt t})}
 $$
 
-<!-- textlint-enable -->
 
-この比が大きいほど、新しい方策が古い方策から大きく離れたことを意味します。PPO では、確率比 $\rho_t(\theta)$ を $1-\epsilon$ から $1+\epsilon$ の範囲にクリップし、一度の更新で方策が動きすぎないようにします。ここで $\epsilon$ はクリップ幅、$A_t$ は時刻 $t$ の行動がどれだけ報酬に効いたかを表す利得です。PPO の目的関数は、このクリップ前の項とクリップ後の項の小さい方を使います。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->この比が大きいほど、新しい方策が古い方策から大きく離れたことを意味します。PPO では、確率比 $\rho_t(\theta)$ を $1-\epsilon$ から $1+\epsilon$ の範囲にクリップし、一度の更新で方策が動きすぎないようにします。ここで $\epsilon$ はクリップ幅、$A_t$ は時刻 $t$ の行動がどれだけ報酬に効いたかを表す利得です。PPO の目的関数は、このクリップ前の項とクリップ後の項の小さい方を使います。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{PPO}}(\theta) = \mathbb{E}_t \left[ \min \left( \rho_t(\theta) A_t, \mathrm{clip}(\rho_t(\theta), 1 - \epsilon, 1 + \epsilon) A_t \right) \right]
 $$
 
-<!-- textlint-enable -->
 
-この目的関数では、報酬に効いた出力の確率を上げ、そうでない出力の確率を下げます。ただし、確率比をクリップして一度の更新量を抑えます。
+
+<!-- textlint-enable -->この目的関数では、報酬に効いた出力の確率を上げ、そうでない出力の確率を下げます。ただし、確率比をクリップして一度の更新量を抑えます。
 
 応答の評価をスカラー報酬にできるなら、RLHF / PPO は生成した応答を採点し、その報酬を最大化する方策更新として書けます。ただし、応答を生成する方策モデルのほかに、基準モデル、報酬モデル、価値推定器が必要になり、訓練構成は重くなります。この構成を軽くする選択肢として、比較データから直接方策を動かす DPO や、価値推定器を省く GRPO があります。
 
@@ -174,47 +174,47 @@ $$
 
 ### DPO
 
-DPO が捨てたのは、明示的な報酬モデルと PPO の更新ループです。直接選好最適化 (Direct Preference Optimization; DPO)[^dpo] は、勝ち応答と負け応答の比較データから、方策の目的関数を直接書きます。出発点は、RLHF でよく使う KL 正則化つきの目的関数です。
+DPO が捨てたのは、明示的な報酬モデルと PPO の更新ループです。直接選好最適化 (Direct Preference Optimization; DPO)[^dpo] は、勝ち応答と負け応答の比較データから、方策の目的関数を直接書きます。出発点は、RLHF でよく使う KL 正則化つきの目的関数です。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \max_\pi \mathbb{E}_{x \sim \mathcal{D},\, y\sim\pi(\cdot \mid x)} \left( r(x, y) - \beta \log \frac{\pi(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)} \right)
 $$
 
-<!-- textlint-enable -->
 
-この最適解は、次の形になることが知られています。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->この最適解は、次の形になることが知られています。<!-- textlint-disable -->
+
+
 
 $$
 \pi^\star(y \mid x) = \frac{1}{Z(x)} \pi_{\mathrm{ref}}(y \mid x) \exp \left( \frac{1}{\beta}r(x, y) \right)
 $$
 
-<!-- textlint-enable -->
 
-ここで $Z(x)$ は正規化定数です。この式を変形すると、報酬は次のように書けます。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->ここで $Z(x)$ は正規化定数です。この式を変形すると、報酬は次のように書けます。<!-- textlint-disable -->
+
+
 
 $$
 r(x, y) = \beta \log \frac{\pi^\star(y \mid x)}{\pi_{\mathrm{ref}}(y \mid x)} + \beta \log Z(x)
 $$
 
-<!-- textlint-enable -->
 
-DPO は、この関係を使って、明示的な報酬モデル $r_\phi(x, y)$ を学習せずに済ませます。勝ち応答 $y_w$ と負け応答 $y_l$ があるとき、DPO の損失は次のように書けます。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->DPO は、この関係を使って、明示的な報酬モデル $r_\phi(x, y)$ を学習せずに済ませます。勝ち応答 $y_w$ と負け応答 $y_l$ があるとき、DPO の損失は次のように書けます。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{DPO}}(\theta) = - \mathbb{E}_{(x, y_w, y_l) \sim \mathcal{D}_{\mathrm{pref}}} \left[ \log \sigma \left( \beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)} \right) \right]
 $$
 
-<!-- textlint-enable -->
 
-DPO が上げたいのは、絶対的な報酬ではなく、基準モデルに対する勝ち応答と負け応答の差です。報酬モデルを別に持たず、訓練中のサンプリングも不要なので、PPO より訓練構成を減らせます。
+
+<!-- textlint-enable -->DPO が上げたいのは、絶対的な報酬ではなく、基準モデルに対する勝ち応答と負け応答の差です。報酬モデルを別に持たず、訓練中のサンプリングも不要なので、PPO より訓練構成を減らせます。
 
 より細かく見ると、勝ち応答 $y_w$ では次の量が大きくなるように更新します。
 
@@ -236,75 +236,75 @@ DPO は、既存の比較データに強く依存します。比較ペアが粗�
 
 DPO の後は、報酬モデル、基準モデル、ペア比較のどれを残すかで手法が分かれます。
 
-Identity Preference Optimization (IPO)[^ipo] は、DPO の近似がどの条件で崩れやすいかを、より一般的な選好学習の枠組みから見直します。DPO では、次の差を大きくし続けやすいと解釈できます。
+Identity Preference Optimization (IPO)[^ipo] は、DPO の近似がどの条件で崩れやすいかを、より一般的な選好学習の枠組みから見直します。DPO では、次の差を大きくし続けやすいと解釈できます。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \Delta_\theta = \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\mathrm{ref}}(y_w \mid x)} - \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\mathrm{ref}}(y_l \mid x)}
 $$
 
-<!-- textlint-enable -->
 
-IPO では、この差を無限に大きくするのではなく、有限の目標値に近づけます。代表的には、次のような二乗誤差として書けます。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->IPO では、この差を無限に大きくするのではなく、有限の目標値に近づけます。代表的には、次のような二乗誤差として書けます。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{IPO}} = \mathbb{E} \left[ \left( \Delta_\theta - \frac{1}{2\beta} \right)^2 \right]
 $$
 
-<!-- textlint-enable -->
 
-オッズ比選好最適化 (Odds Ratio Preference Optimization; ORPO)[^orpo] は、SFT と選好最適化を分けません。好ましい応答を学びながら、好ましくない応答のオッズを下げます。記号を単純化して $\mathrm{odds}_\theta(y \mid x)=\pi_\theta(y \mid x)/(1-\pi_\theta(y \mid x))$ と置くと、ORPO の選好項はオッズ比の差を使います。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->オッズ比選好最適化 (Odds Ratio Preference Optimization; ORPO)[^orpo] は、SFT と選好最適化を分けません。好ましい応答を学びながら、好ましくない応答のオッズを下げます。記号を単純化して $\mathrm{odds}_\theta(y \mid x)=\pi_\theta(y \mid x)/(1-\pi_\theta(y \mid x))$ と置くと、ORPO の選好項はオッズ比の差を使います。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{OR}} = - \mathbb{E} \log \sigma \left( \log \frac{\mathrm{odds}_\theta(y_w \mid x)} {\mathrm{odds}_\theta(y_l \mid x)} \right)
 $$
 
-<!-- textlint-enable -->
 
-全体としては、SFT 的な負の対数尤度とこの選好項を足した形で書けます。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->全体としては、SFT 的な負の対数尤度とこの選好項を足した形で書けます。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{ORPO}} = \mathcal{L}_{\mathrm{NLL}} + \lambda \mathcal{L}_{\mathrm{OR}}
 $$
 
-<!-- textlint-enable -->
 
-DPO は基準モデルを使いますが、ORPO はそれを省くのが特徴です。
 
-単純選好最適化 (Simple Preference Optimization; SimPO)[^simpo] は、基準モデルを使いません。応答長で正規化した平均対数確率を暗黙の報酬として使います。好ましい応答の平均対数確率が、好ましくない応答を余白 $\gamma$ だけ上回るようにします。
+<!-- textlint-enable -->DPO は基準モデルを使いますが、ORPO はそれを省くのが特徴です。
 
-<!-- textlint-disable -->
+単純選好最適化 (Simple Preference Optimization; SimPO)[^simpo] は、基準モデルを使いません。応答長で正規化した平均対数確率を暗黙の報酬として使います。好ましい応答の平均対数確率が、好ましくない応答を余白 $\gamma$ だけ上回るようにします。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{SimPO}} = - \mathbb{E} \log \sigma \left( \beta \left( \frac{1}{|y_w|} \log \pi_\theta(y_w \mid x) - \frac{1}{|y_l|} \log \pi_\theta(y_l \mid x) \right) - \gamma \right)
 $$
 
-<!-- textlint-enable -->
 
-Kahneman-Tversky 最適化 (Kahneman-Tversky Optimization; KTO)[^kto] は、ペア比較を作る負担を避けるために、望ましいかどうかの二値信号から学ぶ方向です。「この応答は望ましい」「この応答は望ましくない」という単独評価を扱うため、人間は損失に敏感で利益には鈍感、という行動経済学の考え方を目的関数に入れます。
+
+<!-- textlint-enable -->Kahneman-Tversky 最適化 (Kahneman-Tversky Optimization; KTO)[^kto] は、ペア比較を作る負担を避けるために、望ましいかどうかの二値信号から学ぶ方向です。「この応答は望ましい」「この応答は望ましくない」という単独評価を扱うため、人間は損失に敏感で利益には鈍感、という行動経済学の考え方を目的関数に入れます。
 
 ### 区間単位の直接選好最適化
 
 区間単位の直接選好最適化 (Segment-Level Direct Preference Optimization; SDPO)[^segment_sdpo] は、会話や推論の一部分に DPO をかける方法です。長い会話では、応答全体を 1 つの選好ラベルで扱っても、改善すべき区間は分かりにくいです。そこで、重要な区間だけを取り出します。なお、SDPO という略語は自己蒸留系の論文でも使われるため、この記事では後段の [自己蒸留型 SDPO](#自己蒸留による方策最適化) と分けます。
 
-文脈を $c$、好ましい区間を $g_w$、好ましくない区間を $g_l$ とします。このとき、区間単位の DPO は次のように書けます。
+文脈を $c$、好ましい区間を $g_w$、好ましくない区間を $g_l$ とします。このとき、区間単位の DPO は次のように書けます。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \mathcal{L}_{\mathrm{SDPO\text{-}seg}} = - \mathbb{E} \log \sigma \left( \beta \left( \log \frac{\pi_\theta(g_w \mid c)}{\pi_{\mathrm{ref}}(g_w \mid c)} - \log \frac{\pi_\theta(g_l \mid c)}{\pi_{\mathrm{ref}}(g_l \mid c)} \right) \right)
 $$
 
-<!-- textlint-enable -->
 
-標準 DPO と形はほぼ同じです。違いは、応答全体ではなく、会話や推論の一部分を単位にしている点です。長いやり取り、対話エージェント、複数手順の推論などで有効です。
+
+<!-- textlint-enable -->標準 DPO と形はほぼ同じです。違いは、応答全体ではなく、会話や推論の一部分を単位にしている点です。長いやり取り、対話エージェント、複数手順の推論などで有効です。
 
 ## 検証可能な報酬から学ぶ
 
@@ -328,37 +328,37 @@ $$
 r_1, r_2, \dots, r_G
 $$
 
-得られた報酬は、入力 $x$ ごとのグループ内で平均と標準偏差を使って正規化します。
+得られた報酬は、入力 $x$ ごとのグループ内で平均と標準偏差を使って正規化します。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 A_i = \frac{r_i - \mathrm{mean}(r_1, \dots, r_G)} {\mathrm{std}(r_1, \dots, r_G) + \epsilon}
 $$
 
-<!-- textlint-enable -->
 
-この $A_i$ は、その応答の報酬が同じ問いの中で平均よりどれだけ上かを表します。目的関数は PPO に近い形です。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->この $A_i$ は、その応答の報酬が同じ問いの中で平均よりどれだけ上かを表します。目的関数は PPO に近い形です。<!-- textlint-disable -->
+
+
 
 $$
 \mathcal{L}_{\mathrm{GRPO}} = \mathbb{E} \left[ \frac{1}{G} \sum_{i=1}^{G} \frac{1}{|y_i|} \sum_{t=1}^{|y_i|} \min \left( \rho_{i,t} A_i, \mathrm{clip}(\rho_{i,t}, 1-\epsilon, 1+\epsilon) A_i \right) - \beta D_{\mathrm{KL}} \left( \pi_\theta \| \pi_{\mathrm{ref}} \right) \right]
 $$
 
-<!-- textlint-enable -->
 
-ここで、$\rho_{i,t}$ は新旧方策の確率比です。
 
-<!-- textlint-disable -->
+<!-- textlint-enable -->ここで、$\rho_{i,t}$ は新旧方策の確率比です。<!-- textlint-disable -->
+
+
 
 $$
 \rho_{i,t} = \frac{\pi_\theta(y_{i,t} \mid x, y_{i,\lt t})} {\pi_{\mathrm{old}}(y_{i,t} \mid x, y_{i,\lt t})}
 $$
 
-<!-- textlint-enable -->
 
-PPO は価値推定器で利得を見積もります。GRPO は価値推定器を使わず、同じ問いに対する複数応答の相対比較から利得を作ります。
+
+<!-- textlint-enable -->PPO は価値推定器で利得を見積もります。GRPO は価値推定器を使わず、同じ問いに対する複数応答の相対比較から利得を作ります。
 
 ### MAXRL
 
@@ -368,18 +368,18 @@ $$
 J_{\mathrm{ML}}(\theta) = \mathbb{E}_{x \sim \rho} \left[ \log p_\theta^{\mathrm{pass}}(x) \right]
 $$
 
-この 2 つは、同じ検証器を使っていても更新の重みが違います。期待報酬の勾配は $\nabla_\theta p_\theta^{\mathrm{pass}}(x)$ ですが、対数尤度の勾配は次のように、正解確率が低い入力ほど大きく重み付けします。
+この 2 つは、同じ検証器を使っていても更新の重みが違います。期待報酬の勾配は $\nabla_\theta p_\theta^{\mathrm{pass}}(x)$ ですが、対数尤度の勾配は次のように、正解確率が低い入力ほど大きく重み付けします。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \nabla_\theta \log p_\theta^{\mathrm{pass}}(x) =
 \frac{1}{p_\theta^{\mathrm{pass}}(x)} \nabla_\theta p_\theta^{\mathrm{pass}}(x)
 $$
 
-<!-- textlint-enable -->
 
-つまり MAXRL は、簡単に正解できる問題よりも、たまにしか正解しない難しい問題へ強い学習信号を置く目的関数として読めます。
+
+<!-- textlint-enable -->つまり MAXRL は、簡単に正解できる問題よりも、たまにしか正解しない難しい問題へ強い学習信号を置く目的関数として読めます。
 
 実装上の差分は小さく、GRPO が報酬を標準偏差で正規化するのに対し、MAXRL は平均報酬で正規化します。成功サンプルが 1 つもない入力では更新できませんが、平均報酬が低い、つまり正解しにくい入力ほど 1 回の成功が強く効きます。論文では、ロールアウト数を増やすほど MAXRL の目的関数が最大尤度に近づく、と説明されています。
 
@@ -401,17 +401,17 @@ $$
 y \sim \pi_\theta(\cdot \mid x)
 $$
 
-生徒が自分で応答 $y$ を生成したあと、その途中文脈 $x, y_{\lt t}$ に対して教師が次のトークン分布を与えます。学習では、教師分布と生徒分布の KL 距離を最小化します。
+生徒が自分で応答 $y$ を生成したあと、その途中文脈 $x, y_{\lt t}$ に対して教師が次のトークン分布を与えます。学習では、教師分布と生徒分布の KL 距離を最小化します。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \mathcal{L}_{\mathrm{OPD}}(\theta) = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \pi_T(\cdot \mid x, y_{\lt t}) \| \pi_\theta(\cdot \mid x, y_{\lt t}) \right) \right]
 $$
 
-<!-- textlint-enable -->
 
-ここで $\pi_T$ は教師モデルです。OPD は生徒自身の文脈上で教えるため、訓練時と生成時のずれを減らす方向に働きます。2026 年には OPD のサーベイも出ており、長い推論やモデル圧縮の文脈で整理されています[^opd_survey]。
+
+<!-- textlint-enable -->ここで $\pi_T$ は教師モデルです。OPD は生徒自身の文脈上で教えるため、訓練時と生成時のずれを減らす方向に働きます。2026 年には OPD のサーベイも出ており、長い推論やモデル圧縮の文脈で整理されています[^opd_survey]。
 
 SFT / RL / OPD は、使う文脈と教師信号が違います。この表の RL は、報酬で方策を更新する強化学習を指します。
 
@@ -427,17 +427,17 @@ SFT は細かい信号を与えますが、文脈は固定されています。�
 
 オンポリシー自己蒸留 (On-Policy Self-Distillation; OPSD)[^opsd] は、OPD の教師を外部モデルではなく、追加情報を条件にした同じモデルの分布に置き換える方法です。ただし、完全に同じ条件の分布をまねても意味が薄いため、教師側には追加情報を与えます。たとえば、正解、検証結果、推論の手がかり、途中証明のような情報です。
 
-教師分布は追加情報 $z$ を条件にしますが、生徒分布は $z$ を条件にしません。そのうえで、生徒が実際に生成した文脈上の出力分布を近づけます。訓練時だけ使える追加情報を条件にした分布を教師にし、推論時と同じく $z$ を使わない分布へ蒸留します。
+教師分布は追加情報 $z$ を条件にしますが、生徒分布は $z$ を条件にしません。そのうえで、生徒が実際に生成した文脈上の出力分布を近づけます。訓練時だけ使える追加情報を条件にした分布を教師にし、推論時と同じく $z$ を使わない分布へ蒸留します。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \mathcal{L}_{\mathrm{OPSD}}(\theta) = \mathbb{E}_{(x, z) \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x)} \left[ \sum_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, z, y_{\lt t}) \right] \| \pi_\theta(\cdot \mid x, y_{\lt t}) \right) \right]
 $$
 
-<!-- textlint-enable -->
 
-ここで $\mathrm{sg}$ は勾配を止める操作です。教師側は更新せず、生徒側だけを教師に近づけます。数学やコードでは、解いた後の検証結果や正解を教師側だけに渡せます。
+
+<!-- textlint-enable -->ここで $\mathrm{sg}$ は勾配を止める操作です。教師側は更新せず、生徒側だけを教師に近づけます。数学やコードでは、解いた後の検証結果や正解を教師側だけに渡せます。
 
 OPSD のデータの流れでは、教師側と生徒側の条件づけを分ける必要があります。以下の解説では、OPSD を self-distillation と on-policy distillation に分け、追加情報を条件にした教師側と、通常の生成文脈に沿う生徒側の関係として説明しています。
 
@@ -447,17 +447,17 @@ https://note.com/kei_disign/n/nd60818508c1a
 
 コード実行後のエラーや評価文まで残せるなら、それをただの成功/失敗で捨てるのはもったいないです。自己蒸留による方策最適化 (Self-Distillation Policy Optimization; SDPO)[^self_distillation_sdpo] は、実行結果、判定理由、評価文などを追加情報として使い、自己蒸留で密な学習信号へ変換する方法です。たとえばコード生成では、生成モデルがコードを出力します。そのコードを実行すると、実行エラーやテスト結果が返ってきます。この実行結果は、どの部分を直すべきかを推定する手がかりになります。しかし通常の強化学習では、最終的に成功なら 1、失敗なら 0 のような粗い報酬しか使わないことがあります。
 
-SDPO は、実行結果や判定結果を使って、より細かい教師信号を作ります。応答を $y \sim \pi_\theta(\cdot \mid x)$、実行結果や評価文を $f$ とします。教師側は $f$ を条件にした分布、生徒側は $f$ を条件にしない通常の分布です。
+SDPO は、実行結果や判定結果を使って、より細かい教師信号を作ります。応答を $y \sim \pi_\theta(\cdot \mid x)$、実行結果や評価文を $f$ とします。教師側は $f$ を条件にした分布、生徒側は $f$ を条件にしない通常の分布です。<!-- textlint-disable -->
 
-<!-- textlint-disable -->
+
 
 $$
 \mathcal{L}_{\mathrm{SDPO\text{-}self}} = \mathbb{E}_{x \sim \mathcal{D},\, y \sim \pi_\theta(\cdot \mid x),\, f} \left[ \sum_t w_t D_{\mathrm{KL}} \left( \mathrm{sg} \left[ \pi_{\bar{\theta}}(\cdot \mid x, f, y_{\lt t}) \right] \| \pi_\theta(\cdot \mid x, y_{\lt t}) \right) \right]
 $$
 
-<!-- textlint-enable -->
 
-ここで $w_t$ は、どの位置を強く学ばせるかを決める重みです。実行結果や評価文を条件にした分布を教師にするため、単なる成功・失敗の報酬よりも、修正対象を位置ごとの信号として渡せます。テストログや評価文を残せるなら、成功/失敗へ潰す前に、生成途中の文脈へ戻せる形で使いたいところです。
+
+<!-- textlint-enable -->ここで $w_t$ は、どの位置を強く学ばせるかを決める重みです。実行結果や評価文を条件にした分布を教師にするため、単なる成功・失敗の報酬よりも、修正対象を位置ごとの信号として渡せます。テストログや評価文を残せるなら、成功/失敗へ潰す前に、生成途中の文脈へ戻せる形で使いたいところです。
 
 ## 使い分けの目安
 
@@ -499,9 +499,9 @@ LLM の事後学習は、教師信号の形から見ると整理しやすいで�
 
 こうして並べると、重要なのは手法名を覚えることではなく、自分のタスクで観測できる失敗をどんな教師信号として残せるかだと分かります。特にエージェント的なタスクでは、最終的な成功/失敗だけでなく、途中の判断、ツール利用、修正の過程を記録し、学習へ戻せる形にすることが効いてきます。事後学習を設計するときは、まず直したい失敗の単位を見極め、その失敗に合う教師信号を選ぶところから始めたいですね。
 
-<!-- textlint-disable ja-technical-writing/sentence-length -->
 
-[^api_wrapper]: GPT や Claude の API を叩いて「すごい」と驚けるタスクだけを相手にしているなら、それはそれで幸せです。わたしがやりたいのは、OpenAI や Anthropic が勝手に学習してくれていない、もう少し面倒なタスクです。便利な API を使うにしても、API の外側で驚いて終わりたくはありません。中身の見通しを持ったうえで、振る舞いをどう変えられるのかまで踏み込みたい、という話です。
+
+[^api_wrapper]: <!-- textlint-disable ja-technical-writing/sentence-length -->GPT や Claude の API を叩いて「すごい」と驚けるタスクだけを相手にしているなら、それはそれで幸せです。わたしがやりたいのは、OpenAI や Anthropic が勝手に学習してくれていない、もう少し面倒なタスクです。便利な API を使うにしても、API の外側で驚いて終わりたくはありません。中身の見通しを持ったうえで、振る舞いをどう変えられるのかまで踏み込みたい、という話です。
 
 [^chatgpt]:
     OpenAI. "Introducing ChatGPT."
@@ -609,6 +609,4 @@ LLM の事後学習は、教師信号の形から見ると整理しやすいで�
 
 [^self_distillation_sdpo]:
     Jonas Hübotter et al. "Reinforcement Learning via Self-Distillation."
-    arXiv:2601.20802. DOI: 10.48550/arXiv.2601.20802. [https://arxiv.org/abs/2601.20802](https://arxiv.org/abs/2601.20802)
-
-<!-- textlint-enable ja-technical-writing/sentence-length -->
+    arXiv:2601.20802. DOI: 10.48550/arXiv.2601.20802. [https://arxiv.org/abs/2601.20802](https://arxiv.org/abs/2601.20802)<!-- textlint-enable ja-technical-writing/sentence-length -->

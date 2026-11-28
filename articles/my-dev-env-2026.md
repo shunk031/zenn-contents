@@ -1,5 +1,5 @@
 ---
-title: "開発環境現状確認（2026年）"
+title: "開発環境現状確認 (2026 年)"
 emoji: "💭"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["開発環境", "dotfiles", "chezmoi", "vscode", "claudecode"]
@@ -21,7 +21,7 @@ https://github.com/shunk031/dotfiles
 
 私は画像生成やデザイン生成に関する研究開発に取り組む Research Scientist をしています。主に Python を使用しており、普段は手元の Macbook から、リソースリッチな GPU マシンへ接続して研究開発を行うスタイルです。
 
-開発の前提として、ローカルマシンですべてを完結させるのではなく macOS 上でエディタやターミナルを操作しつつ、計算資源を必要とする処理は GPU サーバ（Ubuntu）側で実行するという構成になっています。そのため、ローカルとリモートを強く意識したツール選定や設定が多く、一般的な開発環境とは少し違う点もありそうです。
+開発の前提として、ローカルマシンですべてを完結させるのではなく macOS 上でエディタやターミナルを操作しつつ、計算資源を必要とする処理は GPU サーバ (Ubuntu) 側で実行するという構成になっています。そのため、ローカルとリモートを強く意識したツール選定や設定が多く、一般的な開発環境とは少し違う点もありそうです。
 
 ## マシン・OS
 
@@ -30,7 +30,7 @@ https://github.com/shunk031/dotfiles
 - 個人端末: MacBook Air M2[^4]
 - 会社支給端末: MacBook Pro M4
 - ローカル OS: macOS
-- リモート環境: GPU サーバ（Ubuntu）
+- リモート環境: GPU サーバ (Ubuntu)
 
 基本的には後述する VSCode の Remote SSH 機能を使い、ローカルの VSCode から GPU サーバへ接続して開発しています。個人端末と会社端末の差異は極力意識しないよう、ツールや設定は可能な限り共通化しています。
 
@@ -40,13 +40,13 @@ https://github.com/shunk031/dotfiles
 
 https://code.visualstudio.com/
 
-ちょっとした設定変更やファイル編集は vim を使うこともあります。以前は emacs（spacemacs）をかなり深くカスタマイズして使っていましたが、ここ数年で VSCode + 拡張機能 + AI コーディングの組み合わせに完全に移行しました。
+ちょっとした設定変更やファイル編集は vim を使うこともあります。以前は emacs (spacemacs) をかなり深くカスタマイズして使っていましたが、ここ数年で VSCode + 拡張機能 + AI コーディングの組み合わせに完全に移行しました。
 
 https://www.spacemacs.org/
 
 ## AI コーディング
 
-AI コーディングは **Claude Code 一択** で、モデルは Sonnet 4.5 を使っています。設定は dotfiles で管理しており、以下で公開しています。探索的な使い方をすることが多いためコンテキストを消費しがちなのですが、Claude Mem を導入してみて様子を見ています（あんまりご利益がわかっていない）。
+AI コーディングは **Claude Code 一択** で、モデルは Sonnet 4.5 を使っています。設定は dotfiles で管理しており、以下で公開しています。探索的な使い方をすることが多いためコンテキストを消費しがちなのですが、Claude Mem を導入してみて様子を見ています (あんまりご利益がわかっていない)。
 
 https://github.com/thedotmack/claude-mem
 
@@ -66,7 +66,7 @@ https://github.com/shunk031/dotfiles/tree/master/home/dot_claude-mem
 
 https://iterm2.com/
 
-少し前に Ghostty を試し、年始にも再度移行を検討しましたが、hotkey window 相当の機能（quick terminal）を使おうとすると頻繁にフリーズしてしまい、実用には耐えませんでした。そもそも iTerm2 で特に不便しているわけでもないため、今年も当面は iTerm2 を使い続けそうです。
+少し前に Ghostty を試し、年始にも再度移行を検討しましたが、hotkey window 相当の機能 (quick terminal) を使おうとすると頻繁にフリーズしてしまい、実用には耐えませんでした。そもそも iTerm2 で特に不便しているわけでもないため、今年も当面は iTerm2 を使い続けそうです。
 
 https://x.com/shunk031/status/2003020715466121317?s=20
 
@@ -79,6 +79,8 @@ https://github.com/tmux/tmux
 ローカル環境では `C-z` をプレフィックスキーにし、GPU サーバなどのリモート環境では `C-q` をプレフィックスキーにして運用しています。tmux の中でさらに tmux を使っている形になるため、この運用をしている人はあまり見かけず、やや異端な使い方をしています。[^5]
 
 ## シェル環境
+
+ローカルとリモートの両方で zsh を使い、プロンプトや日常的に使う CLI ツールも作業環境に合わせて整えています。
 
 ### シェル
 
@@ -180,7 +182,7 @@ https://x.com/shunk031/status/1816083351603925015?s=20
 
 https://www.dell.com/ja-jp/shop/dell-32-%E6%9B%B2%E9%9D%A2-4k-uhd-%E3%83%A2%E3%83%8B%E3%82%BF%E3%83%BC-s3221qs/apd/210-axhq/
 
-サブモニターとして、会社から貸与されている LG の 27 インチディスプレイを縦置きし、Slack や Twitter（X）専用にしています。
+サブモニターとして、会社から貸与されている LG の 27 インチディスプレイを縦置きし、Slack や Twitter (X) 専用にしています。
 
 ## 机・椅子
 
@@ -228,9 +230,9 @@ https://zenn.dev/shunk031/articles/testable-dotfiles-management-with-chezmoi
 
 今後は azooKey の導入や、Claude Code の Hooks の活用方法を改善していきたいと考えています。無理に新しいツールへ移行するのではなく、現在の開発スタイルを維持しながら、少しずつ改善していく予定です。
 
-<!-- textlint-disable -->
 
-[^1]: 開発環境現状確認（2026年） - Don't Repeat Yourself https://blog-dry.com/entry/2026/01/02/145952
+
+[^1]: <!-- textlint-disable -->開発環境現状確認（2026年） - Don't Repeat Yourself https://blog-dry.com/entry/2026/01/02/145952
 
 [^2]: 開発環境現状確認2026｜laiso https://sizu.me/laiso/posts/3ssbv27ca1o0
 
@@ -238,6 +240,4 @@ https://zenn.dev/shunk031/articles/testable-dotfiles-management-with-chezmoi
 
 [^4]: 博士課程卒業直前に学割で購入した思い出のパソコンくんです。今も現役です
 
-[^5]: なおデフォルトの `C-b` は正直論外だと思っています。`C-b` は元々 UNIX の `backward`（カーソルを左に移動するコマンド）と競合しており、tmux のプレフィックスキーとしては非常に使いづらいです。なお、 `tmux` と同等の機能を提供する screen は `C-a` がデフォルトのプレフィックスキーですが、 `C-a` も `beginning`（行頭へ移動）のコマンドと競合しており、こちらも使いづらいです。できるだけデフォルトのプレフィックスキーを変更して使うことを強くお勧めします。
-
-<!-- textlint-enable -->
+[^5]: なおデフォルトの `C-b` は正直論外だと思っています。`C-b` は元々 UNIX の `backward`（カーソルを左に移動するコマンド）と競合しており、tmux のプレフィックスキーとしては非常に使いづらいです。なお、 `tmux` と同等の機能を提供する screen は `C-a` がデフォルトのプレフィックスキーですが、 `C-a` も `beginning`（行頭へ移動）のコマンドと競合しており、こちらも使いづらいです。できるだけデフォルトのプレフィックスキーを変更して使うことを強くお勧めします。<!-- textlint-enable -->

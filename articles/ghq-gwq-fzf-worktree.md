@@ -11,17 +11,17 @@ published_at: 2026-01-09
 
 こうした問題は Claude Code や Codex のようなコーディングエージェントを使い始めると更に露呈します。複数タスクを並列に走らせるほど、作業ディレクトリが 1 つだと衝突しやすいからです。コーディングエージェントなんてなんぼでもしばきたいですよネ。
 
-本記事では、以下の 3 つのツールを組み合わせて日々の開発をさらに効率的にする方法を紹介します。もちろんコーディングエージェントは使いましょう。
+次の 3 つのツールを組み合わせると、レポジトリ管理から並列作業、ディレクトリ移動まで日々の開発をさらに効率的に進められます。
 
-- [`ghq`](https://github.com/x-motemen/ghq) で clone の置き場所を揃える（レポジトリが増えても破綻しない）
-- [`gwq`](https://github.com/d-kuro/gwq) で git worktree 運用をラクにする（並列作業が前提になる）
-- [`fzf`](https://github.com/junegunn/fzf) でディレクトリ間の移動を最短化する（一覧 → 曖昧検索 → 即ジャンプ）
+- [`ghq`](https://github.com/x-motemen/ghq) で clone の置き場所を揃える (レポジトリが増えても破綻しない)
+- [`gwq`](https://github.com/d-kuro/gwq) で git worktree 運用をラクにする (並列作業が前提になる)
+- [`fzf`](https://github.com/junegunn/fzf) でディレクトリ間の移動を最短化する (一覧 → 曖昧検索 → 即ジャンプ)
 
 # なぜ git worktree がコーディングエージェントと相性が良いのか
 
-[git worktree](https://git-scm.com/docs/git-worktree) は、1 つのリポジトリに対して複数の作業ディレクトリ（worktree）を持てる仕組みです。Git 公式ドキュメントでも「main worktree と linked worktree」を整理し、不要になった linked worktree は git worktree remove で片付ける、と明確に説明されています。[^1]
+[git worktree](https://git-scm.com/docs/git-worktree) は、1 つのリポジトリに対して複数の作業ディレクトリ (worktree) を持てる仕組みです。Git 公式ドキュメントでも「main worktree と linked worktree」を整理し、不要になった linked worktree は git worktree remove で片付ける、と明確に説明されています。[^1]
 
-これがコーディングエージェントと相性が良い理由は単純で、作業場（ディレクトリ）が分離されるからです。
+これがコーディングエージェントと相性が良い理由は単純で、作業場 (ディレクトリ) が分離されるからです。
 
 - タスク A を worktree A で進める
 - タスク B を worktree B で進める
@@ -30,6 +30,8 @@ published_at: 2026-01-09
 Anthropic のベストプラクティスでも、worktree によって複数の Claude セッションを同時に動かす運用が紹介されています。[^2]
 
 # 本記事で紹介するツール群
+
+clone の置き場所を標準化する `ghq`、あいまい検索 UI を提供する `fzf`、git worktree を管理する `gwq` の 3 つのツールを組み合わせます。
 
 ## `ghq`：clone の置き場所を標準化する
 
@@ -55,9 +57,11 @@ gwq は worktree を効率的に管理する CLI ツールで、gwq の README �
 
 # `clone` と `worktree` を「同じ root」に集約する
 
-本記事のキモは「**オリジナルのレポジトリと、git worktree の作業ディレクトリを同じ root（例：`~/ghq`）配下に集約することで、 fzf 検索の対象が 1 箇所に揃うので、移動が爆速になる**」点です。以下に具体的な設定方法を示します。
+本記事のキモは「**オリジナルのレポジトリと、git worktree の作業ディレクトリを同じ root (例：`~/ghq`) 配下に集約することで、 fzf 検索の対象が 1 箇所に揃うので、移動が爆速になる**」点です。以下に具体的な設定方法を示します。
 
 ## セットアップ：`ghq` と `gwq` を `~/ghq` に寄せる
+
+`ghq` の root と `gwq` の worktree 作成先をどちらも `~/ghq` に揃えることで、オリジナルのレポジトリと worktree を同じディレクトリ配下で管理できます。
 
 ### `ghq`：root を `~/ghq` に固定する
 
@@ -89,7 +93,7 @@ template = '{{.Host}}/{{.Owner}}/{{.Repository}}={{.Branch}}'
 basedir = '~/ghq'
 ```
 
-gwq は [template に Host / Owner / Repository / Branch などの変数が使える](https://github.com/d-kuro/gwq?tab=readme-ov-file#configuration)ことも明記されています（ブランチの sanitize も可能です）。
+gwq は [template に Host / Owner / Repository / Branch などの変数が使える](https://github.com/d-kuro/gwq?tab=readme-ov-file#configuration)ことも明記されています (ブランチの sanitize も可能です)。
 
 私は `'{{.Host}}/{{.Owner}}/{{.Repository}}={{.Branch}}'` の形式を採用しています。[`gwq` のデフォルトのように `{{.Branch}}` でディレクトリを分けてしまう](https://github.com/d-kuro/gwq?tab=readme-ov-file#configuration:~:text=template%20%3D%20%22%7B%7B.Host%7D%7D/%7B%7B.Owner%7D%7D/%7B%7B.Repository%7D%7D/%7B%7B.Branch%7D%7D%22)と、ghq で clone したディレクトリの中に worktree が増えてしまい、fzf で探しにくくなるので注意してください。
 
@@ -140,10 +144,8 @@ function dev() {
 本記事では `ghq` + `gwq` + `fzf` の組み合わせで clone してくるレポジトリを整理して素早く移動可能にし、さらに並列でコーディングエージェントを快適に動かす方法を紹介しました。
 `ghq` により作業ディレクトリを一元管理し、`gwq` により worktree の管理を簡素化し、`fzf` により迅速な移動を実現します。これらのツールを組み合わせることで、複数のタスクやコーディングエージェントを同時に扱う際の混乱を避け、生産性を向上させることができます。ぜひ試してみてください！
 
-<!-- textlint-disable -->
 
-[^1]: Git - git-worktree Documentation https://git-scm.com/docs/git-worktree
+
+[^1]: <!-- textlint-disable -->Git - git-worktree Documentation https://git-scm.com/docs/git-worktree
 [^2]: Claude Code Best Practices \ Anthropic https://www.anthropic.com/engineering/claude-code-best-practices#:~:text=c.%20Use%20git%20worktrees
-[^3]: ghq-handbook/ja/05-command-list.md at master · Songmu/ghq-handbook https://github.com/Songmu/ghq-handbook/blob/master/ja/05-command-list.md
-
-<!-- textlint-enable -->
+[^3]: ghq-handbook/ja/05-command-list.md at master · Songmu/ghq-handbook https://github.com/Songmu/ghq-handbook/blob/master/ja/05-command-list.md<!-- textlint-enable -->
