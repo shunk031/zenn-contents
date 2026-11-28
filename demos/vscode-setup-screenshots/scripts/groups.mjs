@@ -1,0 +1,193 @@
+const setting = (...parts) => parts;
+
+export const extensionPins = new Map([
+  ['josemurilloc.aura-spirit-dracula', '0.1.10'],
+  ['pkief.material-icon-theme', '5.40.0'],
+  ['subframe7536.custom-ui-style', '0.7.2'],
+]);
+
+export const groupSpecs = {
+  theme: {
+    chapter: 1,
+    settings: [setting('workbench.colorTheme')],
+    description: 'The Aura Dracula Spirit theme recolors the workbench.',
+  },
+  'minimal-chrome': {
+    chapter: 1,
+    settings: [setting('workbench.activityBar.location'), setting('workbench.editor.showTabs'), setting('workbench.statusBar.visible')],
+    description: 'Six editor tabs and breadcrumbs collapse to a single title row as the Activity Bar and Status Bar disappear.',
+  },
+  'editor-aids': {
+    chapter: 1,
+    settings: [setting('editor.minimap.enabled'), setting('breadcrumbs.enabled')],
+    description: 'The editor minimap and breadcrumb row disappear.',
+  },
+  'sidebar-placement': {
+    chapter: 2,
+    settings: [setting('workbench.sideBar.location')],
+    description: 'The Explorer moves from the left side of the workbench to the right.',
+  },
+  'explorer-icons': {
+    chapter: 2,
+    settings: [setting('workbench.iconTheme'), setting('material-icon-theme.hidesExplorerArrows')],
+    description: 'Material file icons replace the defaults and Explorer disclosure arrows hide.',
+  },
+  'tree-layout': {
+    chapter: 2,
+    settings: [setting('workbench.tree.enableStickyScroll'), setting('workbench.tree.renderIndentGuides'), setting('workbench.tree.indent'), setting('explorer.compactFolders')],
+    interaction: 'tree-layout',
+    description: 'Nested folders use a visible indent guide before the chapter setting removes it; the indent value itself matches the default.',
+  },
+  'operation-confirmations': {
+    chapter: 2,
+    settings: [setting('explorer.confirmDragAndDrop'), setting('explorer.confirmDelete')],
+    interaction: 'operation-confirmations',
+    previewSettings: { 'window.dialogStyle': 'custom' },
+    description: 'Moving delete-me.txt prompts before the setting change and moves into components without a dialog after.',
+  },
+  'explorer-decorations': {
+    chapter: 2,
+    settings: [setting('explorer.decorations.badges'), setting('git.decorations.enabled')],
+    interaction: 'explorer-decorations',
+    description: 'Git status colors and Explorer badges respond to the chapter settings.',
+  },
+  'window-chrome': {
+    chapter: 3,
+    settings: [setting('window.zoomLevel'), setting('window.customTitleBarVisibility'), setting('window.titleBarStyle'), setting('custom-ui-style.electron')],
+    restart: true,
+    description: 'The title bar becomes minimal and the workbench zoom changes.',
+  },
+  'title-spacing': {
+    chapter: 3,
+    settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title > .label-container > .title-label'), setting('custom-ui-style.font.sansSerif')],
+    restart: true,
+    interaction: 'title-spacing',
+    description: 'Extra spacing clears the editor title area around the window controls.',
+  },
+  overlays: {
+    chapter: 4,
+    settings: [setting('custom-ui-style.stylesheet', '.notification-toast'), setting('custom-ui-style.stylesheet', '.quick-input-widget.show-file-icons'), setting('custom-ui-style.stylesheet', '.quick-input-widget'), setting('custom-ui-style.stylesheet', '.quick-input-list .scrollbar'), setting('custom-ui-style.stylesheet', '.monaco-action-bar.quick-input-inline-action-bar'), setting('custom-ui-style.stylesheet', '.editor-widget.find-widget'), setting('custom-ui-style.stylesheet', '.quick-input-titlebar')],
+    restart: true,
+    interaction: 'command-palette',
+    description: 'The open Command Palette shows the chapter spacing and shadow styling.',
+  },
+  'surface-boundaries': {
+    chapter: 4,
+    settings: [setting('custom-ui-style.stylesheet', '.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after'), setting('custom-ui-style.stylesheet', '.monaco-scrollable-element > .shadow.top'), setting('custom-ui-style.stylesheet', '.sidebar .title-label'), setting('custom-ui-style.stylesheet', '.sidebar'), setting('custom-ui-style.stylesheet', '.monaco-workbench .monaco-list:not(.element-focused):focus:before'), setting('custom-ui-style.stylesheet', '.monaco-list-row.focused'), setting('custom-ui-style.stylesheet', '.monaco-editor .scroll-decoration'), setting('custom-ui-style.stylesheet', '.title-actions'), setting('custom-ui-style.stylesheet', '.title.show-file-icons .label-container .monaco-icon-label.file-icon'), setting('custom-ui-style.stylesheet', '.title .monaco-icon-label:after')],
+    restart: true,
+    interaction: 'surface-boundaries',
+    description: 'The focused Explorer outline disappears and the editor title centers within the changed surface boundaries.',
+  },
+  'cursor-appearance': {
+    chapter: 5,
+    settings: [setting('editor.cursorBlinking'), setting('editor.cursorStyle'), setting('custom-ui-style.stylesheet', '.monaco-editor .cursors-layer .cursor')],
+    restart: true,
+    interaction: 'cursor-focus',
+    description: 'A solid block cursor receives the chapter gradient styling.',
+  },
+  'multi-cursor': {
+    chapter: 5,
+    settings: [setting('editor.multiCursorModifier')],
+    interaction: 'multi-cursor',
+    description: 'The same Option-click gesture adds three cursors before and one cursor after the modifier changes.',
+  },
+  'cursor-colors': {
+    chapter: 5,
+    settings: [setting('workbench.colorCustomizations', 'editorCursor.background')],
+    interaction: 'cursor-colors',
+    description: 'The glyph beneath the focused block cursor changes color after the chapter background is applied.',
+  },
+  'font-metrics': {
+    chapter: 6,
+    settings: [setting('editor.fontFamily'), setting('editor.fontSize'), setting('editor.lineHeight')],
+    interaction: 'editor-top',
+    description: 'Editor text size and line spacing change across the visible code lines.',
+  },
+  'code-style': {
+    chapter: 6,
+    settings: [setting('editor.fontLigatures'), setting('editor.tokenColorCustomizations')],
+    interaction: 'code-style',
+    description: 'The same Sample comment changes from upright to italic in the chapter typography.',
+  },
+  'code-decorations': {
+    chapter: 7,
+    settings: [setting('editor.stickyScroll.enabled'), setting('editor.colorDecorators'), setting('editor.codeLens'), setting('editor.links'), setting('editor.matchBrackets')],
+    interaction: 'code-decorations',
+    description: 'A nested CSS block stays in view while its sticky header and accent color swatch respond to the chapter settings.',
+  },
+  'editor-hints': {
+    chapter: 7,
+    settings: [setting('editor.parameterHints.enabled'), setting('editor.lightbulb.enabled'), setting('editor.hover.enabled')],
+    interaction: 'editor-hints',
+    description: 'A call with a type error stages signature help and an available code action.',
+  },
+  'save-and-diff': {
+    chapter: 7,
+    settings: [setting('files.trimTrailingWhitespace'), setting('files.insertFinalNewline'), setting('scm.diffDecorations')],
+    interaction: 'save-diff',
+    previewSettings: { 'editor.renderWhitespace': 'all' },
+    description: 'Saving trims the visible trailing spaces and removes the Git diff gutter decoration.',
+  },
+  'line-numbers-and-indent': {
+    chapter: 8,
+    settings: [setting('editor.lineNumbers'), setting('editor.tabSize'), setting('editor.detectIndentation')],
+    interaction: 'indentation-tabs',
+    description: 'Relative line numbers and the narrower tab indentation appear on the same nested code.',
+  },
+  'folding-and-guides': {
+    chapter: 8,
+    settings: [setting('editor.showFoldingControls'), setting('editor.guides.indentation'), setting('editor.renderWhitespace'), setting('editor.renderLineHighlight'), setting('editor.occurrencesHighlight'), setting('editor.selectionHighlight')],
+    interaction: 'folding-and-guides',
+    description: 'Folding controls, indentation guides, whitespace, and code highlights change.',
+  },
+  'scrollbars-and-ruler': {
+    chapter: 9,
+    settings: [setting('editor.scrollbar.horizontal'), setting('editor.scrollbar.vertical'), setting('editor.overviewRulerBorder')],
+    interaction: 'scrollbars-and-ruler',
+    description: 'Editor scrollbars and the overview ruler use the chapter layout.',
+  },
+  'marker-colors': {
+    chapter: 9,
+    settings: [setting('editor.hideCursorInOverviewRuler'), setting('workbench.colorCustomizations', 'editorOverviewRuler.wordHighlightStrongForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.selectionHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.rangeHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.wordHighlightForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.bracketMatchForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.findMatchForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.modifiedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.deletedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.warningForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.addedForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.errorForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.infoForeground'), setting('workbench.colorCustomizations', 'editorOverviewRuler.border')],
+    interaction: 'marker-colors',
+    description: 'The diagnostic underline and overview-ruler marker are measured separately.',
+  },
+  'automatic-suggestions': {
+    chapter: 10,
+    settings: [setting('editor.quickSuggestions'), setting('editor.suggestOnTriggerCharacters')],
+    interaction: 'automatic-suggestions',
+    description: 'Typing a trigger character opens suggestions before, then stays quiet after.',
+  },
+  'tab-completion': {
+    chapter: 10,
+    settings: [setting('editor.tabCompletion'), setting('editor.snippetSuggestions'), setting('emmet.triggerExpansionOnTab')],
+    interaction: 'tab-completion',
+    description: 'Both fixture snippets move above the same ordinary completion.',
+  },
+  'selected-suggestion-color': {
+    chapter: 10,
+    settings: [setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'editorSuggestWidget.selectedBackground')],
+    interaction: 'selected-suggestion',
+    description: "The same selected completion item's background changes to the chapter color.",
+  },
+  'sidebar-and-title': {
+    chapter: 11,
+    settings: [setting('custom-ui-style.stylesheet', '.title .monaco-icon-label.file-icon'), setting('workbench.colorCustomizations', '[Aura Dracula Spirit (Soft)]', 'sideBar.background')],
+    restart: true,
+    interaction: 'sidebar-title',
+    description: 'The Explorer background changes to #191521, and the long open filename is clipped by the symmetric 60 px title margins.',
+  },
+  autosave: {
+    chapter: 11,
+    settings: [setting('files.autoSave')],
+    interaction: 'autosave',
+    description: 'The unsaved editor indicator clears after the configured save delay.',
+  },
+  'recommendation-notifications': {
+    chapter: 11,
+    settings: [setting('extensions.ignoreRecommendations'), setting('update.mode')],
+    interaction: 'recommendations',
+    restart: true,
+    description: 'The Python extension recommendation toast appears before and is absent after recommendations are ignored.',
+  },
+};

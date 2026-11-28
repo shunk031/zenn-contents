@@ -1,0 +1,2 @@
+output/*
+!output/image-index.csv

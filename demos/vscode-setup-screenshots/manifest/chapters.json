@@ -1,0 +1,79 @@
+[
+  {
+    "chapter": 1,
+    "slug": "user-interface",
+    "sha": "02b14b5421552f337e2d87110412e19050ab6904",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["theme", "minimal-chrome", "editor-aids"]
+  },
+  {
+    "chapter": 2,
+    "slug": "sidebar",
+    "sha": "3c3ed6b068b71373066e1b8a1630b8a17cc060d1",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["sidebar-placement", "explorer-icons", "tree-layout", "operation-confirmations", "explorer-decorations"]
+  },
+  {
+    "chapter": 3,
+    "slug": "window",
+    "sha": "e690ea74b3ff47f9050c879e050e82d2c4f7dbb7",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["window-chrome", "title-spacing"]
+  },
+  {
+    "chapter": 4,
+    "slug": "ui-styles",
+    "sha": "df3b12c33dde40400e17404ebb08c5d7e6908ad4",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["overlays", "surface-boundaries"]
+  },
+  {
+    "chapter": 5,
+    "slug": "cursor",
+    "sha": "71871cc4364994f356a76c81912d15df3e92e37b",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["cursor-appearance", "multi-cursor", "cursor-colors"]
+  },
+  {
+    "chapter": 6,
+    "slug": "typography",
+    "sha": "599a7054551b9ddd9ce4e390c06ffec2d4b1ce68",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["font-metrics", "code-style"]
+  },
+  {
+    "chapter": 7,
+    "slug": "decorations-and-hints",
+    "sha": "975173a0f7ddf904e5d250f41dac713f8774dab4",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["code-decorations", "editor-hints", "save-and-diff"]
+  },
+  {
+    "chapter": 8,
+    "slug": "guides-and-highlights",
+    "sha": "3b3f7d1bce333ca80d41b0ca4193b9bd0eeb233f",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["line-numbers-and-indent", "folding-and-guides"]
+  },
+  {
+    "chapter": 9,
+    "slug": "scrollbars",
+    "sha": "5a393afafeb6457af47de69cda510252bdb36fb4",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["scrollbars-and-ruler", "marker-colors"]
+  },
+  {
+    "chapter": 10,
+    "slug": "suggestions",
+    "sha": "40f648854e63745a60078d73cd741509ad854bdf",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["automatic-suggestions", "tab-completion", "selected-suggestion-color"]
+  },
+  {
+    "chapter": 11,
+    "slug": "misc",
+    "sha": "da275c09488fec3b53f2541ad8d482dca51b499b",
+    "sourcePaths": [".vscode/settings.json", ".vscode/extensions.json"],
+    "groups": ["sidebar-and-title", "autosave", "recommendation-notifications"]
+  }
+]

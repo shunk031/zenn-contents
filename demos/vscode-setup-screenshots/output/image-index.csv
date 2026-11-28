@@ -1,0 +1,74 @@
+chapter,group,file,description
+0,zero,images/00-zero.png,A fresh profile opens the fixed sample project with no user-installed extensions.
+1,theme,images/ch01-theme-before.png,Before theme: The Aura Dracula Spirit theme recolors the workbench.
+1,theme,images/ch01-theme-after.png,After theme: The Aura Dracula Spirit theme recolors the workbench.
+1,minimal-chrome,images/ch01-minimal-chrome-before.png,Before minimal-chrome: Six editor tabs and breadcrumbs collapse to a single title row as the Activity Bar and Status Bar disappear.
+1,minimal-chrome,images/ch01-minimal-chrome-after.png,After minimal-chrome: Six editor tabs and breadcrumbs collapse to a single title row as the Activity Bar and Status Bar disappear.
+1,editor-aids,images/ch01-editor-aids-before.png,Before editor-aids: The editor minimap and breadcrumb row disappear.
+1,editor-aids,images/ch01-editor-aids-after.png,After editor-aids: The editor minimap and breadcrumb row disappear.
+1,checkpoint,images/ch01-checkpoint.png,"After chapter 1, its cumulative settings are shown in the fixed sample project."
+2,sidebar-placement,images/ch02-sidebar-placement-before.png,Before sidebar-placement: The Explorer moves from the left side of the workbench to the right.
+2,sidebar-placement,images/ch02-sidebar-placement-after.png,After sidebar-placement: The Explorer moves from the left side of the workbench to the right.
+2,explorer-icons,images/ch02-explorer-icons-before.png,Before explorer-icons: Material file icons replace the defaults and Explorer disclosure arrows hide.
+2,explorer-icons,images/ch02-explorer-icons-after.png,After explorer-icons: Material file icons replace the defaults and Explorer disclosure arrows hide.
+2,tree-layout,failed/ch02-tree-layout-before.png,failed: Visible Explorer indent guides did not disappear.
+2,tree-layout,failed/ch02-tree-layout-after.png,failed: Visible Explorer indent guides did not disappear.
+2,operation-confirmations,images/ch02-operation-confirmations-before.png,Before operation-confirmations: Moving delete-me.txt prompts before the setting change and moves into components without a dialog after.
+2,operation-confirmations,images/ch02-operation-confirmations-after.png,After operation-confirmations: Moving delete-me.txt prompts before the setting change and moves into components without a dialog after.
+2,explorer-decorations,failed/ch02-explorer-decorations-before.png,failed: Git color or Explorer badge did not change.
+2,explorer-decorations,failed/ch02-explorer-decorations-after.png,failed: Git color or Explorer badge did not change.
+2,checkpoint,images/ch02-checkpoint.png,"After chapter 2, its cumulative settings are shown in the fixed sample project."
+3,window-chrome,images/ch03-window-chrome-before.png,Before window-chrome: The title bar becomes minimal and the workbench zoom changes.
+3,window-chrome,images/ch03-window-chrome-after.png,After window-chrome: The title bar becomes minimal and the workbench zoom changes.
+3,title-spacing,failed/ch03-title-spacing-before.png,failed: Manual visual review found no visible title-spacing transition in the paired screenshots.
+3,title-spacing,failed/ch03-title-spacing-after.png,failed: Manual visual review found no visible title-spacing transition in the paired screenshots.
+3,checkpoint,images/ch03-checkpoint.png,"After chapter 3, its cumulative settings are shown in the fixed sample project."
+4,overlays,images/ch04-overlays-before.png,Before overlays: The open Command Palette shows the chapter spacing and shadow styling.
+4,overlays,images/ch04-overlays-find-before.png,"Before chapter 4 overlay styles, the open Find widget has its default shadow."
+4,overlays,images/ch04-overlays-after.png,After overlays: The open Command Palette shows the chapter spacing and shadow styling.
+4,overlays,images/ch04-overlays-find-after.png,"After chapter 4 overlay styles, the same Find widget has no shadow."
+4,surface-boundaries,images/ch04-surface-boundaries-before.png,Before surface-boundaries: The focused Explorer outline disappears and the editor title centers within the changed surface boundaries.
+4,surface-boundaries,images/ch04-surface-boundaries-after.png,After surface-boundaries: The focused Explorer outline disappears and the editor title centers within the changed surface boundaries.
+4,checkpoint,images/ch04-checkpoint.png,"After chapter 4, its cumulative settings are shown in the fixed sample project."
+5,cursor-appearance,images/ch05-cursor-appearance-before.png,Before cursor-appearance: A solid block cursor receives the chapter gradient styling.
+5,cursor-appearance,images/ch05-cursor-appearance-after.png,After cursor-appearance: A solid block cursor receives the chapter gradient styling.
+5,multi-cursor,images/ch05-multi-cursor-before.png,Before multi-cursor: The same Option-click gesture adds three cursors before and one cursor after the modifier changes.
+5,multi-cursor,images/ch05-multi-cursor-after.png,After multi-cursor: The same Option-click gesture adds three cursors before and one cursor after the modifier changes.
+5,cursor-colors,failed/ch05-cursor-colors-before.png,failed: Glyph foreground under the block cursor did not change.
+5,cursor-colors,failed/ch05-cursor-colors-after.png,failed: Glyph foreground under the block cursor did not change.
+5,checkpoint,images/ch05-checkpoint.png,"After chapter 5, its cumulative settings are shown in the fixed sample project."
+6,font-metrics,images/ch06-font-metrics-before.png,Before font-metrics: Editor text size and line spacing change across the visible code lines.
+6,font-metrics,images/ch06-font-metrics-after.png,After font-metrics: Editor text size and line spacing change across the visible code lines.
+6,code-style,failed/ch06-code-style-before.png,failed: The visible Sample comment did not change font style.
+6,code-style,failed/ch06-code-style-after.png,failed: The visible Sample comment did not change font style.
+6,checkpoint,images/ch06-checkpoint.png,"After chapter 6, its cumulative settings are shown in the fixed sample project."
+7,code-decorations,images/ch07-code-decorations-before.png,Before code-decorations: A nested CSS block stays in view while its sticky header and accent color swatch respond to the chapter settings.
+7,code-decorations,images/ch07-code-decorations-after.png,After code-decorations: A nested CSS block stays in view while its sticky header and accent color swatch respond to the chapter settings.
+7,editor-hints,images/ch07-editor-hints-before.png,Before editor-hints: A call with a type error stages signature help and an available code action.
+7,editor-hints,images/ch07-editor-hints-after.png,After editor-hints: A call with a type error stages signature help and an available code action.
+7,save-and-diff,images/ch07-save-and-diff-before.png,Before save-and-diff: Saving trims the visible trailing spaces and removes the Git diff gutter decoration.
+7,save-and-diff,images/ch07-save-and-diff-after.png,After save-and-diff: Saving trims the visible trailing spaces and removes the Git diff gutter decoration.
+7,checkpoint,images/ch07-checkpoint.png,"After chapter 7, its cumulative settings are shown in the fixed sample project."
+8,line-numbers-and-indent,failed/ch08-line-numbers-and-indent-before.png,"failed: Rendered indent or relative line numbers did not change: [[null,null],[""1"",""2"",""3"",""4""],[null,null],[""4"",""3"",""2"",""1""]]."
+8,line-numbers-and-indent,failed/ch08-line-numbers-and-indent-after.png,"failed: Rendered indent or relative line numbers did not change: [[null,null],[""1"",""2"",""3"",""4""],[null,null],[""4"",""3"",""2"",""1""]]."
+8,folding-and-guides,failed/ch08-folding-and-guides-before.png,"failed: Folding controls, guides, or whitespace markers did not disappear."
+8,folding-and-guides,failed/ch08-folding-and-guides-after.png,"failed: Folding controls, guides, or whitespace markers did not disappear."
+8,checkpoint,images/ch08-checkpoint.png,"After chapter 8, its cumulative settings are shown in the fixed sample project."
+9,scrollbars-and-ruler,images/ch09-scrollbars-and-ruler-before.png,Before scrollbars-and-ruler: Editor scrollbars and the overview ruler use the chapter layout.
+9,scrollbars-and-ruler,images/ch09-scrollbars-and-ruler-after.png,After scrollbars-and-ruler: Editor scrollbars and the overview ruler use the chapter layout.
+9,marker-colors,images/ch09-marker-colors-before.png,Before marker-colors: The diagnostic underline and overview-ruler marker are measured separately.
+9,marker-colors,images/ch09-marker-colors-after.png,After marker-colors: The diagnostic underline and overview-ruler marker are measured separately.
+9,checkpoint,images/ch09-checkpoint.png,"After chapter 9, its cumulative settings are shown in the fixed sample project."
+10,automatic-suggestions,images/ch10-automatic-suggestions-before.png,"Before automatic-suggestions: Typing a trigger character opens suggestions before, then stays quiet after."
+10,automatic-suggestions,images/ch10-automatic-suggestions-after.png,"After automatic-suggestions: Typing a trigger character opens suggestions before, then stays quiet after."
+10,checkpoint,images/ch10-checkpoint.png,"After chapter 10, its cumulative settings are shown in the fixed sample project."
+11,sidebar-and-title,failed/ch11-sidebar-and-title-before.png,failed: Manual visual review did not show the configured file-title spacing; only the subtle sidebar color shift was visible.
+11,sidebar-and-title,failed/ch11-sidebar-and-title-after.png,failed: Manual visual review did not show the configured file-title spacing; only the subtle sidebar color shift was visible.
+11,recommendation-notifications,images/ch11-recommendation-notifications-before.png,Before recommendation-notifications: The Python extension recommendation toast appears before and is absent after recommendations are ignored.
+11,recommendation-notifications,images/ch11-recommendation-notifications-after.png,After recommendation-notifications: The Python extension recommendation toast appears before and is absent after recommendations are ignored.
+11,checkpoint,images/ch11-checkpoint.png,"After chapter 11, its cumulative settings are shown in the fixed sample project."
+10,tab-completion,,failed: Timed out waiting for the painted suggestion widget; no pair images were captured.
+10,selected-suggestion-color,,failed: Timed out waiting for the painted suggestion widget; no pair images were captured.
+10,tab-expansion,,failed: Parent tab-completion staging timed out before this separate pair was attempted.
+10,emmet-expansion,,failed: Parent tab-completion staging timed out before this separate pair was attempted.
+11,autosave,,failed: Timed out waiting for the single-title dirty indicator; no pair images were captured.
