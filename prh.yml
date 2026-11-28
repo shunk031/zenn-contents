@@ -26,7 +26,7 @@ rules:
       - from: "post-training )"
         to: "post-training)"
   - expected: "$1 $3"
-    pattern: '/([)])([ \t\u3000]*)([^\s、。，．：！？!"#$%&\x27*+,\-./:;<=>?@\[\\\]^_`{|}~)\]}>］｝」』】〕〉》〗〙〛〟])/g'
+    pattern: '/([)])([ \t\u3000]*)([^\s\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E、。，．，・：；？！（）［］｛｝〔〕〈〉《》「」『』【】〖〗〘〙〚〛〝〟﹁﹂﹃﹄｟｠‐‑‒–—―〜～…‥])/g'
     specs:
       - from: "(post-training)する"
         to: "(post-training) する"
@@ -34,13 +34,17 @@ rules:
         to: "(post-training) する"
       - from: "(post-training),"
         to: "(post-training),"
+      - from: "(post-training)「quote」"
+        to: "(post-training)「quote」"
   - expected: "$1$3"
-    pattern: '/([)])([ \t\u3000]+)([!"#$%&\x27*+,\-./:;<=>?@\[\\\]^_`{|}~、。，．：！？)\]}>］｝」』】〕〉》〗〙〛〟])/g'
+    pattern: '/([)])([ \t\u3000]+)([\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E、。，．，・：；？！（）［］｛｝〔〕〈〉《》「」『』【】〖〗〘〙〚〛〝〟﹁﹂﹃﹄｟｠‐‑‒–—―〜～…‥])/g'
     specs:
       - from: "(post-training) 、"
         to: "(post-training)、"
       - from: "(post-training) ,"
         to: "(post-training),"
+      - from: "(post-training) 「quote」"
+        to: "(post-training)「quote」"
       - from: "(post-training)」"
         to: "(post-training)」"
   - expected: "$1"

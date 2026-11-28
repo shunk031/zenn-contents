@@ -18,5 +18,7 @@ rules:
       space: always
     "@textlint-ja/preset-ai-writing": true
   prh:
+    checkLink: true
+    checkEmphasis: true
     rulePaths:
       - ./prh.yml
