@@ -32,14 +32,10 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1151s
 ### フォントファミリーと行の高さ
 エディタのフォントファミリーを `editor.fontFamily: "Dank Mono"` に変更し、UI 全体とフォントを統一します。文字サイズは `editor.fontSize: 14`（ピクセル単位）に設定します。行の高さは `editor.lineHeight: 2.5`（既定値 `0`、自動計算）に広げます。行間を広く取ることで、コードの行ごとの区切りが明瞭になり、ゆったりとした読みやすいレイアウトになります。
 
-| Before | After |
-| --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch06-font-metrics-after.webp) |
-
-左の設定前に対し、右の設定後では大きな文字と広い行間が適用され、同じコードが画面上でより高い領域を占めるようになります。
+Dank Mono は有料フォントのため、本節ではスクリーンショットを省略しています。
 
 ### リガチャとコメントのイタリック体表示
-演算子などの連続する記号を合字として美しく結合表示するため、`editor.fontLigatures: true`（既定値 `false`）を有効にします。さらに、コードとコメントを視覚的に区別しやすくします。TextMate ルール `editor.tokenColorCustomizations.textMateRules` を使い、`comment` スコープのフォントスタイルを `fontStyle: "italic"`（イタリック体）に設定します。表示されているコードとイタリック体のコメントに変化が見られないため、比較画像から除外しています。
+演算子などの連続する記号を合字として美しく結合表示するため、`editor.fontLigatures: true`（既定値 `false`）を有効にします。さらに、コードとコメントを視覚的に区別しやすくします。TextMate ルール `editor.tokenColorCustomizations.textMateRules` を使い、`comment` スコープのフォントスタイルを `fontStyle: "italic"`（イタリック体）に設定します。
 
 ## 設定項目の一覧
 
@@ -57,9 +53,7 @@ Dank Mono フォントがシステムにインストールされていない場�
 
 ## 本章完了時の状態
 
-本章の設定をすべて適用すると、エディタは以下の状態になります。
-
-![第 6 章完了時の状態](/images/igorbabko-vscode-setup-2025/ch06-checkpoint.webp)
+Dank Mono は有料フォントのため、本節ではスクリーンショットを省略しています。
 
 ## 追加する拡張機能
 

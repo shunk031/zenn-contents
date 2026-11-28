@@ -47,11 +47,7 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=478s
 ### Custom UI Style によるウィンドウ操作ボタンと余白の調整
 ボタンの位置を移動した結果、ファイル名とボタンが重なってしまいます。スタイルシート設定 `custom-ui-style.stylesheet` を使い、エディタタイトルラベルに `padding-left: 60px` を追加して余白を確保します。また、拡張機能全体のサンセリフフォントとして `custom-ui-style.font.sansSerif: "Dank Mono"`（既定値 `""`）を指定し、UI 全体のフォントを統一します。Dank Mono は有料フォントであり、[作者の公式販売ページ](https://philpl.gumroad.com/l/dank-mono)からライセンスを購入して入手できます。
 
-| Before | After |
-| --- | --- |
-| ![設定前](/images/igorbabko-vscode-setup-2025/ch03-title-spacing-before.webp) | ![設定後](/images/igorbabko-vscode-setup-2025/ch03-title-spacing-after.webp) |
-
-左の設定前では TS アイコンが操作ボタンの領域と重なっていますが、右の設定後ではアイコンと main.ts のタイトルが右へ移動してボタンとの重なりが解消されます。
+Dank Mono は有料フォントのため、本節ではスクリーンショットを省略しています。
 
 ## 設定項目の一覧
 
