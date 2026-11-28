@@ -202,7 +202,7 @@ def main() -> None:
         raise SystemExit("The final MP4 is not under 10,000,000 bytes.")
     gif_bytes = GIF.stat().st_size
     if gif_bytes > 3_000_000:
-        raise SystemExit("The split GIF exceeds Zenn's 3 MB (3,000,000-byte) image limit.")
+        raise SystemExit("The split GIF exceeds 3,000,000 bytes.")
     print(
         f"Media complete: raw {raw_duration:.1f}s; cut {cut_duration:.1f}s after parent idle; "
         f"final {final_duration:.1f}s with no padding; {len(intervals)} spinner-only stretches at {speed:.2f}x; "
