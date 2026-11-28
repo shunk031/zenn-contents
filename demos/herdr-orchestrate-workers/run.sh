@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-# @file .agents/demo/run.sh
-# @brief Run the Herdr recording container with read-only credentials.
+# @file demos/herdr-orchestrate-workers/run.sh
+# @brief Record a selected Herdr demo variant in a disposable container.
+# @option --variant <default|split> Select the single-pane or split-pane tape.
+# @option --output-dir <path> Write media outputs to this host directory.
 
 set -Eeuo pipefail
 
@@ -10,7 +12,49 @@ image_tag="herdr-vhs-demo:v0.12.1-herdr0.9.5-skills4a0a194-ccstatusline2.2.34-fo
 claude_secret="${HOME:?}/.config/herdr-demo/claude-token"
 codex_secret="${HOME:?}/.config/herdr-demo/codex-token"
 provider_secret="${HOME:?}/.config/herdr-demo/codex-provider.toml"
-out_dir="${1:-$kit_dir/out}"
+variant=default
+out_dir="$kit_dir/out"
+
+usage() {
+    printf '%s\n' 'Usage: ./run.sh [--variant default|split] [--output-dir PATH]' >&2
+}
+
+while (($#)); do
+    case "$1" in
+        --variant)
+            if (($# < 2)); then
+                usage
+                exit 2
+            fi
+            variant="$2"
+            shift 2
+            ;;
+        --output-dir)
+            if (($# < 2)); then
+                usage
+                exit 2
+            fi
+            out_dir="$2"
+            shift 2
+            ;;
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        *)
+            usage
+            exit 2
+            ;;
+    esac
+done
+
+case "$variant" in
+    default|split) ;;
+    *)
+        printf '%s\n' 'The variant must be "default" or "split".' >&2
+        exit 2
+        ;;
+esac
 
 if [[ ! -f "$claude_secret" ]]; then
     printf '%s\n' 'Missing required Claude credential file (~/.config/herdr-demo/claude-token).' >&2
@@ -60,5 +104,5 @@ docker_args+=(
     --mount "type=bind,source=$codex_secret,target=/run/secrets/codex-token,readonly" \
     --mount "type=bind,source=$provider_secret,target=/run/secrets/codex-provider.toml,readonly" \
     --mount "type=bind,source=$out_dir,target=/out" \
-    "$image_tag")
+    "$image_tag" "$variant")
 exec "${docker_args[@]}"
