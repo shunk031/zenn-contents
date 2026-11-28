@@ -27,6 +27,11 @@ function isListItem(line) {
   return /^\s{0,3}(?:[-+*]\s+|\d+[.)]\s+)/.test(line);
 }
 
+function isTableDelimiter(line) {
+  const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|");
+  return cells.length > 1 && cells.every((cell) => /^:?-{3,}:?$/.test(cell.trim()));
+}
+
 function withoutImages(line) {
   return line
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
@@ -67,6 +72,7 @@ export function sentenceParts(text) {
       && index + 1 < text.length
       && !/[\s」』）)\]】]/.test(text[index + 1])
     ) continue;
+    if (character === "." && /\b(?:e\.g|i\.e|u\.s|u\.k|mr|mrs|ms|dr|prof|fig|no|vs)\.$/i.test(text.slice(start, index + 1))) continue;
 
     let end = index + 1;
     while (end < text.length && "」』）)]】".includes(text[end])) end += 1;
@@ -103,6 +109,8 @@ export function parseProseBlocks(markdown) {
   let paragraphLine = 0;
   let fenceMarker = null;
   let listActive = false;
+  let tableActive = false;
+  let blockquoteActive = false;
 
   function flushParagraph() {
     if (paragraph.length === 0) return;
@@ -115,12 +123,29 @@ export function parseProseBlocks(markdown) {
     blocks.push({ type: "paragraph", line, text, sentences: sentenceParts(text) });
   }
 
-  for (const [lineIndex, line] of lines.slice(bodyStart(lines)).entries()) {
-    const sourceLine = lineIndex + bodyStart(lines) + 1;
+  const bodyOffset = bodyStart(lines);
+  const bodyLines = lines.slice(bodyOffset);
+  for (const [lineIndex, line] of bodyLines.entries()) {
+    const sourceLine = lineIndex + bodyOffset + 1;
+    const nextLine = bodyLines[lineIndex + 1] ?? "";
     if (fenceMarker) {
       if (isFenceEnd(line, fenceMarker)) fenceMarker = null;
       continue;
     }
+
+    if (blockquoteActive) {
+      if (line.trim() && !/^\s{0,3}>/.test(line) && !isFenceStart(line) && !isListItem(line)
+        && !/^#{1,6}\s+/.test(line) && !skippedBlockType(line) && !isTableDelimiter(nextLine)) continue;
+      blockquoteActive = false;
+    }
+
+    if ((tableActive && line.includes("|")) || (line.includes("|") && isTableDelimiter(nextLine))) {
+      flushParagraph();
+      blocks.push({ type: "table", line: sourceLine, text: line.trim() });
+      tableActive = true;
+      continue;
+    }
+    tableActive = false;
 
     const fence = isFenceStart(line);
     if (fence) {
@@ -159,6 +184,7 @@ export function parseProseBlocks(markdown) {
     if (skippedType) {
       flushParagraph();
       blocks.push({ type: skippedType, line: sourceLine, text: line.trim() });
+      if (skippedType === "blockquote") blockquoteActive = true;
       continue;
     }
 

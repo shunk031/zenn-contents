@@ -207,8 +207,9 @@ test("short prose paragraphs are checked only in scoped articles and exclude lea
     "- first item",
     "",
     "This lead-in has one sentence.",
-    "| header | value |",
-    "| --- | --- |",
+    "header | value",
+    "--- | ---",
+    "cell | row",
     "",
     "This lead-in has one sentence.",
     "```text",
@@ -230,6 +231,11 @@ test("short prose paragraphs are checked only in scoped articles and exclude lea
     "https://example.com/card",
     "",
     "This paragraph has three sentences. It passes the rule. It has enough detail.",
+    "",
+    "Use e.g. this method. It works.",
+    "",
+    "> quoted paragraph.",
+    "Lazy continuation sentence.",
     "",
   ].join("\n"));
   fs.writeFileSync(oldPath, [
@@ -253,6 +259,7 @@ test("short prose paragraphs are checked only in scoped articles and exclude lea
 
   assert.equal(result.status, 1, result.stderr);
   assert.match(result.stderr, /scheduled\.md:8: avoid-short-prose-paragraph/);
+  assert.match(result.stderr, /scheduled\.md:39: avoid-short-prose-paragraph/);
   assert.match(result.stderr, /unpublished\.md:4: avoid-short-prose-paragraph/);
-  assert.equal((result.stderr.match(/avoid-short-prose-paragraph/g) ?? []).length, 2, result.stderr);
+  assert.equal((result.stderr.match(/avoid-short-prose-paragraph/g) ?? []).length, 3, result.stderr);
 });
