@@ -170,18 +170,22 @@ RUN set -eu; \
 COPY --chown=demo:demo prepare-demo.sh /opt/demo/prepare-demo.sh
 COPY --chown=demo:demo record-demo.sh /opt/demo/record-demo.sh
 COPY --chown=demo:demo timing-log.py /opt/demo/timing-log.py
+COPY --chown=demo:demo timing-log-split.py /opt/demo/timing-log-split.py
 COPY --chown=demo:demo mark-timing.py /opt/demo/mark-timing.py
 COPY --chown=demo:demo postprocess-video.py /opt/demo/postprocess-video.py
+COPY --chown=demo:demo postprocess-split-video.py /opt/demo/postprocess-split-video.py
 COPY --chown=demo:demo checks/launch-dry-run.sh /opt/demo/checks/launch-dry-run.sh
 COPY --chown=demo:demo checks/classify-agent-startup.py /opt/demo/checks/classify-agent-startup.py
 COPY --chown=demo:demo checks/skill-input-dry.tape /opt/demo/checks/skill-input-dry.tape
 COPY --chown=demo:demo checks/run-skill-input-dry.sh /opt/demo/checks/run-skill-input-dry.sh
 COPY --chown=demo:demo ccstatusline.settings.json /demo/claude-config/ccstatusline.settings.json
 COPY --chown=demo:demo demo.tape /opt/demo/demo.tape
+COPY --chown=demo:demo demo-split.tape /opt/demo/demo-split.tape
 COPY --chown=demo:demo demo-dry.tape /opt/demo/demo-dry.tape
 RUN chmod 0755 /opt/demo/prepare-demo.sh /opt/demo/record-demo.sh \
-       /opt/demo/timing-log.py /opt/demo/mark-timing.py \
-       /opt/demo/postprocess-video.py \
+       /opt/demo/timing-log.py /opt/demo/timing-log-split.py \
+       /opt/demo/mark-timing.py /opt/demo/postprocess-video.py \
+       /opt/demo/postprocess-split-video.py \
        /opt/demo/checks/launch-dry-run.sh /opt/demo/checks/classify-agent-startup.py \
        /opt/demo/checks/run-skill-input-dry.sh
 

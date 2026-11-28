@@ -9,7 +9,9 @@ import sys
 from pathlib import Path
 
 
-TAPE = Path(__file__).resolve().parents[1] / "demo.tape"
+TAPE_DIR = Path(__file__).resolve().parents[1]
+TAPES = (TAPE_DIR / "demo.tape", TAPE_DIR / "demo-split.tape")
+WAIT_REQUIRED_TAPES = (TAPE_DIR / "demo.tape", TAPE_DIR / "demo-split.tape")
 TYPE_COMMAND = re.compile(r'^\s*Type\s+("(?:\\.|[^"\\])*")\s*$')
 WAIT_PREFIX = re.compile(r"^\s*Wait(?:\+Screen)?@\d+s\s+(/.*)\s*$")
 
@@ -38,44 +40,86 @@ def wait_pattern(source_row: str, row_number: int) -> str:
     return literal[1:closing].replace(r"\/", "/")
 
 
-def main() -> int:
-    type_strings: list[tuple[int, str]] = []
-    wait_patterns: list[tuple[int, re.Pattern[str]]] = []
+def validate_video_start_marker(tape: Path) -> str | None:
+    """Require the marker to be the last hidden shell command before Show."""
+    rows = tape.read_text(encoding="utf-8").splitlines()
+    marker_rows = [
+        row_number
+        for row_number, source_row in enumerate(rows, 1)
+        if source_row.lstrip().startswith("Type ")
+        and "mark-timing.py video_start " in source_row
+    ]
+    if len(marker_rows) != 1:
+        return f"{tape.name}: expected one video_start marker Type command, found {len(marker_rows)}"
 
-    for row_number, source_row in enumerate(TAPE.read_text(encoding="utf-8").splitlines(), 1):
-        stripped = source_row.lstrip()
-        if stripped.startswith("Type "):
-            match = TYPE_COMMAND.match(source_row)
-            if not match:
-                print(f"Type command at row {row_number} is not a quoted string", file=sys.stderr)
-                return 2
-            type_strings.append((row_number, json.loads(match.group(1))))
-        elif stripped.startswith("Wait"):
-            try:
-                pattern = wait_pattern(source_row, row_number)
-                wait_patterns.append((row_number, re.compile(pattern)))
-            except (ValueError, re.error) as error:
-                print(f"Invalid Wait regex at row {row_number}: {error}", file=sys.stderr)
-                return 2
+    marker_row = marker_rows[0]
+    if marker_row + 1 >= len(rows):
+        return f"{tape.name}: video_start marker is incomplete"
+    if rows[marker_row].strip() != "Enter" or rows[marker_row + 1].strip() != "Show":
+        return f"{tape.name}: video_start must be entered immediately before Show"
 
-    if not type_strings or not wait_patterns:
-        print("Tape must contain at least one Type string and one Wait regex", file=sys.stderr)
-        return 2
-
-    overlaps: list[tuple[int, int]] = []
-    for wait_row, pattern in wait_patterns:
-        for type_row, text in type_strings:
-            if pattern.search(text):
-                overlaps.append((wait_row, type_row))
-
-    if overlaps:
-        for wait_row, type_row in overlaps:
-            print(f"Wait row {wait_row} matches Type row {type_row}", file=sys.stderr)
-        return 1
-
-    print(
-        f"validated {len(type_strings)} Type strings and {len(wait_patterns)} Wait regexes; no overlaps"
+    show_row = marker_row + 2
+    first_herdr_row = next(
+        (
+            row_number
+            for row_number, source_row in enumerate(rows, 1)
+            if source_row.lstrip().startswith("Type ")
+            and "herdr --session demo" in source_row
+        ),
+        None,
     )
+    if first_herdr_row is None or first_herdr_row <= show_row:
+        return f"{tape.name}: video_start must be recorded before launching the Herdr UI"
+    return None
+
+
+def main() -> int:
+    summaries: list[str] = []
+    for tape in TAPES:
+        marker_error = validate_video_start_marker(tape)
+        if marker_error:
+            print(marker_error, file=sys.stderr)
+            return 1
+
+        type_strings: list[tuple[int, str]] = []
+        wait_patterns: list[tuple[int, re.Pattern[str]]] = []
+
+        for row_number, source_row in enumerate(tape.read_text(encoding="utf-8").splitlines(), 1):
+            stripped = source_row.lstrip()
+            if stripped.startswith("Type "):
+                match = TYPE_COMMAND.match(source_row)
+                if not match:
+                    print(f"{tape.name}: Type row {row_number} is not a quoted string", file=sys.stderr)
+                    return 2
+                type_strings.append((row_number, json.loads(match.group(1))))
+            elif stripped.startswith("Wait"):
+                try:
+                    pattern = wait_pattern(source_row, row_number)
+                    wait_patterns.append((row_number, re.compile(pattern)))
+                except (ValueError, re.error) as error:
+                    print(f"{tape.name}: invalid Wait regex at row {row_number}: {error}", file=sys.stderr)
+                    return 2
+
+        if not type_strings:
+            print(f"{tape.name}: no Type strings found", file=sys.stderr)
+            return 2
+        if tape in WAIT_REQUIRED_TAPES and not wait_patterns:
+            print(f"{tape.name}: no Wait regexes found", file=sys.stderr)
+            return 2
+
+        overlaps: list[tuple[int, int]] = []
+        for wait_row, pattern in wait_patterns:
+            for type_row, text in type_strings:
+                if pattern.search(text):
+                    overlaps.append((wait_row, type_row))
+
+        if overlaps:
+            for wait_row, type_row in overlaps:
+                print(f"{tape.name}: Wait row {wait_row} matches Type row {type_row}", file=sys.stderr)
+            return 1
+        summaries.append(f"{tape.name}: {len(type_strings)} Type strings, {len(wait_patterns)} Wait regexes")
+
+    print("validated " + "; ".join(summaries) + "; no overlaps")
     return 0
 
 

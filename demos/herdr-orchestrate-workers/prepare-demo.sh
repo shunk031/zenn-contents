@@ -196,9 +196,28 @@ if ! herdr_demo agent start orchestrator --kind claude --pane "$root_pane" -- --
 fi
 
 printf '%s\n' "$root_pane" > /tmp/demo-root-pane
-: > /out/timing.log
-rm -f /out/finished
-nohup /opt/demo/timing-log.py "$demo_session" orchestrator "$root_pane" /out/timing.log /out/finished \
+case "${DEMO_VARIANT:-default}" in
+    default)
+        timing_watcher=/opt/demo/timing-log.py
+        timing_log=/out/timing.log
+        finished_marker=/out/finished
+        ;;
+    split)
+        timing_watcher=/opt/demo/timing-log-split.py
+        timing_log=/out/timing-split.log
+        finished_marker=/out/finished-split
+        ;;
+    *)
+        printf '%s\n' 'The recording variant is unsupported.' >&2
+        return 2
+        ;;
+esac
+: > "$timing_log"
+rm -f "$finished_marker"
+nohup "$timing_watcher" "$demo_session" orchestrator "$root_pane" "$timing_log" "$finished_marker" \
     > /dev/null 2>&1 </dev/null &
+if [[ "${DEMO_VARIANT:-default}" == split ]]; then
+    printf '%s\n' "$!" > /out/timing-watcher-split.pid
+fi
 
 printf '%s\n' 'DEMO_SETUP_READY'
