@@ -15,57 +15,50 @@ https://adventar.org/calendars/13106
 
 ![](/images/design-generators-harness/banner.png)
 
-この課題を解決するため、私はデザイン生成の論文実装を移植・統合するモノレポ [`design-generators`](https://github.com/creative-graphic-design/design-generators) を、コーディングエージェントを使って進めています。本リポジトリではすでに 17 個のモデルが元実装とビット完全一致し、さらに 14 個が許容誤差内の一致を確認済みです。[^dg_metrics] モデルが違っても同じ形の入出力と読み込み方法で扱えるよう、設計をそろえて移植しています。その中核となるのが開発・検証基盤の「ハーネス」で、エージェントが迷わず実装と検証を進められるように規則や検査、手順をまとめた仕組みです。
+この課題を解決するため、私はデザイン生成の論文実装を移植・統合するモノレポ [`design-generators`](https://github.com/creative-graphic-design/design-generators) の開発を、コーディングエージェントを使って進めています。モデルが違っても同じ形の入出力と読み込み方法で扱えるよう、設計をそろえて移植しています。その中核となるのが開発・検証基盤の「ハーネス」で、エージェントが規則に沿って実装と検証を進められるように規約や検査、手順をまとめた仕組みです。
 
 https://github.com/creative-graphic-design/design-generators
 
 <!-- 感想: コーディングエージェントによる論文実装の移植について、実際に使ってどうだったか一言 -->
 
-本記事では `design-generators` の構成をもとに、ハーネスの構成要素を紹介します。30 個以上のモデル[^dg_metrics] を移植・再現してきた知見に基づきます。さらに、モデルの追加から再現確認までを実際にどう進めているかも解説します。多数のモデル実装や論文再現をエージェントに任せたいと考えている方の参考になれば幸いです。
+本記事では `design-generators` の構成をもとに、ハーネスの 5 つの要素と、モデル追加から再現確認までの 4 段階の流れを紹介します。多数の論文実装をエージェントに移植・検証させたいと考えている方の参考になれば幸いです。
 
 # design-generators とは
 
-[`design-generators`](https://github.com/creative-graphic-design/design-generators)[^design_generators_repo] は、デザイン生成の研究を移植・統合するモノレポです。[^dg_readme] 各モデルはフレームワーク別のパッケージとして独立して管理されています。対象は [`🤗 Transformers`](https://huggingface.co/docs/transformers/index)[^transformers] や [`🧨 Diffusers`](https://huggingface.co/docs/diffusers/index)[^diffusers]、[`🤖 Pydantic AI`](https://ai.pydantic.dev/)[^pydantic_ai] です。本リポジトリの目的は、数分で推論できる環境を提供することにあります。[^dg_readme] モデルが違っても同じ形で入力を渡し結果を受け取れる統一された公開スキーマと、変換済みの重みを読み込むメソッド `from_pretrained` により、各論文の環境構築を省きます。
+`design-generators` は、レイアウト生成やポスター生成などデザイン生成の研究実装を移植・統合するモノレポです。[^dg_readme] 各モデルはモデルの種類に応じたフレームワーク別のパッケージとして独立に管理しています。Transformer ベースのモデルには [Transformers](https://huggingface.co/docs/transformers/index)、拡散モデルなどの画像生成モデルには [Diffusers](https://huggingface.co/docs/diffusers/index)、LLM の API を呼び出す最近のモデルには [Pydantic AI](https://ai.pydantic.dev/) を採用しています。
 
-本リポジトリの規模と実装実績を表す主な数値をまとめます。
+本リポジトリは、各論文の環境構築を省き、数分で推論できる環境を提供することを目的としています。統一された公開スキーマと、変換済みの重みを読み込む `from_pretrained` により、モデルが変わっても同じ形で入力を渡し、結果を受け取れます。
 
-| 項目                       | 計測値 | 備考                                                                                |
-| -------------------------- | -----: | ----------------------------------------------------------------------------------- |
-| モデルパッケージ数         |     34 | `models/` 配下のディレクトリ数およびリポジトリ直下のカタログ行数と一致[^dg_metrics] |
-| `REPRODUCING.md` の配置数  |     34 | 全モデルパッケージに推論再現手順書を完備[^dg_metrics]                               |
-| テストコードファイル数     |    441 | `tests/` 配下の追跡対象 Python ファイル数[^dg_metrics]                              |
-| マージ済みプルリクエスト数 |    276 | 2026 年 7 月 16 日の初期コミットから 11 月 21 日までの累計[^dg_metrics]             |
-
-リポジトリ直下のカタログには、30 個以上のモデルが並んでいます。[^dg_readme] CVPR や ICCV、NeurIPS、AAAI といったコンピュータビジョンや機械学習の主要な国際会議で発表されたレイアウト生成や画像生成のモデルです。本リポジトリでは、移植したコードが vendor サブモジュール（= 元の論文実装のリポジトリを Git のサブモジュールとして取り込んだもの）の元実装と数値的に一致するかを確認する方針としています。[^dg_readme] 本記事では、移植したコードの出力が元実装の出力と一致することを「パリティ」と呼びます。単なる再実装にとどまらず、一致確認の自動テスト（パリティテスト）で照合します。カタログ掲載モデルのうち、17 個が元実装とビット完全に一致しています。[^dg_metrics] さらに 14 個が許容誤差内の一致を確認済みです。
+移植したコードは、元の論文実装を取り込んだ `vendor/` 配下のコードと数値的に一致するかを自動テストで照合します。本記事では、移植したコードの出力が元実装の出力と一致することを「パリティ」、その一致を確かめる自動テストを「パリティテスト」と呼びます。多くのモデルで元実装とビット完全一致を確認しており、それ以外の多くのモデルもあらかじめ合意した許容誤差内で一致しています。
 
 # ハーネスの全体像
 
-論文コードの移植を自然言語で依頼するだけでは、失敗しやすくなります。エージェントが都合の良いモックを作り、壊れやすいコードを出力するためです。設計基準を守り、元実装と整合するコードを自律的に書かせるには、エージェントを拘束する「ハーネス」が欠かせません。
+論文コードの移植を自然言語で依頼するだけでは、エージェントが都合のよいモックを作ったり、元実装と噛み合わないコードを書いたりして失敗しやすくなります。設計基準を守りつつ元実装と整合するコードを書かせるには、エージェントの判断材料と検査基準をリポジトリ側に用意しておく必要があります。
 
-`design-generators` では、以下の 5 つの要素を組み合わせてハーネスを構築しています。このうち機械的検証パイプラインには 90% のカバレッジ下限[^dg_checklist] が設定されています。
+`design-generators` では、規約・スキル・パッケージ構造・機械的検証・記録の 5 つの要素を組み合わせてハーネスを構成しています。エージェントの実装と検証を支える要素間の関係を示します。
 
 ```mermaid
 flowchart TD
-    subgraph Governance["真実の源と規約"]
-        AgentsMD["AGENTS.md<br>（基本原則と権限境界）"]
-        Skills[".agents/skills/<br>（ドメイン固有の<br>実装手順）"]
+    subgraph Governance["規約と手順"]
+        AgentsMD["共通規則の指示書<br>（基本原則と権限境界）"]
+        Skills["リポジトリローカルスキル<br>（作業ごとの専門手順）"]
     end
 
     subgraph Planning["合議と計画"]
-        ParallelPlan["Parallel-plan プロトコル<br>（複数エージェントによる<br>合議）"]
+        ParallelPlan["複数エージェントの設計合議<br>（提案と調停）"]
         IssuePlan["Issue 計画コメント<br>（仕様と許容誤差の合意）"]
     end
 
-    subgraph WorkspaceStructure["モデルごとのパッケージと<br>共有ライブラリ"]
-        UV["uv ワークスペース<br>（パッケージごとの<br>依存分離）"]
-        SharedLib["共有ライブラリ<br>（レイアウト生成・<br>ポスター配置・<br>訓練用の共通処理）"]
+    subgraph WorkspaceStructure["パッケージ構造と共有ライブラリ"]
+        UV["uv ワークスペース<br>（パッケージごとの依存分離）"]
+        SharedLib["共有ライブラリ<br>（レイアウト・ポスター・訓練の共通処理）"]
         VendorSub["vendor サブモジュール<br>（元実装の参照保護）"]
     end
 
     subgraph Verification["機械的検証パイプライン"]
-        ParitySuite["パリティテスト<br>（PARITY_REQUIRE=1:<br>アセットがなければ<br>失敗にする）"]
-        Coverage["テストカバレッジ<br>下限 90%<br>（モデルパッケージ<br>単位のテスト）"]
-        CISelector["影響範囲に応じた<br>テスト選択<br>（影響メンバーの<br>自動選択）"]
+        ParitySuite["パリティテスト<br>（アセット欠落時は失敗）"]
+        Coverage["テストカバレッジ下限 90%<br>（パッケージ単位の検査）"]
+        CISelector["影響範囲に応じたテスト選択<br>（依存グラフから自動選択）"]
     end
 
     AgentsMD --> Skills
@@ -77,48 +70,50 @@ flowchart TD
     UV --> Verification
 ```
 
-## 1. 共通規則をまとめる指示書（`AGENTS.md`）
+## 1. 共通規則をまとめる指示書
 
-指示を小さく保てばルール違反や迷走を減らしやすくなるため、全モデル共通の基本原則だけを守らせる方針としています。リポジトリルートの [`AGENTS.md`](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/AGENTS.md)[^dg_agents_md] では、命名規則やクラス設計、ワークスペース操作、Issue やプルリクエスト (PR) の追跡ルールのみを定めています。ドメイン固有の手順を直接書き込まずローカルスキルへと委任することで、共通規則を簡潔に保っています。[^dg_agents_md]
+エージェントに渡す共通指示が長大になると、守るべき原則が埋もれてルール違反が起きやすくなります。そこで、全モデル共通の基本原則は、命名規則やクラス設計、ワークスペース操作、Issue やプルリクエスト (PR) の追跡ルールだけに絞り、リポジトリルートの `AGENTS.md` へ記載しています。[^dg_agents_md] 作業ごとの詳しい手順はローカルスキルへ分離し、共通指示を簡潔に保っています。
 
-## 2. リポジトリローカルスキル（`.agents/skills/`）
+## 2. リポジトリローカルスキル
 
-作業ごとに必要な専門手順だけをエージェントへ読み込ませ、文脈の圧迫を抑えて作業精度を高める狙いがあります。リポジトリ固有の手順は `.agents/skills/` 配下のスキルにまとめています。[^dg_agents_md]
+作業の種類ごとに必要な専門手順だけをエージェントに読み込ませるため、リポジトリ固有の手順を `.agents/skills/` 配下のスキルに分けています。[^dg_agents_md] 関係のない手順でコンテキストを圧迫しないようにする狙いがあります。各スキルが定義する範囲を次の表にまとめます。
 
-- `design-generators-model-conversion`: モデル変換、公開インターフェース、出力スキーマなどを規定。[^dg_agents_md]
-- `design-generators-documentation`: README やモデルカード、再現手順書の記述規約を規定。[^dg_agents_md]
-- `design-generators-training-reproduction`: S0〜S5 の段階的な訓練再現プロトコル（= 設定の確認から全エポックの訓練までの 6 段階）と記録方法を規定。[^dg_agents_md]
-- `design-generators-parallel-plan-discussion`: 複数エージェントによる設計合意プロトコル（= parallel-plan スキル）を規定。[^dg_parallel_plan]
+| スキル名                                   | 定義している内容                                               |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| `design-generators-model-conversion`       | モデル変換、パリティ検証、データソース、公開スキーマの規約     |
+| `design-generators-documentation`          | README、モデルカード、API ドキュメント、再現手順書の記述規約   |
+| `design-generators-training-reproduction`  | 6 段階の訓練再現手順と検証結果の記録方法                       |
+| `design-generators-parallel-plan-discussion` | 複数エージェントによる設計合意の手順                         |
 
-特に `parallel-plan` スキルは、複数のエージェントが提案と調停を経て設計を合意します。[^dg_parallel_plan] 複数のエージェントの作業タブを管理するターミナルツール Herdr（12/1 の記事で紹介したもの）で開いた作業環境（Git worktree）上の合意記録ファイルを用いて合意を形成します。大規模な設計方針の決定で、1 体のエージェントの偏りに依存するリスクを減らせます。
+このうち `design-generators-parallel-plan-discussion` では、複数エージェントが独立に設計案を出し、議論と調停を経て共通インターフェースを合意します。[^dg_parallel_plan] 複数エージェントの作業タブを管理する公開ツール [Herdr](https://zenn.dev/shunk031/articles/herdr-orchestrate-workers-skill) 上で各エージェントに専用の Git worktree とタブを割り当て、共有の下書きファイルを通じて合意をまとめます。大きな設計判断で 1 体のエージェントの偏りに依存するリスクを減らす目的で使っています。
 
 ## 3. モデルごとのパッケージと共有ライブラリ
 
-多数の論文実装を 1 つのリポジトリへ統合しても、ライブラリのバージョン衝突を避けやすくなります。Python のパッケージ管理には [`uv`](https://docs.astral.sh/uv/)[^uv] ワークスペースを採用しています。[^dg_readme] 各モデルを `models/<slug>/` 配下の独立メンバーとして管理し、個別の `pyproject.toml` を持たせています。[^dg_checklist] 元実装が必要とする依存は追加グループ（extra）の `vendor` に分けることで、モデル間の衝突を防いでいます。[^dg_checklist]
+多数の論文実装を 1 つのリポジトリに統合すると、依存ライブラリのバージョン衝突が問題になります。パッケージ管理には [uv](https://docs.astral.sh/uv/) のワークスペースを使い、各モデルを `models/<slug>/` 配下の独立したメンバーとして管理しています。[^dg_checklist] 各パッケージに個別の `pyproject.toml` を持たせ、元実装の実行にだけ必要な依存はオプションの `vendor` グループに分離して衝突を抑えています。
 
-バウンディングボックス計算などの共通処理は共有ライブラリ（`lib/laygen` や `lib/posgen`、`lib/traingen`）へ集約し、車輪の再発明を防いでいます。[^dg_readme]
+バウンディングボックス計算やポスター配置、訓練用の共通処理は、共有ライブラリ（`lib/laygen`、`lib/posgen`、`lib/traingen`）に集約しています。[^dg_readme] モデルごとの重複実装を減らし、公開インターフェースをそろえやすくする構成です。
 
 ## 4. 機械的検証と CI パイプライン
 
-エージェントが書いたコードの品質を人間が毎回細かく見張らなくても、機械的な関門で水準を保ちやすくする狙いがあります。継続的インテグレーション (CI)[^github_actions] により、品質基準を満たしているかを機械的に判定します。[^dg_ci]
+エージェントが生成したコードを人間が毎回細部まで目視で確認しなくても一定の水準を保てるよう、GitHub Actions による CI で品質基準を機械的に判定しています。[^dg_ci] 主な検査項目は次の 3 点です。
 
-- PR メタデータ検査: PR 本文の Issue 参照やチェックリストの記入を機械検査。[^dg_pr_metadata_check]
-- テストのカバレッジ 90% 以上を必須化: パリティテストを除くユニットテストに対し、90% 以上のコード網羅率を強制。[^dg_checklist]
-- 依存関係に基づくテスト選択: 依存グラフから、変更の影響を受けるメンバーのみを自動選択してテスト実行。[^dg_ci]
+- PR メタデータ検査: PR 本文の Issue 参照やチェックリスト、共有ライブラリ変更時の理由記入を自動検査する。[^dg_pr_metadata_check]
+- テストカバレッジの下限設定: パリティテストを除くユニットテストについて、パッケージごとに 90% 以上のカバレッジを必須とする。[^dg_checklist]
+- 依存関係に基づくテスト選択: ワークスペースの依存グラフから、変更の影響を受けるパッケージだけを自動選択してテストを実行する。
 
 ## 5. 検証結果を記録するドキュメント設計
 
-不要な生成物によるリポジトリの肥大化を抑え、同じコマンドで数値を確かめ直せる再現性を高めやすくなります。推論や環境構築の手順は `REPRODUCING.md`、学習の検証記録は `TRAINING.md` に分けて管理します。巨大なテンソルや画像は Git に含めず、再現に要るメタデータのみを Issue や PR 本文、各パッケージのドキュメントに残す設計としています。[^dg_training_proto][^dg_pr_template]
+巨大なテンソルやチェックポイント、画像を Git に含めるとリポジトリが肥大化します。そのため、生成物自体はコミットせず、再現に必要なシード値や設定ハッシュ、実行コマンドなどのメタデータだけを Issue や PR 本文、各パッケージのドキュメントに残す方針としています。[^dg_training_proto] 推論や環境構築の手順は `REPRODUCING.md`、自前訓練の検証記録は `TRAINING.md` に分け、後から同じコマンドで数値を確かめ直せるようにしています。[^dg_readme]
 
 # モデルを追加する流れ
 
-実際に新しいモデルを `design-generators` に追加し、再現性を確認してマージするまでの一連の流れを見ていきます。
+新しいモデルを `design-generators` に追加し、再現性を確認してマージするまでを 4 つの段階で進めます。人間、コーディネーター（実装担当とは別にパリティテストを独立に再実行する役割）、実装エージェントのやり取りは次の流れになります。
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Dev as 人間<br>（Issue 作成と<br>マージの判断）
-    actor Coord as コーディネーター<br>（パリティの確認）
+    actor Dev as 人間<br>（Issue 作成とマージ判断）
+    actor Coord as コーディネーター<br>（独立したパリティ確認）
     actor Agent as 実装エージェント
     participant Issue as GitHub Issue
     participant Worktree as 作業ワークスペース
@@ -126,95 +121,82 @@ sequenceDiagram
 
     Dev->>Issue: Issue 作成<br>（対象モデルの提示）
     Agent->>Issue: 計画コメントの提示<br>（仕様・許容誤差）
-    Dev->>Issue: 計画の合意確認<br>(plan-agreed)
+    Dev->>Issue: 計画の合意確認
     Note over Agent,Worktree: タスク専用 worktree の作成
-    Agent->>Worktree: vendor 実装から<br>正解データ（ゴールデンフィクスチャ）の生成
-    Agent->>Worktree: モデル変換と<br>推論パイプラインの実装
-    Agent->>Worktree: PARITY_REQUIRE=1 で<br>パリティテスト実行
+    Agent->>Worktree: 元実装から正解データを生成
+    Agent->>Worktree: モデル変換と推論パイプラインの実装
+    Agent->>Worktree: アセット欠落を失敗扱いにして<br>パリティテストを実行
     opt 自前訓練モデルの場合
-        Agent->>Worktree: S0〜S5 段階的<br>訓練再現プロトコルの実行
-        Agent->>Worktree: TRAINING.md への<br>検証結果の記録
+        Agent->>Worktree: 6 段階の訓練再現検証を実行
+        Agent->>Worktree: TRAINING.md へ検証結果を記録
     end
-    Agent->>PR: PR 作成<br>(テンプレート全項目記入・CI 実行)
-    Coord->>Worktree: パリティテストの<br>独立再実行 (parity-verified)
-    Dev->>PR: 最終確認とマージ
+    Agent->>PR: PR 作成<br>（テンプレート記入・CI 実行）
+    Coord->>Worktree: パリティテストの独立再実行
+    Dev->>PR: 最終確認とマージ判断
 ```
 
-## 1. Issue 起点の設計合意（plan-agreed）
+## 1. Issue 起点の設計合意
 
-モデルの追加作業は、必ず GitHub の Issue を立てることから始まります。[^dg_agents_md] エージェントは Issue の計画コメントで、対象モデルのスコープや公開インターフェースを明文化します。[^dg_agents_md] 利用データセットや、元実装と比較する許容誤差の基準もここで合意します。
+モデルの追加作業は、GitHub の Issue を立てることから始めます。[^dg_agents_md] 実装エージェントは Issue の計画コメントに、対象モデルのスコープ、公開インターフェース、利用データセット、元実装と比較する許容誤差の基準を明文化します。
 
-設計方針に変更が生じた場合は、計画コメントを書き換えるのではなく修正コメントを追記します。最新の修正コメントが過去の記述を上書きするルールとしています。この運用により、エージェントが設計の経緯と最新の合意事項を混同するリスクを減らせます。[^dg_agents_md] 設計が合意されると、Issue のステータスラベルは [`plan-agreed`](https://github.com/creative-graphic-design/design-generators/issues?q=is%3Aissue+state%3Aopen+label%3Aplan-agreed) となります。[^dg_agents_md]
+途中で設計方針が変わった場合は、最初の計画コメントを書き換えず、修正コメントを追記します。最新の修正コメントが過去の記述を上書きする運用にすることで、エージェントが過去の経緯と最新の合意を取り違えにくくしています。設計に合意したら Issue の状態を合意済みに進め、実装に移ります。
 
-## 2. 専用の worktree での実装と推論パリティ検証（in-progress）
+## 2. 専用の worktree での実装と推論パリティ検証
 
-実装段階に入ると、Issue に [`in-progress`](https://github.com/creative-graphic-design/design-generators/issues?q=is%3Aissue+state%3Aopen+label%3Ain-progress) ラベルが付与されます。[^dg_agents_md] 並行して進む作業どうしの変更がぶつからないようにするため、実装作業はメインブランチを直接触らず、独立したタスク専用の Git worktree で行われます。[^dg_checklist]
+実装に入ったら、Issue の状態を実装中に更新し、メインブランチを直接触らずタスク専用の Git worktree を切って作業します。[^dg_checklist] 複数のモデル移植を並行して進めても変更がぶつからないようにするためです。
 
-実装の核となるのが、元実装との一致を確認するゴールデンフィクスチャの準備です。ゴールデンフィクスチャとは、正解の基準として元実装から生成して保存したテスト用データのことです。チェックリストでは、参照生成スクリプトを用い、固定シードと単一 GPU の環境でゴールデンフィクスチャを再生成する運用としています。[^dg_checklist]
+実装の軸になるのが、元実装から生成する正解データ（ゴールデンフィクスチャ）の準備です。参照生成スクリプトを使い、固定シードと単一 GPU の環境で元実装の出力を生成します。続いて共通の基底クラスを継承してモデルパッケージを実装し、正解データと比較するパリティテストで数値の一致を確認します。テスト実行時は、必要なアセットが欠けていればスキップせず失敗となる設定を有効化し、検証漏れを抑えています。[^dg_training_proto]
 
-続いて、パイプライン基底クラスを継承してモデルパッケージを実装します。生成したゴールデンフィクスチャと比較するパリティテストを実行して整合性を検証します。このとき、テスト環境には `PARITY_REQUIRE=1`[^dg_training_proto] を指定し、アセット欠落によるテストの意図しない通過を防ぎます。
+## 3. 訓練再現の段階的検証
 
-## 3. 訓練再現の段階的検証（S0〜S5 プロトコル）
-
-自前で重みを学習する必要があるモデルでは、推論パリティの合格だけでは不十分です。推論コードが一致していても、学習ループに微小な差分があれば性能を再現できないためです。[^dg_training_proto] `design-generators` では、厳格な訓練再現プロトコルを定めており、S0 から S5 までの 6 段階で学習の整合性を検証します。[^dg_training_proto]
+公開済みの重みがなく自前で学習し直す必要があるモデルでは、推論パリティの確認だけでは足りません。推論コードが一致していても、学習ループに微小な差分があれば論文の性能を再現できないためです。[^dg_training_proto] そのため、設定の確認から全エポック訓練までを 6 段階に分けて順に検証します。
 
 ```mermaid
 flowchart LR
-    S0["S0: 静的設定<br>（Config・重みキー・<br>初期状態）"]
-    S1["S1: 前トレース<br>（固定バッチでの損失計算）"]
-    S2["S2: 1ステップ更新<br>（勾配・オプティマイザ更新）"]
-    S3["S3: 複数バッチ軌跡<br>（自然な訓練軌跡の<br>記録と同期診断）"]
-    S4["S4: データストリーム<br>（決定論的ローダ順序）"]
-    S5["S5: 全エポック訓練の統計<br>（評価プロトコルでの<br>性能一致）"]
+    Step1["1. 静的設定と初期状態<br>（構成・重みキー・初期値）"]
+    Step2["2. 固定バッチ前トレース<br>（更新前の出力と損失）"]
+    Step3["3. 1 ステップ更新<br>（勾配・オプティマイザ更新）"]
+    Step4["4. 複数バッチ軌跡<br>（自然な軌跡と同期診断）"]
+    Step5["5. 決定論的データストリーム<br>（ローダ順序・拡張・マスク）"]
+    Step6["6. 全エポック訓練の統計<br>（評価プロトコルでの性能比較）"]
 
-    S0 --> S1 --> S2 --> S3 --> S4 --> S5
+    Step1 --> Step2 --> Step3 --> Step4 --> Step5 --> Step6
 ```
+
+各段階で確かめる内容を次の表にまとめます。
 
 | 段階 | 名前                     | 確かめること                                                                                                                 |
 | ---- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| S0   | 静的設定と初期状態       | パラメータ数やキー配置、学習率スケジューラが元実装と完全一致することを確認。                                                 |
-| S1   | 固定バッチ前トレース     | 同一シードとバッチ入力に対し、オプティマイザ更新前の出力と損失の一致を確認。                                                 |
-| S2   | 1 ステップ更新           | 1 回の逆伝播と更新を経て、勾配や更新後の重みパラメータの一致を確認。                                                         |
-| S3   | 複数バッチ訓練軌跡       | 自然な訓練軌跡を必ず記録し、各ステップが S0〜S2 を満たせば数値の一致とみなし、満たさなければ軌跡を残して同期した診断を足す。 |
-| S4   | 決定論的データストリーム | データローダの読み出し順序やデータ拡張、マスク処理が元実装と同一かを確認。                                                   |
-| S5   | 全エポック訓練の統計比較 | 全エポックの訓練を実施し、元論文の評価プロトコル下で性能指標が一致することを確認。                                           |
+| 1    | 静的設定と初期状態       | パラメータ数や重みキーの対応、学習率スケジューラが元実装と一致することを確認する。                                           |
+| 2    | 固定バッチ前トレース     | 同一シードとバッチ入力に対し、オプティマイザ更新前の出力と損失が一致することを確認する。                                     |
+| 3    | 1 ステップ更新           | 1 回の逆伝播と更新を経て、勾配や更新後の重みパラメータが一致することを確認する。                                             |
+| 4    | 複数バッチ訓練軌跡       | 自然な訓練軌跡を記録し、各ステップが前の段階の基準を満たすかを確かめ、外れた場合は同期診断を足す。                           |
+| 5    | 決定論的データストリーム | データローダの読み出し順序やデータ拡張、マスク処理が元実装と同一かを確認する。                                               |
+| 6    | 全エポック訓練の統計比較 | 全エポックの訓練を実施し、元論文の評価プロトコル下で性能指標が一致することを確認する。                                       |
 
-なお、損失の範囲の確認は S3 とは別の層として扱われます。S5 の前に、元実装とパッケージの条件をそろえた実行を少なくとも 3 回、1,500 更新以上で行います。[^dg_training_proto]
+全エポック訓練に入る前には、元実装とパッケージの条件をそろえた実行を少なくとも 3 回、1,500 更新以上行って損失の範囲を確認します。また、学習開始前の設定記録（マニフェスト）と、評価スクリプトの出力一致の記録を必須としています。途中の段階を飛ばして最終結果だけで合格と主張することは禁止しており、検証結果はすべて各パッケージの `TRAINING.md` に残します。
 
-S5 の訓練前には、学習開始前の設定記録（マニフェスト）と評価スクリプトによる出力一致（評価経路のパリティ）の登録を義務づけています。[^dg_training_proto] 設定ハッシュ値や実行コマンドを固定し、評価スクリプトの出力一致を記録します。途中のステップを飛ばして S5 の結果だけで合格と主張することは禁じられています。すべての検証結果は各パッケージの `TRAINING.md` に記録されます。
+## 4. PR 作成と独立した検証
 
-## 4. PR 作成と独立した検証（parity-verified）
+実装と検証が終わったら、エージェントはリポジトリのテンプレートに従って PR を作成します。[^dg_agents_md] テンプレートには変更概要、検証コマンドと結果、共有ライブラリへの影響、チェックリストを記入します。[^dg_pr_template]
 
-実装と検証が完了すると、エージェントは指定テンプレートに従って PR を作成します。[^dg_agents_md] テンプレートには変更概要や検証コマンド、共有ライブラリへの影響を記入します。[^dg_pr_template]
-
-PR 作成後は、CI による静的解析や型検査、ユニットテストが自動実行されます。[^dg_ci] さらにマージ前の関門として、コーディネーターが独立環境でパリティテストを再実行します。[^dg_agents_md] コーディネーターとは、実装担当とは別にパリティテストを独立に再実行して結果を確かめる役割のことです。[^dg_agents_md] この独立再実行に合格して初めて [`parity-verified`](https://github.com/creative-graphic-design/design-generators/issues?q=is%3Aissue+state%3Aopen+label%3Aparity-verified) ラベルが付与され、マージされます。[^dg_agents_md]
+PR を作成すると、CI による静的解析、型検査、ユニットテストが自動で走ります。[^dg_ci] さらにマージ前の関門として、実装担当とは別のコーディネーターが独立環境でパリティテストを再実行し、結果を確かめます。独立再実行に通ったうえで、最終的なマージは人間が判断します。[^dg_checklist]
 
 # まとめ
 
-AI エージェントが実装から検証までを自律的に進める開発基盤は、近年「software factory」として議論されています。たとえば Vercel の自律開発ワークフロー[^vercel_factory] や、Stripe が報告する決定論的ツールによるテスト済み PR 生成[^stripe_minions]、Uber の自律検証基盤[^uber_factory]、共有掲示板を介した複数エージェント協調[^instant_factories] などです。本リポジトリのハーネスも、論文実装の再現に特化した software factory と捉えられます。
+AI エージェントが実装から検証までを自律的に進める開発基盤は、近年「software factory」として議論されています。たとえば [Vercel](https://vercel.com/blog/building-a-software-factory-for-ai-sdk) の自律開発ワークフロー、[Stripe](https://stripe.dev/blog/minions-stripes-one-shot-end-to-end-coding-agents) の決定論的ツールによるテスト済み PR 生成、[Uber](https://www.uber.com/us/en/blog/efficient-software-factory/) の自律検証基盤、[共有掲示板を介した複数エージェント協調の論文](https://arxiv.org/abs/2610.36254) などがあります。`design-generators` のハーネスも、論文実装の再現に特化した software factory の一例と捉えられます。
 
-ただし、人間が関与しない無人工場ではありません。パリティの確認はコーディネーターが独立に再実行して行い、マージは人間が判断します。[^dg_agents_md][^dg_checklist] 本リポジトリが示すのは、インターフェースを定義し、機械検証で外枠を固める「ハーネスの設計」があって初めてエージェントが自律的に走れるということです。30 個以上のモデル[^dg_metrics] を移植できたのも、`uv` による依存分離やアセット欠落を許さない `PARITY_REQUIRE=1`、S0〜S5 プロトコルといった足場をコード化した結果です。
+もっとも、すべてをエージェント任せにしているわけではありません。パリティの確認はコーディネーターが独立に再実行し、マージは人間が判断します。[^dg_agents_md] 共通インターフェースを定め、uv による依存分離やアセット欠落を許さないパリティテスト、6 段階の訓練再現検証といった仕組みをリポジトリ側に組み込んでおくことは、エージェントが自律的に作業を進めるための有用な土台になると考えています。
 
-多数のモデルを比較検証したい研究や、大規模コードベースを自律的に保守する場面において、プロンプト調整だけでなく、テストや検証結果を記録する仕組み化の参考になれば幸いです。
+多数のモデルを比較検証したい研究や、大きなコードベースをエージェントと継続的に保守する場面において、プロンプトの工夫だけでなく、テストや検証記録まで含めた仕組み化の参考になれば幸いです。
 
 <!-- 感想: ハーネスを導入したエージェント運用の実感について、実際に使ってどうだったか一言 -->
 
-[^design_generators_repo]: https://github.com/creative-graphic-design/design-generators
-[^transformers]: https://huggingface.co/docs/transformers/index
-[^diffusers]: https://huggingface.co/docs/diffusers/index
-[^pydantic_ai]: https://ai.pydantic.dev/
 [^dg_readme]: [design-generators README.md](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/README.md)
-[^dg_metrics]: [design-generators research facts: metrics](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/README.md#L23-L62)
 [^dg_agents_md]: [design-generators AGENTS.md](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/AGENTS.md)
 [^dg_parallel_plan]: [design-generators parallel-plan SKILL.md](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/.agents/skills/design-generators-parallel-plan-discussion/SKILL.md)
-[^uv]: https://docs.astral.sh/uv/
 [^dg_checklist]: [design-generators implementation-checklist.md](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/docs/implementation-checklist.md)
-[^github_actions]: https://github.com/features/actions
 [^dg_ci]: [design-generators ci.yml](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/.github/workflows/ci.yml)
 [^dg_pr_metadata_check]: design-generators PR metadata check: [ci.yml](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/.github/workflows/ci.yml#L43-L48), [check_pr_issue_reference.py](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/scripts/check_pr_issue_reference.py#L319-L355)
 [^dg_training_proto]: [design-generators training-reproduction.md](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/docs/training-reproduction.md)
 [^dg_pr_template]: [design-generators PULL_REQUEST_TEMPLATE.md](https://github.com/creative-graphic-design/design-generators/blob/cf04fffc83eb7f3720b3b33dbe417f9117d8288a/.github/PULL_REQUEST_TEMPLATE.md)
-[^vercel_factory]: Vercel, "Building a software factory for AI SDK", https://vercel.com/blog/building-a-software-factory-for-ai-sdk
-[^stripe_minions]: Stripe, "Minions: Stripe’s one-shot, end-to-end coding agents", https://stripe.dev/blog/minions-stripes-one-shot-end-to-end-coding-agents
-[^uber_factory]: Uber, "Building a high-performance AI software factory", https://www.uber.com/blog/efficient-software-factory/
-[^instant_factories]: "Instant Software Factories: Scaling Autonomous Coding with Infinite-Context LLMs", https://arxiv.org/abs/2610.36254
