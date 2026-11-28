@@ -100,7 +100,7 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1851s
 | --- | --- |
 | ![右端に黄色のバーと赤色のバーが表示されたルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-before.webp) | ![黄色のバーが消え、赤色のバーが残ったルーラー拡大](/images/igorbabko-vscode-setup-2025/ch09-git-diff-markers-after.webp) |
 
-左の右端に表示されていた黄色と赤色のバーのうち、右では黄色のバーが消え、赤色のバーは残ります。なお、この比較では確認のため `scm.diffDecorations` を一時的に `all` へ戻しており、第 7 章の設定を適用した状態ではこれらの Git マーカーはすでに非表示です。
+左の右端に表示されていた黄色と赤色のバーのうち、右では黄色の Git マーカーが消え、赤色のエラーマーカーは残ります。この赤色のエラーマーカーは、続く比較（`editorOverviewRuler.errorForeground`）で非表示になります。なお、この比較では確認のため `scm.diffDecorations` を一時的に `all` へ戻しており、第 7 章の設定を適用した状態では Git マーカーはすでに非表示です。
 
 | Before | After |
 | --- | --- |

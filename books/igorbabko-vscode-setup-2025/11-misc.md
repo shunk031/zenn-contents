@@ -63,7 +63,7 @@ VS Code の自動更新モードを `update.mode: "none"`（既定値 `"default"
 | --- | --- |
 | ![Settings UI で update.mode が Default になっている画面](/images/igorbabko-vscode-setup-2025/ch11-update-mode-before.webp) | ![Settings UI で update.mode が None へ切り替わった画面](/images/igorbabko-vscode-setup-2025/ch11-update-mode-after.webp) |
 
-`update.mode` で絞り込んだ Settings UI 上で、左の `Default` から右の `None` へ値が切り替わる様子を示しています。なお、この比較は Settings UI 上の設定値のみを確認したものであり、実行時の更新動作自体は `--disable-updates` によって抑止されています。
+`update.mode` で絞り込んだ Settings UI 上で、左の `Default` から右の `None` へ値が切り替わる様子を示しています。なお、キャプチャ環境では更新を無効にしているため、このスクリーンショットで確認できるのは設定値のみであり、更新動作は示していません。
 
 ## 設定項目の一覧
 
