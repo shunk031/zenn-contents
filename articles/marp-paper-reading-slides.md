@@ -60,7 +60,7 @@ Marp は CSS によるテーマ拡張機構を備えています。独自のク�
 
 本節では、筆者のスライド用リポジトリ [shunk031/slides](https://github.com/shunk031/slides) に含まれるファイル群の役割と、原稿の執筆から PDF 出力までを動かす手順を説明します。
 
-このスライドプロジェクトは複数のツールに依存するため、それらをまとめて手軽に管理できるよう [mise](https://mise.jdx.dev/getting-started.html)[^mise_doc] を採用しています。Node 24.18.0 や Marp CLI 4.5.1 のバージョン固定、プレビューや PDF 出力といったタスク定義をすべて `mise.toml` に集約しています。
+このスライドプロジェクトは複数のツールに依存するため、それらをまとめて手軽に管理できるよう [mise](https://mise.jdx.dev/getting-started.html)[^mise_doc] を採用しています。ツールのバージョン固定や、プレビューや PDF 出力といったタスク定義をすべて `mise.toml` に集約しています。
 
 リポジトリのディレクトリ構成は次のとおりです。
 
@@ -150,7 +150,7 @@ paginate: true
 
 ### Headless Chrome によるレイアウト検査
 
-スライド作成では、文字のはみ出しや意図しない改行、図とテキストの重なりなど、目視で見落としやすい崩れが発生します。`mise run check-layout` を実行すると、`scripts/check-layout.cjs` が Headless Chrome 上で全スライドを描画します。フォントや画像の読み込み完了後、各要素の配置をピクセル単位で検査します。
+スライド作成では、文字のはみ出しやテキスト同士の重なり、単語の途中改行など、目視で見落としやすい崩れが発生します。`mise run check-layout` を実行すると、`scripts/check-layout.cjs` が Headless Chrome 上で全スライドを描画します。フォントや画像の読み込み完了後、各要素の配置をピクセル単位で検査します。
 
 主な検査項目として以下のような項目が定義されています。
 
