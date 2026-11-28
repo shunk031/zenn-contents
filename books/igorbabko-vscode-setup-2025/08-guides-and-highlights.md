@@ -37,7 +37,7 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=1565s
 | --- | --- |
 | ![ステータスバーに Spaces: 4 が表示された状態](/images/igorbabko-vscode-setup-2025/ch08-detected-indent-size-before.webp) | ![同じファイルのままステータスバーが Spaces: 2 へ変わった状態](/images/igorbabko-vscode-setup-2025/ch08-detected-indent-size-after.webp) |
 
-ファイル内容自体は変わらず、見た目上の変化は画面下部のステータスバーが左の `Spaces: 4` から右の `Spaces: 2` へ切り替わる点に表れます。
+ファイル内容自体は変わらず、見た目上の変化は画面下部のステータスバーが左の `Spaces: 4` から右の `Spaces: 2` へ切り替わる点に表れます。なお、ステータスバーはこの比較画像の撮影時のみ表示しており、第 1 章の設定では引き続き非表示のままです。
 
 ### ガイドラインとハイライトの排除
 コード折りたたみ用の矢印コントロール（`editor.showFoldingControls: "never"`、既定値 `"mouseover"`）を常に非表示にします。コード折りたたみの操作は、キーボードショートカットで行います。VS Code の既定値は、折りたたみが macOS で `⌥⌘[`、Windows や Linux で `Ctrl+Shift+[` です。展開は macOS で `⌥⌘]`、Windows や Linux で `Ctrl+Shift+]` です。さらに、インデントの垂直ガイド線（`editor.guides.indentation: false`、既定値 `true`）を非表示にします。空白・タブの記号表示（`editor.renderWhitespace: "none"`、既定値 `"selection"`）を非表示にします。あわせて、現在行のハイライト（`editor.renderLineHighlight: "none"`、既定値 `"line"`）も非表示にします。加えて、シンボルの一致強調（`editor.occurrencesHighlight: "off"`、既定値 `"singleFile"`）をオフにします。選択文字列と一致する箇所の強調（`editor.selectionHighlight: false`、既定値 `true`）もオフにし、エディタ内のハイライト装飾を徹底して削ぎ落とします。
