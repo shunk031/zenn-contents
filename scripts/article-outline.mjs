@@ -34,7 +34,7 @@ function isTableDelimiter(line) {
 
 function withoutImages(line) {
   return line
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/!\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])?/g, "")
     .replace(/<img\b[^>]*>/gi, "")
     .trim();
 }
@@ -70,12 +70,12 @@ export function sentenceParts(text) {
     if (
       character === "."
       && index + 1 < text.length
-      && !/[\s」』）)\]】]/.test(text[index + 1])
+      && !/[\s」』）)\]】"'”’]/.test(text[index + 1])
     ) continue;
     if (character === "." && /\b(?:e\.g|i\.e|u\.s|u\.k|mr|mrs|ms|dr|prof|fig|no|vs)\.$/i.test(text.slice(start, index + 1))) continue;
 
     let end = index + 1;
-    while (end < text.length && "」』）)]】".includes(text[end])) end += 1;
+    while (end < text.length && "」』）)]】\"'”’".includes(text[end])) end += 1;
     const part = text.slice(start, end).trim();
     if (part) parts.push(part);
     start = end;
@@ -92,8 +92,9 @@ function skippedBlockType(line) {
   const trimmed = line.trim();
   if (/^\|/.test(trimmed)) return "table";
   if (/^>/.test(trimmed)) return "blockquote";
-  if (/^!\[[^\]]*\]\([^)]*\)\s*$/.test(trimmed) || /^<img\b[^>]*>$/i.test(trimmed)) return "image";
+  if (/^!\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])?\s*$/.test(trimmed) || /^<img\b[^>]*>$/i.test(trimmed)) return "image";
   if (/^\[\^[^\]]+\]:/.test(trimmed)) return "footnote";
+  if (/^\[[^\]]+\]:\s*\S/.test(trimmed)) return "link-definition";
   if (/^https?:\/\/\S+$/i.test(trimmed)) return "link-card";
   if (/^<!--/.test(trimmed) || /^</.test(trimmed)) return "html";
   if (/^\$\$/.test(trimmed)) return "math";

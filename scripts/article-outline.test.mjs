@@ -8,7 +8,7 @@ test("extracts prose openings and skips Markdown blocks", () => {
     "First sentence. Second sentence.", "", "One sentence.",
     "```md", "## Code heading", "Code sentence.", "```",
     "- List sentence.", "Head A | Head B", "--- | ---", "row | value",
-    "![image](image.png)", "Inline image ![image](image.png) remains.",
+    "![figure][figure]", "[figure]: image.png", "Inline image ![image](image.png) remains.",
     "https://example.com/card", "[^note]: 脚注の定義です。",
     "> Quoted sentence.", "Lazy quoted continuation.",
     "", "Use e.g. this method. It works.", "## Next heading", "Last sentence.",

@@ -220,7 +220,8 @@ test("short prose paragraphs are checked only in scoped articles and exclude lea
     "    indented code",
     "",
     "This lead-in has one sentence.",
-    "![figure](figure.png)",
+    "![figure][figure]",
+    "[figure]: figure.png",
     "",
     "This lead-in has one sentence.",
     "```mermaid",
@@ -230,7 +231,7 @@ test("short prose paragraphs are checked only in scoped articles and exclude lea
     "This lead-in has one sentence.",
     "https://example.com/card",
     "",
-    "This paragraph has three sentences. It passes the rule. It has enough detail.",
+    "He said, \"Go.\" Then he left. It worked.",
     "",
     "Use e.g. this method. It works.",
     "",
@@ -259,7 +260,7 @@ test("short prose paragraphs are checked only in scoped articles and exclude lea
 
   assert.equal(result.status, 1, result.stderr);
   assert.match(result.stderr, /scheduled\.md:8: avoid-short-prose-paragraph/);
-  assert.match(result.stderr, /scheduled\.md:39: avoid-short-prose-paragraph/);
+  assert.match(result.stderr, /scheduled\.md:40: avoid-short-prose-paragraph/);
   assert.match(result.stderr, /unpublished\.md:4: avoid-short-prose-paragraph/);
   assert.equal((result.stderr.match(/avoid-short-prose-paragraph/g) ?? []).length, 3, result.stderr);
 });
