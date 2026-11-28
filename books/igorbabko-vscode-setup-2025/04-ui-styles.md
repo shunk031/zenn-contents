@@ -18,6 +18,7 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=739s
     ".monaco-action-bar.quick-input-inline-action-bar": "display: none",
     ".editor-widget.find-widget": "box-shadow: none; border-radius: 4px",
     ".quick-input-titlebar": "background: #100B15 !important",
+    ".monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after": "display: none",
     ".monaco-scrollable-element > .shadow.top": "display: none",
     ".sidebar .title-label": "padding: 0 !important",
     ".sidebar": "border: none !important",
@@ -86,6 +87,7 @@ Neovim の Forward Search タイトルバーが、左の Aura テーマ色から
 ### サイドバーとエディタ境界のフラット化
 スクロールシャドウや境界線、フォーカス枠線を取り除き、サイドバーとエディタ周りをフラットに整えます。
 
+- `.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom:after`: `display: none`。エディタグループ下部のタイトルボーダー装飾を非表示にする（本書で使うテーマではこの枠線が表示されないため見た目の変化はない）
 - `.monaco-scrollable-element > .shadow.top`: `display: none` で上部のスクロールシャドウを非表示にする
 - `.monaco-editor .scroll-decoration`: `display: none` でエディタ内のスクロール装飾を非表示にする
 - `.sidebar`: `border: none !important` でサイドバーの境界線を非表示にする
@@ -125,6 +127,7 @@ Neovim の Forward Search タイトルバーが、左の Aura テーマ色から
 | `.monaco-action-bar.quick-input-inline-action-bar` | なし（親 `{}`） | クイック入力リスト内のインラインアクションボタンを非表示にします。 |
 | `.editor-widget.find-widget` | なし（親 `{}`） | 検索ウィジェットの影を非表示にし、角丸を 4px に設定します。 |
 | `.quick-input-titlebar` | なし（親 `{}`） | クイック入力のタイトルバーの背景色を `#100B15` に設定します。 |
+| `.monaco-workbench ... .title.title-border-bottom:after` | なし（親 `{}`） | エディタグループ下部のタイトルボーダー装飾を非表示にします。 |
 | `.monaco-scrollable-element > .shadow.top` | なし（親 `{}`） | 上部エッジのスクロールシャドウを非表示にします。 |
 | `.sidebar .title-label` | なし（親 `{}`） | サイドバーのタイトルラベルの余白（パディング）をなくします。 |
 | `.sidebar` | なし（親 `{}`） | サイドバーの境界線を非表示にします。 |

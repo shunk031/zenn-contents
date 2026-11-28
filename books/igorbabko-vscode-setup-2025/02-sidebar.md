@@ -15,6 +15,7 @@ https://www.youtube.com/watch?v=VmFOsK7IhI4&t=209s
   "material-icon-theme.hidesExplorerArrows": true,
   "workbench.tree.enableStickyScroll": false,
   "workbench.tree.renderIndentGuides": "none",
+  "workbench.tree.indent": 8,
   "explorer.compactFolders": false,
   "explorer.confirmDragAndDrop": false,
   "explorer.confirmDelete": false,
@@ -52,6 +53,7 @@ Aura のカラーテーマを保ったまま、左の Seti アイコンと展開
 
 - `workbench.tree.enableStickyScroll: false`（既定値 `true`）: スクロール時に親フォルダー名を上部に固定するスティッキースクロールを無効化する
 - `workbench.tree.renderIndentGuides: "none"`（既定値 `"onHover"`）: ツリー内の垂直インデントガイドを非表示にする
+- `workbench.tree.indent: 8`（既定値 `8`）: ツリービューの階層間のインデント幅をピクセル単位で設定する（既定値と同じため見た目の変化はない）
 - `explorer.compactFolders: false`（既定値 `true`）: 子フォルダーが 1 つだけの場合のコンパクト表示を解除する
 
 | Before | After |
@@ -108,6 +110,7 @@ Aura のカラーテーマを保ったまま、左の Seti アイコンと展開
 | `material-icon-theme.hidesExplorerArrows` | `false` | エクスプローラーのフォルダー横にある展開矢印を非表示にします。 |
 | `workbench.tree.enableStickyScroll` | `true` | ツリービューでのスティッキースクロール（スクロール時の親階層の固定表示）の有効・無効を切り替えます。`false` で無効化します。 |
 | `workbench.tree.renderIndentGuides` | `"onHover"` | ツリービュー内のインデントガイドの表示を制御します。`none` で非表示にします。 |
+| `workbench.tree.indent` | `8` | ツリービューの階層間のインデント幅をピクセル単位で設定します。 |
 | `explorer.compactFolders` | `true` | 単一の子フォルダーを持つフォルダーのコンパクト表示を制御します。`false` で各フォルダーを個別の行に展開します。 |
 | `explorer.confirmDragAndDrop` | `true` | エクスプローラー内でドラッグ＆ドロップ移動する際の確認ダイアログを制御します。`false` で確認ダイアログを非表示にします。 |
 | `explorer.confirmDelete` | `true` | エクスプローラー内でアイテムを削除する際の確認ダイアログを制御します。`false` で確認ダイアログを非表示にします。 |
