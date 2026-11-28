@@ -216,5 +216,8 @@ esac
 rm -f "$finished_marker"
 nohup "$timing_watcher" "$demo_session" orchestrator "$root_pane" "$timing_log" "$finished_marker" \
     > /dev/null 2>&1 </dev/null &
+if [[ "${DEMO_VARIANT:-default}" == split ]]; then
+    printf '%s\n' "$!" > /out/timing-watcher-split.pid
+fi
 
 printf '%s\n' 'DEMO_SETUP_READY'

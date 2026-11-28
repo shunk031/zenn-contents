@@ -21,6 +21,7 @@ KIT_DIR = Path(__file__).resolve().parents[1]
 POSTPROCESS_PATH = KIT_DIR / "postprocess-split-video.py"
 WATCHER_PATH = KIT_DIR / "timing-log-split.py"
 MARKER_WRITER_PATH = KIT_DIR / "mark-timing.py"
+RECORD_SCRIPT_PATH = KIT_DIR / "record-demo.sh"
 
 
 def load_postprocessor(path: Path = POSTPROCESS_PATH, name: str = "postprocess_split"):
@@ -47,6 +48,21 @@ def report_pattern() -> re.Pattern[str]:
 
 
 class SplitPostprocessTimingTest(unittest.TestCase):
+    def test_recording_waits_for_watcher_before_postprocessing(self) -> None:
+        record_script = RECORD_SCRIPT_PATH.read_text(encoding="utf-8")
+        vhs_call = record_script.index('vhs "$tape"')
+        watcher_wait = record_script.index('while [[ ! -s "$finished_marker" ]]')
+        postprocess_call = record_script.index('python3 "$postprocessor" /out')
+        self.assertLess(vhs_call, watcher_wait)
+        self.assertLess(watcher_wait, postprocess_call)
+        self.assertIn('kill -0 "$watcher_pid"', record_script)
+
+        watcher = WATCHER_PATH.read_text(encoding="utf-8")
+        final_wait_close = watcher.rindex('record(f"{active_wait}_end")')
+        completion_marker = watcher.index('FINISHED_PATH.write_text(f"{finish_stamp}\\n"')
+        self.assertLess(final_wait_close, completion_marker)
+        self.assertIn('FINISHED_PATH.write_text("watcher_timeout\\n"', watcher)
+
     def test_marker_writer_records_utc_video_start(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             timing = Path(temporary) / "timing.log"

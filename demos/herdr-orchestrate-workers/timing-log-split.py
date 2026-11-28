@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import atexit
 import json
 import re
 import subprocess
@@ -114,6 +115,14 @@ if len(sys.argv) != 6:
 SESSION, ROOT_NAME, ROOT_PANE = sys.argv[1:4]
 LOG_PATH = Path(sys.argv[4])
 FINISHED_PATH = Path(sys.argv[5])
+
+
+def mark_watcher_failed() -> None:
+    if not FINISHED_PATH.exists():
+        FINISHED_PATH.write_text("watcher_failed\n", encoding="utf-8")
+
+
+atexit.register(mark_watcher_failed)
 recorded: set[str] = set()
 worker: dict = {}
 worker_pane = ""
@@ -129,6 +138,7 @@ screen_stable_since = time.monotonic()
 wait_number = 0
 active_wait = ""
 deadline = time.monotonic() + WATCH_SECONDS
+finish_stamp: str | None = None
 
 while time.monotonic() < deadline:
     tick_number += 1
@@ -259,7 +269,6 @@ while time.monotonic() < deadline:
         # Require a later structured-state poll than the one that observed removal.
         finish_stamp = record("parent_idle_after_worker_removal")
         recorded.add("parent_idle_after_worker_removal")
-        FINISHED_PATH.write_text(f"{finish_stamp}\n", encoding="utf-8")
 
     if "parent_idle_after_worker_removal" in recorded:
         break
@@ -270,3 +279,8 @@ while time.monotonic() < deadline:
 
 if active_wait:
     record(f"{active_wait}_end")
+
+if finish_stamp is None:
+    FINISHED_PATH.write_text("watcher_timeout\n", encoding="utf-8")
+else:
+    FINISHED_PATH.write_text(f"{finish_stamp}\n", encoding="utf-8")
