@@ -22,5 +22,5 @@
 - pre-commit は `lefthook.yml` で管理する。新しい clone や worktree で作業を始めるときは、`mise install` のあとに `lefthook install` を実行してから編集・commit に入る。
 - commit 前の自動確認では、staged された記事と本の章に `textlint` と `article-style:audit`、staged された docs に `textlint` が走る。監査スクリプトには `node --check`、staged diff には `git diff --cached --check` が走る。自動確認が通っても、上の人間レビューは省略しない。
 - 記事や本の章のレビューでは、ユーザーが明示的に求めない限りスクリーンショット取得や `npx zenn preview` を実行しない。本文修正と lint / audit を優先する。
-- bare URL は埋め込み用途のことがあるため、意図を確認せずに markdown link へ書き換えない。
+- 記事や本の章（`books/<slug>/*.md`）にある bare URL は埋め込み用途のことがあるため、意図を確認せずに markdown link へ書き換えない。
 - 表記揺れを見つけたら、記事全体や本全体で統一する。
