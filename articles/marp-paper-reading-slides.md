@@ -21,7 +21,7 @@ https://adventar.org/calendars/13106
 
 PowerPoint や Keynote などの GUI ツールでは、フォントや余白、数式の配置を手作業で調整する手間が発生します。一方で Marp は、原稿がテキストなのでコーディングエージェントでも扱いやすく、CSS でスタイルを一括調整できます。HTML で出力すれば、CSS のアニメーションも宣言的に書ける点も気に入っています。
 
-筆者のスライド用リポジトリ [shunk031/slides](https://github.com/shunk031/slides) では、この Marp を基盤に据え、コーディングエージェントがスライドの原稿を主に執筆し、人間が微調整する運用を整えています。専用の CSS テーマ、数式注釈の記法ルール、Headless Chrome によるレイアウト自動検査を備え、文字のはみ出しやテキスト同士の重なり、単語の途中改行などが見つかったスライドの PDF 出力を自動で止めます。本記事では、このリポジトリの構成と、エージェントと協調して論文紹介スライドを見やすく仕上げる工夫を解説します。
+筆者のスライド用リポジトリ [shunk031/slides](https://github.com/shunk031/slides) では、この Marp を基盤に据え、コーディングエージェントがスライドの原稿を主に執筆し、人間が微調整する運用を整えています。専用の CSS テーマと Headless Chrome によるレイアウト自動検査を備え、文字のはみ出しやテキスト同士の重なり、単語の途中改行などが見つかったスライドの PDF 出力を自動で止めます。本記事では、このリポジトリの構成と、エージェントと協調して論文紹介スライドを見やすく仕上げる工夫を解説します。
 
 https://github.com/shunk031/slides
 
@@ -143,7 +143,7 @@ paginate: true
 
 > ![Figure 1: 入力から出力への対応](assets/placeholder.svg)
 >
-> Figure from [[Example+ Demo’26](https://example.org/paper)]: 入力・処理・出力の対応
+> Figure from [[Kitada+ arXiv’18](https://arxiv.org/abs/1809.02568)]: 提案する分類システム
 ```
 
 ![](/images/marp-paper-reading-slides/figure-source.png)
@@ -185,7 +185,7 @@ section.debug-layout > blockquote img { width: 1284px; max-width: none; }
 
 > ![Figure 1: 枠の右端がスライド外へ出る](assets/placeholder.svg)
 >
-> Figure from [[Example+ Demo’26](https://example.org/paper)]: 入力・処理・出力の対応
+> Figure from [[Kitada+ arXiv’18](https://arxiv.org/abs/1809.02568)]: 提案する分類システム
 ```
 
 ![](/images/marp-paper-reading-slides/layout-debug.png)
@@ -215,7 +215,6 @@ section.debug-layout > blockquote img { width: 1284px; max-width: none; }
 Marp を活用した論文紹介スライドの作成構成と、見やすく仕上げるための工夫を紹介しました。Markdown による原稿管理、専用 CSS テーマ、Headless Chrome による自動検査を組み合わせることで、レイアウト崩れを防ぎながらスライドを作成できます。コーディングエージェントに執筆を任せる場合でも、明確なルール定義と機械による自動検査を整えることで、手作業での調整や手戻りを減らしやすくなりました。これから論文紹介スライドや技術発表資料を作成する読者にとって、本記事の環境が参考になれば幸いです。 <!-- textlint-disable -->
 
 <!-- 感想: Marp とレイアウト自動検査によるスライド作成環境を運用してみた総括について、実際に使ってどうだったか一言 -->
-
 
 [^marp_app]: Marp: Markdown Presentation Ecosystem https://marp.app/
 [^mise_doc]: Getting Started - mise-en-place https://mise.jdx.dev/getting-started.html
